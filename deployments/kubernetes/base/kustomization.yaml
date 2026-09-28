@@ -1,0 +1,13 @@
+# Kustomize base configuration for NerveCenter
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Base resources
+resources:
+  - deployment.yaml
+  - service.yaml
+  - configmap.yaml
+  - secret.yaml
+
+# Environment-specific overlays will extend this base

@@ -1,0 +1,33 @@
+# Kustomize configuration for NerveCenter Kubernetes deployment
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Common labels for all resources
+commonLabels:
+  app: nervcenter
+  version: v1
+
+# Base resources
+resources:
+  - base/deployment.yaml
+  - base/service.yaml
+  - base/configmap.yaml
+  - base/secret.yaml
+
+# ConfigMap generation
+configMapGenerator:
+  - name: nervcenter-config
+    files:
+      - config.env
+
+# Secret generation (use generators for sensitive data)
+secretGenerator:
+  - name: nervcenter-secrets
+    files:
+      - secrets.env
+
+# Common annotations
+commonAnnotations:
+  version: v1
+  description: NerveCenter deployment

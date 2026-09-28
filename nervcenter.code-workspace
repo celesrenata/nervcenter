@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../m5max-darwin-flake"
+		},
+		{
+			"path": "../nixos-k3s-configs"
+		},
+		{
+			"path": "../../kube"
+		}
+	],
+	"settings": {}
+}

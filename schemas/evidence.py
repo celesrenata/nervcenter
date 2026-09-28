@@ -1,0 +1,75 @@
+"""Evidence records (NerveCenter spec Section 15).
+
+Evidence is the provenance primitive of NerveCenter: every inference, decision,
+entity, and relationship must cite captured evidence. An evidence record
+immutably points to *where* a fact came from (a URL, file, transcript, tool
+result, ...) and how trustworthy that source is.
+
+Assumptions (spec Section 15 not present in the repository):
+    - ``source_type`` is a classification literal over the kinds of sources a
+      personal-intelligence core captures from.
+    - ``content_hash`` stores the digest of the captured content (see
+      :func:`schemas.base.content_hash`) so citations remain verifiable even if
+      the original artifact moves or disappears.
+"""
+
+from datetime import datetime, timezone
+from typing import Any, Literal
+
+from pydantic import Field
+
+from .base import Record
+
+#: Classification of the source an evidence record was captured from.
+EvidenceSourceType = Literal[
+    "web_page",
+    "document",
+    "transcript",
+    "message",
+    "tool_result",
+    "screenshot",
+    "database_row",
+    "file",
+    "manual_note",
+    "model_output",
+    "other",
+]
+
+
+class Evidence(Record):
+    """An immutable, citable provenance record."""
+
+    source_type: EvidenceSourceType = Field(
+        ...,
+        description="Kind of source this evidence was captured from.",
+    )
+    source_ref: str = Field(
+        ...,
+        description="Locating reference for the source (URL, path, URI, or id).",
+    )
+    content: str | None = Field(
+        default=None,
+        description="Captured text/content excerpt; may be redacted per policy.",
+    )
+    content_hash: str | None = Field(
+        default=None,
+        description="SHA-256 digest of the captured content for verifiability.",
+    )
+    captured_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="When the content was captured (UTC).",
+    )
+    trust: float = Field(
+        default=0.5,
+        ge=0.0,
+        le=1.0,
+        description="Trusted-source score (0..1) assigned at capture time.",
+    )
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Capture-time metadata (http status, offsets, tool name, ...).",
+    )
+    redacted: bool = Field(
+        default=False,
+        description="Whether the content was redacted by policy before storage.",
+    )

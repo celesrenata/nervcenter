@@ -1,0 +1,190 @@
+# NerveCenter implementation status tracker.
+# Derived from Section 95 (Parallel Implementation Workstreams) of the
+# NerveCenter specification. Each workstream maps to one or more paths.
+#
+# Status values:
+#   planned    - not started
+#   in_progress - active
+#   done       - complete
+#   blocked    - waiting on dependency
+#   deferred   - consciously postponed
+
+version: 1
+updated: "2026-09-28"
+spec_section: 95
+
+workstreams:
+  - id: ws-01
+    name: Core Event Bus
+    owner: backend
+    paths:
+      - backend/events
+      - backend/persistence
+    description: >
+      Event bus, subscriptions, replay, and durable persistence (WAL, snapshots)
+      that underpin every other subsystem.
+    status: in_progress
+
+  - id: ws-02
+    name: Knowledge & Evidence
+    owner: backend
+    paths:
+      - backend/knowledge
+      - backend/evidence
+    description: >
+      Knowledge graph (entities, relations) and evidence capture with
+      provenance and citation support.
+    status: planned
+
+  - id: ws-03
+    name: Goals & Tasks
+    owner: backend
+    paths:
+      - backend/goals
+      - backend/tasks
+      - backend/scheduler
+    description: >
+      Goal models, decomposition and progress tracking, task queues,
+      execution, and time-based scheduling.
+    status: done
+
+  - id: ws-04
+    name: Orchestration & Agents
+    owner: backend
+    paths:
+      - backend/orchestration
+      - backend/agents
+      - agents
+    description: >
+      Multi-agent orchestration, plan execution, agent runtime, and
+      registries plus agent definitions and capability manifests.
+    status: planned
+
+  - id: ws-05
+    name: Inference & Policy
+    owner: backend
+    paths:
+      - backend/inference
+      - backend/policy
+      - backend/context
+    description: >
+      Model routing and inference adapters, context assembly and
+      budgeting, and guardrails/permissions/redaction.
+    status: planned
+
+  - id: ws-06
+    name: API Surface
+    owner: backend
+    paths:
+      - backend/api
+      - backend/observability
+    description: >
+      HTTP/gRPC interface and observability (tracing, metrics, logs).
+    status: planned
+
+  - id: ws-07
+    name: Connectors
+    owner: backend
+    paths:
+      - backend/connectors
+    description: >
+      External system integrations and data sources.
+    status: planned
+
+  - id: ws-08
+    name: Schemas
+    owner: schemas
+    paths:
+      - schemas
+    description: >
+      Versioned data contracts (JSON Schema) for records and interfaces.
+    status: in_progress
+
+  - id: ws-09
+    name: SDKs
+    owner: sdk
+    paths:
+      - sdk/python
+      - sdk/typescript
+    description: >
+      Client SDKs for Python and TypeScript.
+    status: planned
+
+  - id: ws-10
+    name: MCP Server
+    owner: mcp
+    paths:
+      - mcp
+    description: >
+      MCP server exposing NerveCenter tools to model clients.
+    status: planned
+
+  - id: ws-11
+    name: CLI
+    owner: cli
+    paths:
+      - cli
+    description: >
+      Terminal client for the core.
+    status: planned
+
+  - id: ws-12
+    name: Web UI
+    owner: web
+    paths:
+      - web
+    description: >
+      Browser-based user interface.
+    status: planned
+
+  - id: ws-13
+    name: Apple Clients
+    owner: apple
+    paths:
+      - apple/Shared
+      - apple/iOS
+      - apple/Watch
+      - apple/Widgets
+      - apple/Tests
+    description: >
+      Native Apple clients: shared code, iOS app, watchOS app,
+      widgets, and tests.
+    status: planned
+
+  - id: ws-14
+    name: Deployments
+    owner: deployments
+    paths:
+      - deployments/nix
+      - deployments/kubernetes
+      - deployments/local
+    description: >
+      Deployment definitions for nix, kubernetes, and local targets.
+    status: planned
+
+  - id: ws-15
+    name: Synthetic Lab
+    owner: synthetic-lab
+    paths:
+      - synthetic-lab
+    description: >
+      Synthetic-data lab for testing and evaluation.
+    status: planned
+
+  - id: ws-16
+    name: Migrations
+    owner: migrations
+    paths:
+      - migrations
+    description: >
+      Database schema migrations.
+    status: planned
+
+  - id: ws-17
+    name: Tests
+    owner: tests
+    paths:
+      - tests
+    description: >
+      Cross-cutting integration and end-to-end tests.
+    status: planned

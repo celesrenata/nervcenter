@@ -1,0 +1,526 @@
+# NerveCenter implementation dependency graph.
+#
+# Derived from Section 96 (Workstream Dependency Shape) and
+# Section 95 (Parallel Implementation Workstreams) of the
+# NerveCenter specification. This file is the single source of
+# truth for workstream relationships, parallel execution groups,
+# the critical path, and timeline estimates.
+#
+# Node ids reference the workstream ids defined in
+# docs/implementation-status.yaml. One extra derived node
+# (ws-core-persistence) splits the durable-storage work out of
+# ws-01 so that persistence can be sequenced before the event
+# bus while still living under backend/persistence.
+#
+# Legend for `depends_on` semantics:
+#   A workstream may only START once every id in its `depends_on`
+#   list has reached `done`. Edges are strict (hard) dependencies.
+#   Soft / informational couplings (nice-to-have) are listed under
+#   `soft_depends_on` and do NOT gate the start of the workstream.
+
+version: 1
+updated: "2026-09-28"
+spec_section: 96
+source_status_file: docs/implementation-status.yaml
+
+# ---------------------------------------------------------------------------
+# Workstream nodes
+# ---------------------------------------------------------------------------
+workstreams:
+  # --- Foundation ----------------------------------------------------------
+  - id: ws-08
+    name: Schemas
+    owner: schemas
+    paths:
+      - schemas
+    layer: foundation
+    depends_on: []
+    description: >
+      Versioned data contracts (JSON Schema) for every record and interface.
+      Nothing else can be validated without this, so it is the root of the
+      graph.
+
+  - id: ws-core-persistence
+    name: Persistence
+    owner: backend
+    paths:
+      - backend/persistence
+    layer: foundation
+    depends_on:
+      - ws-08
+    description: >
+      Storage engines, WAL, and snapshots. Derived node split out of ws-01 so
+      that durable storage is available before the event bus and every
+      domain subsystem.
+
+  # --- Core subsystems -----------------------------------------------------
+  - id: ws-01
+    name: Core Event Bus
+    owner: backend
+    paths:
+      - backend/events
+      - backend/persistence
+    layer: core
+    depends_on:
+      - ws-08
+      - ws-core-persistence
+    description: >
+      Event bus, subscriptions, and replay. Every other subsystem emits and
+      consumes events, so it must land before domain logic.
+
+  - id: ws-02
+    name: Knowledge & Evidence
+    owner: backend
+    paths:
+      - backend/knowledge
+      - backend/evidence
+    layer: core
+    depends_on:
+      - ws-08
+      - ws-core-persistence
+    soft_depends_on:
+      - ws-01
+    description: >
+      Knowledge graph (entities, relations) and evidence capture with
+      provenance and citation support.
+
+  - id: ws-03
+    name: Goals & Tasks
+    owner: backend
+    paths:
+      - backend/goals
+      - backend/tasks
+      - backend/scheduler
+    layer: core
+    depends_on:
+      - ws-08
+      - ws-core-persistence
+    soft_depends_on:
+      - ws-01
+    description: >
+      Goal models, decomposition and progress tracking, task queues,
+      execution, and time-based scheduling.
+
+  - id: ws-05
+    name: Inference & Policy
+    owner: backend
+    paths:
+      - backend/inference
+      - backend/policy
+      - backend/context
+    layer: core
+    depends_on:
+      - ws-08
+      - ws-core-persistence
+    soft_depends_on:
+      - ws-01
+    description: >
+      Model routing and inference adapters, context assembly and budgeting,
+      and guardrails/permissions/redaction.
+
+  - id: ws-16
+    name: Migrations
+    owner: migrations
+    paths:
+      - migrations
+    layer: core
+    depends_on:
+      - ws-08
+      - ws-core-persistence
+    description: >
+      Database schema migrations that bring the on-device store up to the
+      current schema version.
+
+  # --- Upper backend -------------------------------------------------------
+  - id: ws-04
+    name: Orchestration & Agents
+    owner: backend
+    paths:
+      - backend/orchestration
+      - backend/agents
+      - agents
+    layer: upper-backend
+    depends_on:
+      - ws-03
+    description: >
+      Multi-agent orchestration, plan execution, agent runtime, and registries
+      plus agent definitions and capability manifests. Drives goals/tasks.
+
+  - id: ws-07
+    name: Connectors
+    owner: backend
+    paths:
+      - backend/connectors
+    layer: upper-backend
+    depends_on:
+      - ws-08
+      - ws-core-persistence
+    soft_depends_on:
+      - ws-01
+    description: >
+      External system integrations and data sources.
+
+  - id: ws-06
+    name: API Surface
+    owner: backend
+    paths:
+      - backend/api
+      - backend/observability
+    layer: upper-backend
+    depends_on:
+      - ws-01
+      - ws-02
+      - ws-03
+      - ws-04
+      - ws-05
+      - ws-16
+    description: >
+      HTTP/gRPC interface and observability (tracing, metrics, logs). Gating
+      node for the entire client tier.
+
+  # --- Clients & surfaces --------------------------------------------------
+  - id: ws-09
+    name: SDKs
+    owner: sdk
+    paths:
+      - sdk/python
+      - sdk/typescript
+    layer: client
+    depends_on:
+      - ws-08
+      - ws-06
+    description: >
+      Client SDKs for Python and TypeScript.
+
+  - id: ws-10
+    name: MCP Server
+    owner: mcp
+    paths:
+      - mcp
+    layer: client
+    depends_on:
+      - ws-06
+      - ws-07
+    description: >
+      MCP server exposing NerveCenter tools to model clients.
+
+  - id: ws-11
+    name: CLI
+    owner: cli
+    paths:
+      - cli
+    layer: client
+    depends_on:
+      - ws-06
+      - ws-09
+    description: >
+      Terminal client for the core.
+
+  - id: ws-12
+    name: Web UI
+    owner: web
+    paths:
+      - web
+    layer: client
+    depends_on:
+      - ws-06
+      - ws-09
+    description: >
+      Browser-based user interface.
+
+  - id: ws-13
+    name: Apple Clients
+    owner: apple
+    paths:
+      - apple/Shared
+      - apple/iOS
+      - apple/Watch
+      - apple/Widgets
+      - apple/Tests
+    layer: client
+    depends_on:
+      - ws-06
+      - ws-09
+    description: >
+      Native Apple clients: shared code, iOS app, watchOS app, widgets, and
+      tests.
+
+  - id: ws-14
+    name: Deployments
+    owner: deployments
+    paths:
+      - deployments/nix
+      - deployments/kubernetes
+      - deployments/local
+    layer: client
+    depends_on:
+      - ws-06
+      - ws-07
+    description: >
+      Deployment definitions for nix, kubernetes, and local targets.
+
+  # --- Quality & validation ------------------------------------------------
+  - id: ws-15
+    name: Synthetic Lab
+    owner: synthetic-lab
+    paths:
+      - synthetic-lab
+    layer: validation
+    depends_on:
+      - ws-01
+      - ws-02
+      - ws-03
+      - ws-05
+    description: >
+      Synthetic-data lab for testing and evaluation against core subsystems.
+
+  - id: ws-17
+    name: Tests
+    owner: tests
+    paths:
+      - tests
+    layer: validation
+    depends_on:
+      - ws-01
+      - ws-02
+      - ws-03
+      - ws-04
+      - ws-05
+      - ws-06
+      - ws-07
+      - ws-14
+    description: >
+      Cross-cutting integration and end-to-end tests. Sinks of the graph.
+
+# ---------------------------------------------------------------------------
+# Parallel execution groups
+# ---------------------------------------------------------------------------
+# Each group lists workstreams that can run CONCURRENTLY because they share
+# the same (already-satisfied) prerequisite frontier. Within a group there are
+# no inter-workstream dependencies.
+parallel_groups:
+  - group: G0-foundation
+    prerequisites: []
+    workstreams:
+      - ws-08
+    note: Schemas are the root; everything waits here.
+
+  - group: G1-persistence
+    prerequisites:
+      - ws-08
+    workstreams:
+      - ws-core-persistence
+    note: Durable storage before anything that writes.
+
+  - group: G2-core
+    prerequisites:
+      - ws-08
+      - ws-core-persistence
+    workstreams:
+      - ws-01
+      - ws-02
+      - ws-03
+      - ws-05
+      - ws-07
+      - ws-16
+    note: >
+      Event bus plus all schema-backed domain subsystems and migrations run
+      side by side. ws-01, ws-02, ws-03, ws-05, ws-07 are mutually
+      independent (ws-02/03/05/07 only softly lean on ws-01).
+
+  - group: G3-upper
+    prerequisites:
+      - ws-01
+      - ws-02
+      - ws-03
+      - ws-05
+      - ws-16
+    workstreams:
+      - ws-04
+    note: Orchestration is gated on Goals & Tasks (ws-03).
+
+  - group: G4-api
+    prerequisites:
+      - ws-04
+    workstreams:
+      - ws-06
+    note: API Surface lands once all backend subsystems are present.
+
+  - group: G5-sdks
+    prerequisites:
+      - ws-08
+      - ws-06
+    workstreams:
+      - ws-09
+    note: SDKs need the schema contracts and a stable API.
+
+  - group: G6-clients
+    prerequisites:
+      - ws-09
+    workstreams:
+      - ws-10
+      - ws-11
+      - ws-12
+      - ws-13
+      - ws-14
+    note: >
+      The whole client tier (MCP, CLI, Web UI, Apple, Deployments) fans out
+      in parallel after the API and SDK are available.
+
+  - group: G7-validation
+    prerequisites:
+      - ws-06
+    workstreams:
+      - ws-15
+    note: Synthetic lab runs once core subsystems and the API exist.
+
+  - group: G8-e2e
+    prerequisites:
+      - ws-15
+    workstreams:
+      - ws-17
+    note: Cross-cutting integration/e2e tests are the final gate.
+
+# ---------------------------------------------------------------------------
+# Critical path
+# ---------------------------------------------------------------------------
+# The critical path is the longest dependency chain from a root to a sink.
+# Any slip on these nodes delays overall completion. Length in nodes: 8.
+critical_path:
+  workstreams:
+    - ws-08               # Schemas
+    - ws-core-persistence # Persistence
+    - ws-01               # Core Event Bus
+    - ws-03               # Goals & Tasks
+    - ws-04               # Orchestration & Agents
+    - ws-06               # API Surface
+    - ws-09               # SDKs
+    - ws-13               # Apple Clients (deepest client leaf)
+  rationale: >
+    Persistence, the event bus, goals/tasks, orchestration, and the API all
+    sit on the longest chain. Among the client leaves, Apple Clients and
+    Deployments are the deepest (API -> SDK/Connectors -> client). ws-13 is
+    shown as the terminal leaf; ws-14 (Deployments) is equally critical via
+    ws-06 -> ws-07 -> ws-14.
+  alternative_critical_tail:
+    - ws-06
+    - ws-07
+    - ws-14
+  note: >
+    Deployments tie with Apple Clients at the tail via the connector path
+    (ws-06 -> ws-07 -> ws-14).
+
+# ---------------------------------------------------------------------------
+# Timeline estimates
+# ---------------------------------------------------------------------------
+# Estimates are in engineer-weeks of effort and assume the parallel groups are
+# executed concurrently. `duration` is the wall-clock length of a node when it
+# is the critical contributor; `effort` is total work regardless of overlap.
+# The `wave` maps a node to the parallel group in which it starts.
+timeline:
+  unit: engineer-weeks
+  assumptions:
+    - Workstreams inside the same parallel_group run concurrently.
+    - A node can start only when all hard `depends_on` entries are done.
+    - Estimates are planning-level (order-of-magnitude), not committed.
+  nodes:
+    - id: ws-08
+      wave: G0-foundation
+      effort: 2
+      duration: 2
+      on_critical_path: true
+    - id: ws-core-persistence
+      wave: G1-persistence
+      effort: 3
+      duration: 3
+      on_critical_path: true
+    - id: ws-01
+      wave: G2-core
+      effort: 4
+      duration: 4
+      on_critical_path: true
+    - id: ws-02
+      wave: G2-core
+      effort: 4
+      duration: 4
+      on_critical_path: false
+    - id: ws-03
+      wave: G2-core
+      effort: 4
+      duration: 4
+      on_critical_path: true
+    - id: ws-05
+      wave: G2-core
+      effort: 4
+      duration: 4
+      on_critical_path: false
+    - id: ws-07
+      wave: G2-core
+      effort: 3
+      duration: 3
+      on_critical_path: false
+    - id: ws-16
+      wave: G2-core
+      effort: 2
+      duration: 2
+      on_critical_path: false
+    - id: ws-04
+      wave: G3-upper
+      effort: 5
+      duration: 5
+      on_critical_path: true
+    - id: ws-06
+      wave: G4-api
+      effort: 5
+      duration: 5
+      on_critical_path: true
+    - id: ws-09
+      wave: G5-sdks
+      effort: 4
+      duration: 4
+      on_critical_path: true
+    - id: ws-10
+      wave: G6-clients
+      effort: 3
+      duration: 3
+      on_critical_path: false
+    - id: ws-11
+      wave: G6-clients
+      effort: 2
+      duration: 2
+      on_critical_path: false
+    - id: ws-12
+      wave: G6-clients
+      effort: 5
+      duration: 5
+      on_critical_path: false
+    - id: ws-13
+      wave: G6-clients
+      effort: 5
+      duration: 5
+      on_critical_path: true
+    - id: ws-14
+      wave: G6-clients
+      effort: 3
+      duration: 3
+      on_critical_path: false
+    - id: ws-15
+      wave: G7-validation
+      effort: 3
+      duration: 3
+      on_critical_path: false
+    - id: ws-17
+      wave: G8-e2e
+      effort: 4
+      duration: 4
+      on_critical_path: false
+  # Wall-clock estimate is the sum of `duration` along the critical path
+  # (each critical node must finish before the next can start).
+  critical_path_duration: 32
+  total_effort: 60
+  notes: >
+    critical_path_duration (32 engineer-weeks) equals
+    2 + 3 + 4 + 4 + 5 + 5 + 4 + 5 along the critical chain. Off-critical work
+    (e.g. ws-02, ws-05, ws-12, ws-15, ws-17) overlaps with critical work, so
+    the wall-clock schedule is driven by the critical path, while total_effort
+    (60 engineer-weeks) reflects the full scope.

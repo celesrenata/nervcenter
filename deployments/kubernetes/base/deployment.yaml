@@ -1,0 +1,54 @@
+# NerveCenter Deployment
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nervcenter
+  labels:
+    app: nervcenter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nervcenter
+  template:
+    metadata:
+      labels:
+        app: nervcenter
+    spec:
+      containers:
+        - name: nervcenter
+          image: nervcenter:latest
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: nervcenter-config
+            - secretRef:
+                name: nervcenter-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: data-volume
+              mountPath: /app/data
+      volumes:
+        - name: data-volume
+          emptyDir: {}
