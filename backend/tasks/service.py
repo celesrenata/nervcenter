@@ -31,16 +31,16 @@ Spec sections
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
 import structlog
-from schemas.tasks import Task as TaskSchema
-from sqlalchemy import desc, func, or_, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from backend.persistence.models import Task as TaskORM
+from schemas.tasks import Task as TaskSchema
 
 log = structlog.get_logger(__name__)
 
@@ -52,7 +52,7 @@ def _iso(dt: datetime | None) -> str | None:
     if dt is None:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     return dt.isoformat()
 
 

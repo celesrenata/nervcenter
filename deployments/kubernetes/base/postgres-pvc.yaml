@@ -1,0 +1,19 @@
+# PostgreSQL data volume. Standalone PVC (not the StatefulSet's volumeClaimTemplate)
+# so the PGDATA `subPath` mount is explicit and the claim is easy to inspect/
+# expand. `longhorn` matches the StorageClass used by other services on this
+# cluster (Immediate binding, volume expansion enabled).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+  namespace: nervecenter
+  labels:
+    app: nervcenter
+    app.kubernetes.io/name: postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Gi

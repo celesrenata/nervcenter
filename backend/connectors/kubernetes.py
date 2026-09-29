@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import asyncio
-import time
-from datetime import datetime, timezone
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from datetime import UTC, datetime
+from typing import Any
 
 import httpx
 import structlog
@@ -13,16 +13,13 @@ from .base import (
     Connector,
     ConnectorEvent,
     HTTPPool,
-    RetryPolicy,
-    Snapshot,
-    SnapshotError,
 )
 
 log = structlog.get_logger(__name__)
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class KubernetesConnector(Connector):

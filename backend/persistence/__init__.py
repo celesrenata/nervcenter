@@ -20,35 +20,34 @@ Usage::
 """
 
 from .connection import (
+    DatabaseConfig,
+    HealthReport,
+    check_health,
     config_from_env,
     create_engine,
     create_persistence,
-    session_scope,
+    dispose_engine,
     ensure_pgvector,
     pgvector_available,
-    check_health,
-    dispose_engine,
-    DatabaseConfig,
-    HealthReport,
+    session_scope,
 )
-
 from .models import (
+    AgentResult,
     Base,
-    Vector,
-    TimedRecord,
-    RootRecord,
-    Jsonb,
-    UUIDv4,
-    Event,
-    Entity,
-    Relationship,
-    Evidence,
     Claim,
     Decision,
+    Entity,
+    Event,
+    Evidence,
+    Goal,
+    Jsonb,
+    Relationship,
+    RootRecord,
     Task,
     TaskRun,
-    Goal,
-    AgentResult,
+    TimedRecord,
+    UUIDv4,
+    Vector,
 )
 
 __all__ = [

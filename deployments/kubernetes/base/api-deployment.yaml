@@ -1,0 +1,67 @@
+# NerveCenter API deployment. Image tag is set by the operator (deploy.sh
+# patches it with the git short SHA before `kubectl apply -k`); the placeholder
+# tag `latest` is the deploy.sh fallback when git is unavailable.
+#
+# envFrom: nervecenter-env (Secret — DB/NATS/OmniRoute URLs, NERVE_MOCK_INFER)
+#          nervcenter-config (ConfigMap — APP_ENV, LOG_LEVEL, API_*).
+# imagePullSecrets: harbor-pull (per-namespace copy; see deployments/README.md).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: nervecenter
+  labels:
+    app: nervcenter
+    app.kubernetes.io/name: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: "registry.celestium.life/nervecenter/api:latest"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: nervecenter-env
+            - configMapRef:
+                name: nervcenter-config
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "0.25"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+      imagePullSecrets:
+        - name: harbor-pull

@@ -20,7 +20,7 @@ Spec sections
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -80,7 +80,7 @@ class TimeTravelQuery:
         Includes every entity and relationship whose validity window covers
         ``at`` — i.e. the temporal relationship of the graph *at that time*.
         """
-        when = at or datetime.now(timezone.utc)
+        when = at or datetime.now(UTC)
         ents = await self._entities.list_entities(active_at=when, limit=20_000)
         rels = await self._relationships.active_snapshot(when)
         return GraphState(at=when, entities=ents, relationships=rels)
@@ -89,7 +89,7 @@ class TimeTravelQuery:
         self, entity_id: str, at: datetime | None = None
     ) -> EntitySchema | None:
         """The entity as it stood at ``at``, or ``None`` when absent/inactive."""
-        when = at or datetime.now(timezone.utc)
+        when = at or datetime.now(UTC)
         try:
             entity = await self._entities.get(entity_id)
         except EntityNotFoundError:
@@ -183,7 +183,7 @@ class LineageTracker:
             event_id=str(uuid4()),
             entity_id=entity_id,
             action=action,
-            at=at or datetime.now(timezone.utc),
+            at=at or datetime.now(UTC),
             before=before,
             after=after,
             actor=actor,

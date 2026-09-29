@@ -1,6 +1,6 @@
 """API versioning utilities."""
-from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException, Request
+
 from backend.api.models import VersionInfo
 
 router = APIRouter()

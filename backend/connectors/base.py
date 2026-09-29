@@ -59,9 +59,10 @@ import asyncio
 import contextlib
 import time
 import uuid
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, AsyncIterator, Generic, TypeVar
+from datetime import UTC, datetime
+from typing import Any, TypeVar
 
 import httpx
 import structlog
@@ -161,7 +162,7 @@ class RetryPolicy:
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @dataclass(frozen=True, slots=True)
@@ -478,7 +479,7 @@ async def run_command(
                 stdout_b, stderr_b = await asyncio.wait_for(
                     proc.communicate(), timeout=timeout
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 with contextlib.suppress(ProcessLookupError):
                     proc.kill()
                 await proc.wait()
@@ -809,7 +810,7 @@ class Connector(abc.ABC):
             self._sub_task.cancel()
             try:
                 await asyncio.wait_for(self._sub_task, timeout=5.0)
-            except (asyncio.TimeoutError, asyncio.CancelledError):
+            except (TimeoutError, asyncio.CancelledError):
                 pass
             self._sub_task = None
         log.info("connector.unsubscribed", connector=self.connector_type, name=self.name)

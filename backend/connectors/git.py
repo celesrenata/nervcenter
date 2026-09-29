@@ -110,8 +110,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -135,7 +134,7 @@ _REC_SEP = "\x01"
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _is_remote(repo: str) -> bool:
@@ -312,7 +311,7 @@ class GitConnector(Connector):
             ).expanduser()
             cache_root.mkdir(parents=True, exist_ok=True)
             digest = hashlib.sha256(
-                f"{self.name}:{self._repo}".encode("utf-8")
+                f"{self.name}:{self._repo}".encode()
             ).hexdigest()[:24]
             workdir = cache_root / digest
             if not (workdir / "HEAD").exists():
@@ -639,7 +638,7 @@ class GitConnector(Connector):
         subject, an, ae, ct = fields[:4]
         committed_at: str | None
         try:
-            committed_at = datetime.fromtimestamp(float(ct), tz=timezone.utc).isoformat()
+            committed_at = datetime.fromtimestamp(float(ct), tz=UTC).isoformat()
         except (ValueError, OSError):
             committed_at = None
         return sha, {
@@ -671,7 +670,7 @@ class GitConnector(Connector):
                 continue
             sha, an, ae, ct, subject, parents = parts[:6]
             try:
-                committed_at = datetime.fromtimestamp(float(ct), tz=timezone.utc).isoformat()
+                committed_at = datetime.fromtimestamp(float(ct), tz=UTC).isoformat()
             except (ValueError, OSError):
                 committed_at = None
             commits.append({
@@ -743,7 +742,7 @@ class GitConnector(Connector):
                 continue
             sha, an, ae, ct, subject, parents = parts[:6]
             try:
-                committed_at = datetime.fromtimestamp(float(ct), tz=timezone.utc).isoformat()
+                committed_at = datetime.fromtimestamp(float(ct), tz=UTC).isoformat()
             except (ValueError, OSError):
                 committed_at = None
             records.append({

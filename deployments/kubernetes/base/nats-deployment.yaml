@@ -1,0 +1,59 @@
+# NATS server with JetStream (spec §14 event stream).
+# Probes use the monitoring HTTP endpoint (8222, enabled by default in NATS
+# >= 2.2): /varz returns a JSON status document for a live server.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nats
+  namespace: nervecenter
+  labels:
+    app: nervcenter
+    app.kubernetes.io/name: nats
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nats
+  template:
+    metadata:
+      labels:
+        app: nats
+    spec:
+      containers:
+        - name: nats
+          image: "nats:2.10-alpine"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--jetstream"
+            - "--store_dir"
+            - "/data/jetstream"
+          ports:
+            - name: nats-client
+              containerPort: 4222
+            - name: monitoring
+              containerPort: 8222
+          readinessProbe:
+            httpGet:
+              path: /varz
+              port: 8222
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /varz
+              port: 8222
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "0.2"
+            limits:
+              memory: "512Mi"
+              cpu: "1"
+          volumeMounts:
+            - name: jetstream
+              mountPath: /data/jetstream
+      volumes:
+        - name: jetstream
+          emptyDir: {}

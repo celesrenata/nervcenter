@@ -17,14 +17,14 @@ Usage::
     from backend.persistence.models import Event, Entity, Goal, Task
 """
 
-from .base import Base, Vector, TimedRecord, RootRecord, Jsonb, UUIDv4
-from .events import Event
-from .entities import Entity
-from .relationships import Relationship
-from .evidence import Evidence
+from .base import Base, Jsonb, RootRecord, TimedRecord, UUIDv4, Vector
 from .claims import Claim, Decision
+from .entities import Entity
+from .events import Event
+from .evidence import Evidence
+from .goals import AgentResult, Goal
+from .relationships import Relationship
 from .tasks import Task, TaskRun
-from .goals import Goal, AgentResult
 
 __all__ = [
     "Base",

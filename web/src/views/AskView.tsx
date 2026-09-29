@@ -1,11 +1,31 @@
 import { useState, useEffect } from 'react'
-import { api } from '../api/client'
+import { askApi } from '../api/client'
+
+interface EvidenceItem {
+  statement: string
+  type: 'FACT' | 'HYPOTHESIS' | 'OBSERVATION' | 'CLAIM' | 'DERIVED_FACT' | 'RECOMMENDATION'
+  confidence: number
+  evidence: string[]
+}
+
+interface AskResponse {
+  answer: string
+  confidence: number
+  facts: EvidenceItem[]
+  hypotheses: EvidenceItem[]
+  reasoning?: string
+}
 
 interface ChatMessage {
   id: string
   role: 'user' | 'assistant' | 'system'
   content: string
   timestamp: string
+  provenance?: {
+    facts: EvidenceItem[]
+    hypotheses: EvidenceItem[]
+    reasoning?: string
+  }
 }
 
 const AskView = () => {
@@ -40,15 +60,19 @@ const AskView = () => {
     setLoading(true)
 
     try {
-      const response = await api.post('/ask', {
-        message: input,
-      })
+      const response = await askApi.post(input)
+      const data: AskResponse = response.data
 
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: response.data.response,
+        content: data.answer,
         timestamp: new Date().toISOString(),
+        provenance: {
+          facts: data.facts,
+          hypotheses: data.hypotheses,
+          reasoning: `Confidence: ${(data.confidence * 100).toFixed(0)}%`,
+        },
       }
 
       setMessages((prev) => [...prev, assistantMessage])
@@ -73,7 +97,7 @@ const AskView = () => {
       </h1>
 
       <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col">
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -82,7 +106,7 @@ const AskView = () => {
               }`}
             >
               <div
-                className={`max-w-[80%] p-4 rounded-lg ${
+                className={`max-w-[85%] p-4 rounded-lg shadow ${
                   message.role === 'user'
                     ? 'bg-blue-500 text-white'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white'
@@ -92,6 +116,38 @@ const AskView = () => {
                 <p className="text-xs mt-2 opacity-70">
                   {new Date(message.timestamp).toLocaleTimeString()}
                 </p>
+
+                {/* Provenance section */}
+                {message.provenance && message.provenance.facts.length > 0 && (
+                  <div className={`mt-3 pt-3 border-t ${message.role === 'user' ? 'border-blue-300' : 'border-gray-400'}`}>
+                    <div className="text-xs font-semibold mb-2">Provenance</div>
+                    <div className="space-y-2">
+                      {message.provenance.facts.map((fact, idx) => (
+                        <div key={idx} className="text-xs">
+                          <span className="text-green-600 dark:text-green-400 font-semibold">✓ FACT</span>{' '}
+                          <span className="opacity-80">"{fact.statement}"</span>
+                          <div className="text-xs opacity-70 mt-0.5">
+                            Confidence: {fact.confidence * 100}% | Evidence: {fact.evidence.join(', ')}
+                          </div>
+                        </div>
+                      ))}
+                      {message.provenance.hypotheses.map((hypo, idx) => (
+                        <div key={idx} className="text-xs">
+                          <span className="text-yellow-600 dark:text-yellow-400 font-semibold">❓ HYPOTHESIS</span>{' '}
+                          <span className="opacity-80">"{hypo.statement}"</span>
+                          <div className="text-xs opacity-70 mt-0.5">
+                            Confidence: {hypo.confidence * 100}% | Evidence: {hypo.evidence.join(', ')}
+                          </div>
+                        </div>
+                      ))}
+                      {message.provenance.reasoning && (
+                        <div className="text-xs opacity-70 mt-2 pt-2 border-t border-gray-300 dark:border-gray-600">
+                          <span className="font-semibold">Reasoning:</span> {message.provenance.reasoning}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}

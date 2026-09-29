@@ -26,16 +26,18 @@ from typing import Annotated, Any
 from uuid import uuid4
 
 from pydantic import ConfigDict
-from sqlalchemy import BigInteger, DateTime, Index, MetaData, String, func
+from sqlalchemy import DateTime, Index, MetaData, String, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, registry
 from sqlalchemy.types import TypeDecorator
 
 #: PostgreSQL dialect-specific JSONB type for attributes, payload, etc.
-Jsonb = Annotated[
-    dict[str, Any],
-    mapped_column(JSONB, default=dict, nullable=False),
-]
+#:
+#: Plain :class:`~sqlalchemy.dialects.postgresql.JSONB` alias, passed
+#: positionally to ``mapped_column(Jsonb, ...)``. (The earlier
+#: ``Annotated[..., mapped_column(...)]`` composite was invalid as a
+#: SchemaItem argument and broke model import.)
+Jsonb = JSONB
 
 #: PostgreSQL UUID type; we generate v4 IDs on the ORM side for consistency
 #: with the Pydantic Record contract.

@@ -41,8 +41,9 @@ Usage::
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from datetime import UTC, datetime
+from typing import Any
 
 import psutil
 import structlog
@@ -51,15 +52,13 @@ from .base import (
     ConnectError,
     Connector,
     ConnectorEvent,
-    Snapshot,
-    SnapshotError,
 )
 
 log = structlog.get_logger(__name__)
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class HostConnector(Connector):

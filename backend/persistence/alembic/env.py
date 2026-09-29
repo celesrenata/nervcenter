@@ -29,19 +29,15 @@ Environment variables
 from __future__ import annotations
 
 import os
-from typing import Any
 
 from alembic import context
-from alembic.config import Config as AlembicConfig
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection, create_engine
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from backend.persistence.connection import (
-    ENV_DATABASE_URL,
     DEFAULT_DATABASE_URL,
-    config_from_env,
-    redact_url,
+    ENV_DATABASE_URL,
 )
 from backend.persistence.models.base import Base
 

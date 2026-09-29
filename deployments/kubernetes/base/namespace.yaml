@@ -1,0 +1,9 @@
+# NerveCenter namespace.
+# Namespace name is fixed to `nervecenter` (used by DB/NATS upstream hostnames).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nervecenter
+  labels:
+    app: nervcenter
+    app.kubernetes.io/name: nervcenter

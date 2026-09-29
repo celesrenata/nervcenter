@@ -1,0 +1,37 @@
+# harbor-pull — per-namespace image pull Secret (kubernetes.io/dockerconfigjson).
+#
+# This is a TEMPLATE with an obviously-invalid placeholder body. The canonical
+# way to get the real secret is to copy the existing per-namespace one
+# (pattern used cluster-wide, e.g. by beeflow-service):
+#
+#   kubectl get secret -n beeflow-service harbor-pull \
+#     -o jsonpath='{.data.\.dockerconfigjson}' | base64 -d
+#   # -> {"auths":{"registry.celestium.life":{...}}}
+#
+# Then create it in the nervecenter namespace WITHOUT hard-coding credentials
+# in this repo (never commit the real value):
+#
+#   kubectl get secret -n beeflow-service harbor-pull -o yaml \
+#     | sed -e '/^  namespace:/d' -e 's/^  name:/  name:/' \
+#     | kubectl apply -n nervecenter -f -
+#
+# or, from `docker login registry.celestium.life` creds:
+#
+#   kubectl -n nervecenter create secret generic harbor-pull \
+#     --type=kubernetes.io/dockerconfigjson \
+#     --from-file=.dockerconfigjson=$HOME/.docker/config.json
+#
+# deployments/harbor/deploy.sh performs the copy automatically when the
+# namespace lacks the secret.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: harbor-pull
+  namespace: nervecenter
+  labels:
+    app: nervcenter
+    app.kubernetes.io/name: harbor-pull
+type: kubernetes.io/dockerconfigjson
+data:
+  # base64 of: {"auths":{"registry.celestium.life":{"username":"CHANGE_ME","password":"CHANGE_ME","auth":""}}}
+  .dockerconfigjson: "eyJhdXRocyI6eyJyZWdpc3RyeS5jZWxlc3RpdW0ubGlmZSI6eyJ1c2VybmFtZSI6IkNIQU5HRV9NRSIsInBhc3N3b3JkIjoiQ0hBTkdFX01FIiwiYXV0aCI6IiJ9fX0="

@@ -1,15 +1,15 @@
 """Observability endpoints for the NerveCenter API."""
 from datetime import datetime
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import JSONResponse
+
+from fastapi import APIRouter, HTTPException
+
 from backend.api.models import (
     HealthResponse,
+    MetricsPoint,
     MetricsResponse,
-    TraceResponse,
     ServiceHealth,
     Status,
-    MetricsPoint,
+    TraceResponse,
     TraceSpan,
 )
 

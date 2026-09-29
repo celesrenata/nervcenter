@@ -1,0 +1,18 @@
+# Headless service for stable Postgres DNS (postgres.nervecenter.svc).
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: nervecenter
+  labels:
+    app: nervcenter
+    app.kubernetes.io/name: postgres
+spec:
+  clusterIP: None
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP

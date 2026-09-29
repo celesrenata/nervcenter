@@ -1,78 +1,82 @@
 import { useState, useEffect } from 'react'
-import { api } from '../api/client'
+import { computeApi, routesApi, modelHistoryApi } from '../api/client'
 
-interface InferenceRequest {
+interface ComputeNode {
   id: string
-  prompt: string
+  hostname: string
+  hardware: string
+  vram: string
+  gpuUtilization: number
+  loadedModel: string | null
+  tokensPerSec: number
+  contextUsage: string | null
+  activeCalls: number
+  latency: { p50: number; p95: number; p99: number } | null
+  failures24h: number
+  fallbacks24h: number
+}
+
+interface Route {
+  routeId: string
+  taskType: string
+  chain: string[]
+  strategy: string
+  activeCalls: number
+  successRate: number
+  avgLatency: number
+}
+
+interface ModelHistory {
   model: string
-  response?: string
-  status: 'pending' | 'processing' | 'completed' | 'failed'
-  latency: number
-  timestamp: string
+  node: string
+  window: string
+  avgTokPerSec: number
+  p95Latency: number
+  successRate: number
+  fallbackRate: number
 }
 
 const InferenceView = () => {
-  const [requests, setRequests] = useState<InferenceRequest[]>([])
+  const [nodes, setNodes] = useState<ComputeNode[]>([])
+  const [routes, setRoutes] = useState<Route[]>([])
+  const [history, setHistory] = useState<ModelHistory[]>([])
   const [loading, setLoading] = useState(true)
-  const [prompt, setPrompt] = useState('')
-  const [model, setModel] = useState('claude-3-5-sonnet')
-  const [processing, setProcessing] = useState(false)
 
   useEffect(() => {
-    const fetchRequests = async () => {
+    const fetchData = async () => {
       try {
-        const response = await api.get('/inference/requests')
-        setRequests(response.data)
+        const [nodesRes, routesRes, historyRes] = await Promise.all([
+          computeApi.list(),
+          routesApi.list(),
+          modelHistoryApi.list(),
+        ])
+        setNodes(nodesRes.data)
+        setRoutes(routesRes.data)
+        setHistory(historyRes.data)
       } catch (error) {
-        console.error('Error fetching inference requests:', error)
+        console.error('Error fetching inference data:', error)
       } finally {
         setLoading(false)
       }
     }
-
-    fetchRequests()
+    fetchData()
   }, [])
 
-  const handleGenerate = async () => {
-    if (!prompt) return
-
-    setProcessing(true)
-
-    try {
-      const response = await api.post('/inference/generate', {
-        prompt,
-        model,
-      })
-      setRequests((prev) => [
-        {
-          id: response.data.id,
-          prompt,
-          model,
-          response: response.data.response,
-          status: 'completed',
-          latency: response.data.latency,
-          timestamp: new Date().toISOString(),
-        },
-        ...prev,
-      ])
-      setPrompt('')
-    } catch (error) {
-      console.error('Error generating response:', error)
-    } finally {
-      setProcessing(false)
-    }
+  const getNodeColor = (util: number) => {
+    if (util === 0) return 'bg-gray-500'
+    if (util < 50) return 'bg-green-500'
+    if (util < 80) return 'bg-yellow-500'
+    return 'bg-red-500'
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'processing':
+  const getStrategyColor = (strategy: string) => {
+    switch (strategy) {
+      case 'latency-first':
         return 'bg-blue-500'
-      case 'completed':
+      case 'quality-first':
+        return 'bg-purple-500'
+      case 'cost-first':
         return 'bg-green-500'
-      case 'failed':
-        return 'bg-red-500'
-      case 'pending':
-        return 'bg-yellow-500'
       default:
         return 'bg-gray-500'
     }
@@ -84,109 +88,140 @@ const InferenceView = () => {
         Inference
       </h1>
 
+      {/* Physical Nodes Section */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
         <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-          Generate Response
-        </h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Prompt
-            </label>
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white min-h-[100px]"
-              placeholder="Enter your prompt..."
-              disabled={processing}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Model
-            </label>
-            <select
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              disabled={processing}
-            >
-              <option value="claude-3-5-sonnet">
-                Claude 3.5 Sonnet
-              </option>
-              <option value="claude-3-opus">Claude 3 Opus</option>
-              <option value="claude-3-sonnet">
-                Claude 3 Sonnet
-              </option>
-              <option value="claude-3-haiku">Claude 3 Haiku</option>
-            </select>
-          </div>
-          <button
-            onClick={handleGenerate}
-            disabled={processing || !prompt}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {processing ? 'Generating...' : 'Generate'}
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-          Recent Requests
+          Physical Nodes
         </h3>
         {loading ? (
           <div className="text-center py-12">Loading...</div>
         ) : (
-          <div className="space-y-4">
-            {requests.map((req) => (
-              <div
-                key={req.id}
-                className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg"
-              >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {nodes.map((node) => (
+              <div key={node.id} className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <span
-                    className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(
-                      req.status
-                    )} text-white`}
-                  >
-                    {req.status}
-                  </span>
-                  <div className="flex items-center space-x-3">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {req.latency}ms
-                    </span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {req.timestamp}
-                    </span>
+                  <h4 className="font-semibold text-gray-800 dark:text-white">{node.hostname}</h4>
+                  <div className={`w-2 h-2 rounded-full ${getNodeColor(node.gpuUtilization)}`} />
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">{node.hardware} • {node.vram}</div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">Model:</span>
+                  <span className="text-gray-800 dark:text-white">{node.loadedModel || 'Idle'}</span>
+                </div>
+                <div className="mt-2">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-gray-500 dark:text-gray-400">GPU Usage</span>
+                    <span className="text-gray-800 dark:text-white">{node.gpuUtilization}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
+                    <div
+                      className={`h-1.5 rounded-full ${getNodeColor(node.gpuUtilization)}`}
+                      style={{ width: `${node.gpuUtilization}%` }}
+                    />
                   </div>
                 </div>
-                <div className="mb-2">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    Model:
-                  </span>
-                  <span className="text-sm text-gray-700 dark:text-gray-300 ml-1">
-                    {req.model}
-                  </span>
-                </div>
-                <div className="mb-2">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    Prompt:
-                  </span>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
-                    {req.prompt}
-                  </p>
-                </div>
-                {req.response && (
+                <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
                   <div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      Response:
-                    </span>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
-                      {req.response}
-                    </p>
+                    <span className="text-gray-500 dark:text-gray-400">Tokens/s:</span>
+                    <span className="text-gray-800 dark:text-white ml-1">{node.tokensPerSec}</span>
                   </div>
-                )}
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Calls:</span>
+                    <span className="text-gray-800 dark:text-white ml-1">{node.activeCalls}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">p95 Lat:</span>
+                    <span className="text-gray-800 dark:text-white ml-1">{node.latency?.p95 || 0}ms</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Failures (24h):</span>
+                    <span className="text-gray-800 dark:text-white ml-1">{node.failures24h}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Fallbacks (24h):</span>
+                    <span className="text-gray-800 dark:text-white ml-1">{node.fallbacks24h}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Context:</span>
+                    <span className="text-gray-800 dark:text-white ml-1">{node.contextUsage || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* OmniRoute Routes Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+          OmniRoute Routes
+        </h3>
+        {loading ? (
+          <div className="text-center py-12">Loading...</div>
+        ) : (
+          <div className="space-y-3">
+            {routes.map((route) => (
+              <div key={route.routeId} className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium text-gray-800 dark:text-white">{route.routeId}</span>
+                  <span className={`text-xs px-2 py-1 rounded ${getStrategyColor(route.strategy)} text-white`}>
+                    {route.strategy}
+                  </span>
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                  Chain: {route.chain.join(' → ')}
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex space-x-3">
+                    <span>
+                      Calls: <span className="text-gray-800 dark:text-white">{route.activeCalls}</span>
+                    </span>
+                    <span>
+                      Success: <span className="text-gray-800 dark:text-white">{(route.successRate * 100).toFixed(0)}%</span>
+                    </span>
+                    <span>
+                      Latency: <span className="text-gray-800 dark:text-white">{route.avgLatency}ms</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Historical Model Performance Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+          Historical Model Performance
+        </h3>
+        {loading ? (
+          <div className="text-center py-12">Loading...</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {history.map((item, idx) => (
+              <div key={idx} className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                <div className="font-medium text-gray-800 dark:text-white">{item.model} ({item.node})</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">{item.window} window</div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Tok/s:</span>
+                    <span className="text-gray-800 dark:text-white ml-1">{item.avgTokPerSec}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">p95 Lat:</span>
+                    <span className="text-gray-800 dark:text-white ml-1">{item.p95Latency}ms</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Success:</span>
+                    <span className="text-gray-800 dark:text-white ml-1">{(item.successRate * 100).toFixed(0)}%</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Fallback:</span>
+                    <span className="text-gray-800 dark:text-white ml-1">{(item.fallbackRate * 100).toFixed(0)}%</span>
+                  </div>
+                </div>
               </div>
             ))}
           </div>

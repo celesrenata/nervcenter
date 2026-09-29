@@ -16,6 +16,14 @@ The browser-based user interface for NerveCenter - a local-first, event-driven p
 
 ## Tech Stack
 
+### Mock Mode
+
+When `VITE_API_BASE` is unset, the UI runs in mock mode using representative fixtures. This allows standalone testing without a live backend.
+
+### API Contract
+
+The UI expects the backend API to follow the contract defined in `docs/nervcenter-spec.md` §46. If the API doesn't fully match the contract, gaps are documented in `CONTRACT_GAPS.md`.
+
 - **React 18** with TypeScript
 - **Vite** for fast development and optimized builds
 - **Tailwind CSS** for styling

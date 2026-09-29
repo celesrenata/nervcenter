@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING
 
 import structlog
 
-from backend.tasks.dag import RunnableQueue, TaskDAG, RunnableState, topological_order
+from backend.tasks.dag import RunnableState, TaskDAG
 
 if TYPE_CHECKING:
     from schemas.goals import Goal
@@ -59,7 +59,7 @@ class RunnableTask:
     priority: int = field(default=0)
     created_at: float = field(default=0.0)
 
-    def __lt__(self, other: "RunnableTask") -> bool:
+    def __lt__(self, other: RunnableTask) -> bool:
         # Higher priority first, then newer task first
         if self.priority != other.priority:
             return self.priority > other.priority
@@ -119,8 +119,8 @@ class DAGScheduler:
 
     def __init__(
         self,
-        goal_service: "GoalServiceProtocol",
-        task_service: "TaskServiceProtocol",
+        goal_service: GoalServiceProtocol,
+        task_service: TaskServiceProtocol,
     ) -> None:
         self._goals = goal_service
         self._tasks = task_service
@@ -205,12 +205,12 @@ class DAGScheduler:
 class GoalServiceProtocol:
     """Structural protocol for the goal service consumed by the scheduler."""
 
-    async def active_goals(self) -> list["Goal"]:  # noqa: D400
+    async def active_goals(self) -> list[Goal]:  # noqa: D400
         ...
 
 
 class TaskServiceProtocol:
     """Structural protocol for the task service consumed by the scheduler."""
 
-    async def list_for_goal(self, goal_id: str) -> list["Task"]:  # noqa: D400
+    async def list_for_goal(self, goal_id: str) -> list[Task]:  # noqa: D400
         ...

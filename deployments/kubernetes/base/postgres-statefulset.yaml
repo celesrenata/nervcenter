@@ -1,0 +1,72 @@
+# PostgreSQL with pgvector (spec §14 persistence stack).
+# Image `pgvector/pgvector:pg16` ships the `vector` extension built in.
+#
+# Data lives on a dedicated PVC (postgres-pvc.yaml) mounted at /var/lib/postgresql
+# with `subPath: pgdata` — PGDATA is pinned to that subPath so WAL + data are
+# deterministic across pod rebuilds.
+#
+# Self-hosted default credentials are `nervcenter:nervcenter` (matching the
+# app's DEFAULT_DATABASE_URL in backend/persistence/connection.py).
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: nervecenter
+  labels:
+    app: nervcenter
+    app.kubernetes.io/name: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: "pgvector/pgvector:pg16"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_DB
+              value: "nervcenter"
+            - name: POSTGRES_USER
+              value: "nervcenter"
+            - name: POSTGRES_PASSWORD
+              value: "nervcenter"
+            - name: PGDATA
+              value: "/var/lib/postgresql/pgdata"
+          ports:
+            - name: postgres
+              containerPort: 5432
+          volumeMounts:
+            - name: postgres-volume
+              mountPath: "/var/lib/postgresql"
+              subPath: pgdata
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "nervcenter", "-d", "nervcenter"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "nervcenter", "-d", "nervcenter"]
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "0.25"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+      volumes:
+        - name: postgres-volume
+          persistentVolumeClaim:
+            claimName: postgres-data
+  updateStrategy:
+    type: RollingUpdate

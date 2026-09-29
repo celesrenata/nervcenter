@@ -1,0 +1,49 @@
+# NerveCenter schema-migration Job.
+#
+# Runs `python -m backend.persistence.migrate upgrade` (alembic `upgrade head`)
+# using the api image so all python deps are present. envFrom the
+# nervecenter-env Secret (NERVE_DB_URL / NERVECENTER_DATABASE_URL).
+#
+# Ordering: run this Job BEFORE rolling the api Deployment on first deploy
+# (see deployments/README.md). The Job is re-applied on every upgrade —
+# alembic is idempotent, so a no-op migration completes immediately.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nervecenter-migrate
+  namespace: nervecenter
+  labels:
+    app: nervcenter
+    app.kubernetes.io/name: migration
+spec:
+  backoffLimit: 5
+  activeDeadlineSeconds: 120
+  template:
+    metadata:
+      labels:
+        app: migration
+    spec:
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: harbor-pull
+      containers:
+        - name: migrate
+          # Same image as the api Deployment; deploy.sh retags both via
+          # `kubectl kustomize --image registry.celestium.life/nervecenter/api=TAG`.
+          image: "registry.celestium.life/nervecenter/api:latest"
+          imagePullPolicy: IfNotPresent
+          command:
+            - "python"
+            - "-m"
+            - "backend.persistence.migrate"
+            - "upgrade"
+          envFrom:
+            - secretRef:
+                name: nervecenter-env
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "0.25"
+            limits:
+              memory: "512Mi"
+              cpu: "1"

@@ -14,22 +14,22 @@ Modules
 - ``telemetry`` — Inference telemetry collection
 """
 
-from .policy import InferencePolicyEngine, PolicyRule, TaskRequirements
-from .omniroute import OmniRouteAdapter, InferenceRequest, InferenceResponse
 from .adapter import (
+    AdapterPool,
+    AnthropicAdapter,
+    HuggingFaceAdapter,
     InferenceAdapter,
     InferenceResult,
     LocalAdapter,
     OpenAIAdapter,
-    AnthropicAdapter,
-    HuggingFaceAdapter,
-    AdapterPool,
 )
+from .omniroute import InferenceRequest, InferenceResponse, OmniRouteAdapter
+from .policy import InferencePolicyEngine, PolicyRule, TaskRequirements
 from .telemetry import (
     InferenceTelemetry,
-    TelemetryCollector,
-    LatencyWindow,
     LatencySnapshot,
+    LatencyWindow,
+    TelemetryCollector,
 )
 
 __all__ = [

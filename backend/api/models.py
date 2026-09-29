@@ -1,11 +1,12 @@
 """Data models for the NerveCenter API."""
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
-class Status(str, Enum):
+class Status(StrEnum):
     """Service status enumeration."""
     HEALTHY = "healthy"
     UNHEALTHY = "unhealthy"
@@ -17,16 +18,16 @@ class ServiceHealth(BaseModel):
     """Health check result for a service."""
     name: str
     status: Status
-    version: Optional[str] = None
-    message: Optional[str] = None
-    details: Optional[Dict[str, Any]] = None
+    version: str | None = None
+    message: str | None = None
+    details: dict[str, Any] | None = None
     checked_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class HealthResponse(BaseModel):
     """Health check response."""
     status: Status
-    services: List[ServiceHealth]
+    services: list[ServiceHealth]
     total_services: int
     healthy_services: int
 
@@ -36,13 +37,13 @@ class MetricsPoint(BaseModel):
     timestamp: datetime
     name: str
     value: float
-    labels: Optional[Dict[str, str]] = None
+    labels: dict[str, str] | None = None
 
 
 class MetricsResponse(BaseModel):
     """Metrics response."""
-    metrics: List[MetricsPoint]
-    summary: Optional[Dict[str, Any]] = None
+    metrics: list[MetricsPoint]
+    summary: dict[str, Any] | None = None
 
 
 class TraceSpan(BaseModel):
@@ -54,15 +55,15 @@ class TraceSpan(BaseModel):
     end_time: datetime
     duration_ms: float
     status: str
-    attributes: Optional[Dict[str, Any]] = None
-    parent_span_id: Optional[str] = None
+    attributes: dict[str, Any] | None = None
+    parent_span_id: str | None = None
 
 
 class TraceResponse(BaseModel):
     """Trace response."""
     trace_id: str
-    spans: List[TraceSpan]
-    root_span: Optional[TraceSpan] = None
+    spans: list[TraceSpan]
+    root_span: TraceSpan | None = None
 
 
 class AuthRequest(BaseModel):
@@ -74,10 +75,10 @@ class AuthRequest(BaseModel):
 class AuthResponse(BaseModel):
     """Authentication response."""
     access_token: str
-    refresh_token: Optional[str] = None
+    refresh_token: str | None = None
     token_type: str = "Bearer"
     expires_in: int
-    user: Dict[str, Any]
+    user: dict[str, Any]
 
 
 class TokenRefreshRequest(BaseModel):
@@ -96,8 +97,8 @@ class ErrorDetail(BaseModel):
     """Error detail."""
     code: str
     message: str
-    field: Optional[str] = None
-    details: Optional[Dict[str, Any]] = None
+    field: str | None = None
+    details: dict[str, Any] | None = None
 
 
 class ErrorResponse(BaseModel):
@@ -109,8 +110,8 @@ class ErrorResponse(BaseModel):
 class VersionInfo(BaseModel):
     """API version information."""
     version: str
-    release_date: Optional[str] = None
-    compatible_versions: List[str] = []
+    release_date: str | None = None
+    compatible_versions: list[str] = []
 
 
 class ApiResponseMeta(BaseModel):
@@ -118,10 +119,10 @@ class ApiResponseMeta(BaseModel):
     version: str
     request_id: str
     timestamp: datetime
-    pagination: Optional[Dict[str, int]] = None
+    pagination: dict[str, int] | None = None
 
 
 class ListResponse(BaseModel):
     """Generic list response."""
-    data: List[Any]
+    data: list[Any]
     meta: ApiResponseMeta

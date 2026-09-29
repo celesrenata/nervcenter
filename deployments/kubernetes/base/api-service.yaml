@@ -1,0 +1,18 @@
+# ClusterIP service for the api — exposes :8000 inside the cluster only.
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: nervecenter
+  labels:
+    app: nervcenter
+    app.kubernetes.io/name: api
+spec:
+  type: ClusterIP
+  selector:
+    app: api
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP

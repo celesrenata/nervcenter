@@ -2,6 +2,7 @@ README.md
 pyproject.toml
 backend/__init__.py
 backend/agents/__init__.py
+backend/agents/registry.py
 backend/api/__init__.py
 backend/api/app.py
 backend/api/auth.py
@@ -11,6 +12,8 @@ backend/api/observability.py
 backend/api/versioning.py
 backend/api/endpoints/__init__.py
 backend/api/endpoints/agents.py
+backend/api/endpoints/entities.py
+backend/api/endpoints/events.py
 backend/api/endpoints/evidence.py
 backend/api/endpoints/goals.py
 backend/api/endpoints/knowledge.py
@@ -33,6 +36,7 @@ backend/events/publisher.py
 backend/events/subscriber.py
 backend/events/validators.py
 backend/evidence/__init__.py
+backend/evidence/service.py
 backend/goals/__init__.py
 backend/goals/reconciliation.py
 backend/goals/service.py
@@ -50,8 +54,10 @@ backend/knowledge/resolution.py
 backend/knowledge/service.py
 backend/observability/__init__.py
 backend/orchestration/__init__.py
+backend/orchestration/incident.py
 backend/persistence/__init__.py
 backend/persistence/connection.py
+backend/persistence/migrate.py
 backend/persistence/alembic/env.py
 backend/persistence/alembic/versions/001_initial.py
 backend/persistence/models/__init__.py

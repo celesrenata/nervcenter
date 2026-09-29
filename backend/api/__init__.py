@@ -9,11 +9,12 @@ including:
 - OpenAPI documentation
 """
 from backend.api.app import app
-from backend.api.endpoints import agents, goals, tasks, evidence, knowledge
-from backend.api.observability import router as observability_router
 from backend.api.auth import router as auth_router
+from backend.api.endpoints import agents, evidence, goals, knowledge, tasks
 from backend.api.models import *
-from backend.api.versioning import router as versioning_router, API_VERSIONS, CURRENT_VERSION
+from backend.api.observability import router as observability_router
+from backend.api.versioning import API_VERSIONS, CURRENT_VERSION
+from backend.api.versioning import router as versioning_router
 
 __all__ = [
     "app",

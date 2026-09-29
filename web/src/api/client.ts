@@ -1,64 +1,401 @@
-import axios from 'axios'
+/**
+ * API client with env-based mock mode.
+ * If VITE_API_BASE is set → real API; otherwise → mock fixtures.
+ */
 
-const API_BASE_URL = '/api'
+import { mockOverview, mockTasks, mockAgents, mockComputeNodes, mockRoutes, mockModelHistory, mockIncidents, mockDecisions, mockEvents, mockSystems, mockAskResponse, mockGoals, mockModels } from './mockClient'
 
-export const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
+// Determine mode based on environment variable
+const API_BASE = import.meta.env?.VITE_API_BASE
+
+export const useMockMode = API_BASE === undefined || API_BASE === ''
+
+export interface ApiResponse<T> {
+  data: T
+  status: number
+}
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// ─── Real API implementation ──────────────────────────────────────────────────
+
+const realApi = {
+  // Health & Overview
+  getOverview: async () => {
+    const res = await fetch(`${API_BASE}/overview`)
+    return { data: await res.json(), status: res.status }
   },
-})
+  getHealth: async () => {
+    const res = await fetch(`${API_BASE}/health`)
+    return { data: await res.json(), status: res.status }
+  },
 
-// Add request interceptor for auth token
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('authToken')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
+  // Tasks (Task DAG with 8 states)
+  getTasks: async () => {
+    const res = await fetch(`${API_BASE}/tasks`)
+    return { data: await res.json(), status: res.status }
+  },
+  getTask: async (taskId: string) => {
+    const res = await fetch(`${API_BASE}/tasks/${taskId}`)
+    return { data: await res.json(), status: res.status }
+  },
 
-// Export API endpoints
-export const authApi = {
-  login: (username: string, password: string) =>
-    api.post('/auth/login', { username, password }),
-  refresh: (refreshToken: string) =>
-    api.post('/auth/refresh', { refresh_token: refreshToken }),
-  logout: () => api.post('/auth/logout'),
-  me: () => api.get('/auth/me'),
+  // Agents
+  getAgents: async () => {
+    const res = await fetch(`${API_BASE}/agents`)
+    return { data: await res.json(), status: res.status }
+  },
+  getAgent: async (agentId: string) => {
+    const res = await fetch(`${API_BASE}/agents/${agentId}`)
+    return { data: await res.json(), status: res.status }
+  },
+
+  // Compute nodes (for Inference view)
+  getComputeNodes: async () => {
+    const res = await fetch(`${API_BASE}/compute`)
+    return { data: await res.json(), status: res.status }
+  },
+  getComputeNode: async (nodeId: string) => {
+    const res = await fetch(`${API_BASE}/compute/${nodeId}`)
+    return { data: await res.json(), status: res.status }
+  },
+
+  // OmniRoute routes (for Inference view)
+  getRoutes: async () => {
+    const res = await fetch(`${API_BASE}/routes`)
+    return { data: await res.json(), status: res.status }
+  },
+  getRoute: async (routeId: string) => {
+    const res = await fetch(`${API_BASE}/routes/${routeId}`)
+    return { data: await res.json(), status: res.status }
+  },
+
+  // Historical model performance (for Inference view)
+  getModelHistory: async () => {
+    const res = await fetch(`${API_BASE}/models/history`)
+    return { data: await res.json(), status: res.status }
+  },
+
+  // Incidents
+  getIncidents: async () => {
+    const res = await fetch(`${API_BASE}/incidents`)
+    return { data: await res.json(), status: res.status }
+  },
+  getIncident: async (incidentId: string) => {
+    const res = await fetch(`${API_BASE}/incidents/${incidentId}`)
+    return { data: await res.json(), status: res.status }
+  },
+
+  // Decisions
+  getDecisions: async () => {
+    const res = await fetch(`${API_BASE}/decisions`)
+    return { data: await res.json(), status: res.status }
+  },
+  getDecision: async (decisionId: string) => {
+    const res = await fetch(`${API_BASE}/decisions/${decisionId}`)
+    return { data: await res.json(), status: res.status }
+  },
+
+  // Events (Timeline)
+  getEvents: async () => {
+    const res = await fetch(`${API_BASE}/events`)
+    return { data: await res.json(), status: res.status }
+  },
+  getEvent: async (eventId: string) => {
+    const res = await fetch(`${API_BASE}/events/${eventId}`)
+    return { data: await res.json(), status: res.status }
+  },
+
+  // Systems health
+  getSystems: async () => {
+    const res = await fetch(`${API_BASE}/systems`)
+    return { data: await res.json(), status: res.status }
+  },
+  getMetrics: async () => {
+    const res = await fetch(`${API_BASE}/metrics`)
+    return { data: await res.json(), status: res.status }
+  },
+
+  // Ask endpoint
+  postAsk: async (message: string) => {
+    const res = await fetch(`${API_BASE}/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+    })
+    return { data: await res.json(), status: res.status }
+  },
+
+  // Goals
+  getGoals: async () => {
+    const res = await fetch(`${API_BASE}/goals`)
+    return { data: await res.json(), status: res.status }
+  },
+  getGoal: async (goalId: string) => {
+    const res = await fetch(`${API_BASE}/goals/${goalId}`)
+    return { data: await res.json(), status: res.status }
+  },
+
+  // Models
+  getModels: async () => {
+    const res = await fetch(`${API_BASE}/models`)
+    return { data: await res.json(), status: res.status }
+  },
+  getModel: async (modelId: string) => {
+    const res = await fetch(`${API_BASE}/models/${modelId}`)
+    return { data: await res.json(), status: res.status }
+  },
+
+  // Auth (mock stub)
+  login: async (username: string, password: string) => {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    })
+    return { data: await res.json(), status: res.status }
+  },
+  logout: async () => {
+    const res = await fetch(`${API_BASE}/auth/logout`, {
+      method: 'POST',
+    })
+    return { data: await res.json(), status: res.status }
+  },
+  me: async () => {
+    const res = await fetch(`${API_BASE}/auth/me`)
+    return { data: await res.json(), status: res.status }
+  },
 }
 
-export const agentsApi = {
-  list: () => api.get('/agents'),
-  get: (agentId: string) => api.get(`/agents/${agentId}`),
+// ─── Mock API implementation ──────────────────────────────────────────────────
+
+const mockApi = {
+  // Health & Overview
+  getOverview: async () => {
+    await delay(80)
+    return { data: mockOverview, status: 200 }
+  },
+  getHealth: async () => {
+    await delay(50)
+    return { data: mockOverview.health, status: 200 }
+  },
+
+  // Tasks (Task DAG with 8 states)
+  getTasks: async () => {
+    await delay(100)
+    return { data: mockTasks, status: 200 }
+  },
+  getTask: async (taskId: string) => {
+    await delay(50)
+    const task = mockTasks.find((t) => t.task_id === taskId)
+    return { data: task, status: task ? 200 : 404 }
+  },
+
+  // Agents
+  getAgents: async () => {
+    await delay(100)
+    return { data: mockAgents, status: 200 }
+  },
+  getAgent: async (agentId: string) => {
+    await delay(50)
+    const agent = mockAgents.find((a) => a.id === agentId)
+    return { data: agent, status: agent ? 200 : 404 }
+  },
+
+  // Compute nodes (for Inference view)
+  getComputeNodes: async () => {
+    await delay(80)
+    return { data: mockComputeNodes, status: 200 }
+  },
+  getComputeNode: async (nodeId: string) => {
+    await delay(50)
+    const node = mockComputeNodes.find((n) => n.id === nodeId)
+    return { data: node, status: node ? 200 : 404 }
+  },
+
+  // OmniRoute routes (for Inference view)
+  getRoutes: async () => {
+    await delay(80)
+    return { data: mockRoutes, status: 200 }
+  },
+  getRoute: async (routeId: string) => {
+    await delay(50)
+    const route = mockRoutes.find((r) => r.routeId === routeId)
+    return { data: route, status: route ? 200 : 404 }
+  },
+
+  // Historical model performance (for Inference view)
+  getModelHistory: async () => {
+    await delay(80)
+    return { data: mockModelHistory, status: 200 }
+  },
+
+  // Incidents
+  getIncidents: async () => {
+    await delay(100)
+    return { data: mockIncidents, status: 200 }
+  },
+  getIncident: async (incidentId: string) => {
+    await delay(50)
+    const incident = mockIncidents.find((i) => i.id === incidentId)
+    return { data: incident, status: incident ? 200 : 404 }
+  },
+
+  // Decisions
+  getDecisions: async () => {
+    await delay(80)
+    return { data: mockDecisions, status: 200 }
+  },
+  getDecision: async (decisionId: string) => {
+    await delay(50)
+    const decision = mockDecisions.find((d) => d.id === decisionId)
+    return { data: decision, status: decision ? 200 : 404 }
+  },
+
+  // Events (Timeline)
+  getEvents: async () => {
+    await delay(100)
+    return { data: mockEvents, status: 200 }
+  },
+  getEvent: async (eventId: string) => {
+    await delay(50)
+    const event = mockEvents.find((e) => e.id === eventId)
+    return { data: event, status: event ? 200 : 404 }
+  },
+
+  // Systems health
+  getSystems: async () => {
+    await delay(80)
+    return { data: mockSystems, status: 200 }
+  },
+  getMetrics: async () => {
+    await delay(50)
+    return { data: { timestamp: new Date().toISOString() }, status: 200 }
+  },
+
+  // Ask endpoint
+  postAsk: async (_message: string) => {
+    await delay(600)
+    return { data: mockAskResponse, status: 200 }
+  },
+
+  // Goals
+  getGoals: async () => {
+    await delay(80)
+    return { data: mockGoals, status: 200 }
+  },
+  getGoal: async (goalId: string) => {
+    await delay(50)
+    const goal = mockGoals.find((g) => g.id === goalId)
+    return { data: goal, status: goal ? 200 : 404 }
+  },
+
+  // Models
+  getModels: async () => {
+    await delay(80)
+    return { data: mockModels, status: 200 }
+  },
+  getModel: async (modelId: string) => {
+    await delay(50)
+    const model = mockModels.find((m) => m.id === modelId)
+    return { data: model, status: model ? 200 : 404 }
+  },
+
+  // Auth (mock stub)
+  login: async (_username: string, _password: string) => {
+    await delay(200)
+    return {
+      data: {
+        access_token: 'mock-jwt-token',
+        user: { username: 'admin', roles: ['admin'] },
+      },
+      status: 200,
+    }
+  },
+  logout: async () => {
+    await delay(50)
+    return { data: { success: true }, status: 200 }
+  },
+  me: async () => {
+    await delay(50)
+    return { data: { username: 'admin', roles: ['admin'] }, status: 200 }
+  },
 }
 
-export const goalsApi = {
-  list: () => api.get('/goals'),
-  get: (goalId: string) => api.get(`/goals/${goalId}`),
+// ─── Export unified API client ────────────────────────────────────────────────
+
+const api = useMockMode ? mockApi : realApi
+
+// ─── Export typed API clients ─────────────────────────────────────────────────
+
+export const overviewApi = {
+  get: () => api.getOverview(),
+  getHealth: () => api.getHealth(),
 }
 
 export const tasksApi = {
-  list: () => api.get('/tasks'),
-  get: (taskId: string) => api.get(`/tasks/${taskId}`),
+  list: () => api.getTasks(),
+  get: (taskId: string) => api.getTask(taskId),
 }
 
-export const evidenceApi = {
-  list: () => api.get('/evidence'),
-  get: (evidenceId: string) => api.get(`/evidence/${evidenceId}`),
+export const agentsApi = {
+  list: () => api.getAgents(),
+  get: (agentId: string) => api.getAgent(agentId),
 }
 
-export const knowledgeApi = {
-  list: () => api.get('/knowledge'),
-  get: (knowledgeId: string) => api.get(`/knowledge/${knowledgeId}`),
+export const computeApi = {
+  list: () => api.getComputeNodes(),
+  get: (nodeId: string) => api.getComputeNode(nodeId),
 }
 
-export const systemsApi = {
-  health: () => api.get('/health'),
-  metrics: () => api.get('/metrics'),
+export const routesApi = {
+  list: () => api.getRoutes(),
+  get: (routeId: string) => api.getRoute(routeId),
+}
+
+export const modelHistoryApi = {
+  list: () => api.getModelHistory(),
 }
 
 export const incidentsApi = {
-  list: () => api.get('/incidents'),
-  get: (incidentId: string) => api.get(`/incidents/${incidentId}`),
+  list: () => api.getIncidents(),
+  get: (incidentId: string) => api.getIncident(incidentId),
 }
+
+export const decisionsApi = {
+  list: () => api.getDecisions(),
+  get: (decisionId: string) => api.getDecision(decisionId),
+}
+
+export const eventsApi = {
+  list: () => api.getEvents(),
+  get: (eventId: string) => api.getEvent(eventId),
+}
+
+export const systemsApi = {
+  health: () => api.getSystems(),
+  metrics: () => api.getMetrics(),
+}
+
+export const askApi = {
+  post: (message: string) => api.postAsk(message),
+}
+
+export const goalsApi = {
+  list: () => api.getGoals(),
+  get: (goalId: string) => api.getGoal(goalId),
+}
+
+export const modelsApi = {
+  list: () => api.getModels(),
+  get: (modelId: string) => api.getModel(modelId),
+}
+
+export const authApi = {
+  login: (username: string, password: string) => api.login(username, password),
+  logout: () => api.logout(),
+  me: () => api.me(),
+}
+
+// Re-export for backward compatibility
+export { api }

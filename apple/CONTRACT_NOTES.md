@@ -1,0 +1,96 @@
+# Contract Notes
+
+## NerveModels
+
+### RecordBase
+All persisted records share these fields:
+- `id`: UUID string (stable unique identifier)
+- `created_at`: ISO-8601 timestamp (UTC)
+- `schema_version`: Always "v0"
+- `hash`: Optional SHA-256 digest of canonical JSON (excluding this field)
+
+### Event
+- `event_type`: String (e.g., "entity.created")
+- `category`: One of `system|knowledge|evidence|goal|task|inference|policy|orchestration|connector`
+- `occurred_at`: ISO-8601 timestamp
+- `source`: Agent ID, connector ID, or "internal"
+- `subject`: Optional entity ID
+- `payload`: `[String: AnyCodable]` - type-specific document
+- `severity`: One of `debug|info|warning|error|critical`
+- `trace_id`, `correlation_id`: Optional correlation headers
+
+### Task
+- `title`: Short human-readable task title
+- `description`: Optional full description
+- `status`: One of `pending|scheduled|in_progress|completed|failed|cancelled`
+- `priority`: Integer (0-10)
+- `goal_id`: Optional goal ID
+- `dependencies`: List of task IDs this task depends on
+- `inputs`: `[String: AnyCodable]` - executor-specific inputs
+
+### Goal
+- `title`: Short statement of the goal
+- `status`: One of `active|paused|achieved|abandoned`
+- `progress`: Float (0.0-1.0)
+- `success_criteria`: List of criteria strings
+- `tasks`: List of task IDs
+
+### Claim
+- `statement`: The claim, as a single sentence
+- `status`: One of `open|supported|contradicted|superseded|rejected`
+- `confidence`: Float (0.0-1.0)
+- `classification`: One of `FACT|DERIVED_FACT|HYPOTHESIS|RECOMMENDATION`
+- `supporting_evidence`: List of evidence IDs
+
+### SynchronizedState (Phone ↔ Watch)
+- `system_health`: String (e.g., "healthy")
+- `active_incidents`: Integer
+- `running_agents`: Integer
+- `pending_approvals`: Integer
+- `primary_goal_progress`: Float (0.0-1.0)
+- `updated_at`: ISO-8601 timestamp
+
+## NerveAPI
+
+### CorrelationMetadata
+Serialized as HTTP headers:
+- `nerve_trace_id`
+- `nerve_goal_id`
+- `nerve_task_id`
+- `nerve_agent_id`
+- `nerve_agent_run_id`
+- `verification_policy`
+
+### NerveAPIError
+- `http(statusCode: Int, data: Data?)`
+- `network(underlying: String)`
+- `decoding(underlying: String)`
+- `invalidConfiguration(String)`
+- `timeout`
+- `unexpectedResponse(String)`
+
+## NerveAuth
+
+### CredentialStore
+Protocol for storing/retrieving device credentials.
+
+### BiometricAuthenticator
+Protocol for biometric authorization (spec §72).
+
+### Approval
+- `planned_change_id`: ID of the change being approved
+- `approver_type`: One of `human|policy|orchestrator|agent`
+- `decision`: One of `approved|denied|no_response`
+
+## NervePersistence
+
+### LocalCache (actor)
+- `CachedState`: Compact phone↔watch sync snapshot
+- Atomic file writes (`.atomic` replace on write)
+
+## NerveRealtime
+
+### RealtimeClient
+Protocol for event streaming:
+- WebSocket support
+- SSE fallback

@@ -31,11 +31,10 @@ from __future__ import annotations
 import json
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from schemas.events import Event
-
 
 # ---------------------------------------------------------------------------
 # Correlation helpers
@@ -234,7 +233,7 @@ class EventEnvelope:
 
     event: Event
     subject: str = ""
-    published_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    published_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     delivery: DeliveryMetadata = field(default_factory=DeliveryMetadata)
 
     def to_json(self) -> bytes:
@@ -296,7 +295,7 @@ class EventEnvelope:
         return cls(
             event=event,
             subject=delivery_info.get("subject", subject),
-            published_at=published_at or datetime.now(timezone.utc),
+            published_at=published_at or datetime.now(UTC),
             delivery=delivery,
         )
 

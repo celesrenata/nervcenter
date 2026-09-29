@@ -12,7 +12,7 @@ The policy engine:
 - Supports fallback chains and retry policies
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -176,7 +176,7 @@ class InferencePolicyEngine(BaseModel):
             strategy="auto",
             latency_budget_ms=requirements.latency_budget_ms,
             cost_budget_usd=requirements.cost_budget_usd,
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
 
         if route.tier is not None and route.tier >= 0:

@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+nervcenter.egg-info/
+
+# Venv / dev tooling
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Build artifacts
+dist/
+build/
+node_modules/
+# SwiftPM build dir (apple package)
+.build/
+
+# Local dev state
+.deployments-cache/
+deployments/local/pgvector-data/
+
+# Gitignored secret manifests (see secrets.yaml.example, harbor-pull.example.yaml)
+deployments/kubernetes/base/secrets.yaml
+deployments/kubernetes/base/harbor-pull.yaml
+
+# Local env
+.env.development.local
+.env.staging.local
+.env.production.local
+.deployments-cache/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+*.swp
+*.swo
+*~
+web/dist/
+apple/.build/

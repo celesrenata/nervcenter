@@ -1,0 +1,55 @@
+# NerveCenter Web UI (nginx) — serves the SPA and proxies /api/ + /mcp/ to the
+# api service in-cluster (upstream baked into the nginx template at render
+# time via container env API_UPSTREAM / API_PORT from the ConfigMap).
+#
+# Image tag `latest` placeholder; deploy.sh patches it with the git short SHA.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: nervecenter
+  labels:
+    app: nervcenter
+    app.kubernetes.io/name: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: "registry.celestium.life/nervecenter/web:latest"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: API_UPSTREAM
+              valueFrom:
+                configMapKeyRef:
+                  name: nervcenter-config
+                  key: API_UPSTREAM
+            - name: API_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: nervcenter-config
+                  key: API_PORT
+          ports:
+            - name: http
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 20
+      imagePullSecrets:
+        - name: harbor-pull

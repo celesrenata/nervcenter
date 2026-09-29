@@ -32,8 +32,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Index, String, text
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, Jsonb, UUIDv4

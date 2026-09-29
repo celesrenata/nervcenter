@@ -29,9 +29,10 @@ from __future__ import annotations
 
 import os
 import time
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Literal
+from typing import Any, Literal
 from urllib.parse import urlsplit, urlunsplit
 
 import structlog

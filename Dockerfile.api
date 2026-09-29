@@ -1,0 +1,62 @@
+# syntax=docker/dockerfile:1
+# NerveCenter API image.
+#
+# Multi-stage: builder compiles/installs the monorepo package (`pip install .`
+# from pyproject.toml, name `nervcenter`), runtime is a slim non-root image
+# that only carries the installed site-packages + console scripts (uvicorn).
+#
+# Build (from repo root):
+#   docker build -f Dockerfile.api -t registry.celestium.life/nervecenter/api:TAG .
+#
+# Entry:  uvicorn backend.api.app:app --host 0.0.0.0 --port 8000
+# Migrate (Job nervecenter-migrate):  python -m backend.persistence.migrate
+
+FROM python:3.11-slim AS builder
+
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /build
+
+# Build tools: asyncpg/setuptools compile wheels on some ABIs; curl for sanity.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install the package exactly as the monorepo declares it (`pip install .`).
+# pyproject README reference: README.md is required for metadata.
+COPY pyproject.toml README.md ./
+COPY backend/ ./backend/
+RUN pip install .
+
+FROM python:3.11-slim AS runtime
+
+# Same interpreter in both stages, so site-packages copy is safe.
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    # Migration entrypoint resolves the alembic env dir through this
+    # (installed site-packages path); see backend/persistence/migrate.py.
+    NERVE_ALEMBIC_SCRIPT_LOCATION=/usr/local/lib/python3.11/site-packages/backend/persistence/alembic
+
+# Non-root runtime user (uid/gid 10001).
+RUN groupadd --gid 10001 nervcenter \
+    && useradd --uid 10001 --gid 10001 --home-dir /app --shell /usr/sbin/nologin nervcenter
+
+# Carry over the installed packages (site-packages) and console scripts
+# (uvicorn, alembic, ...) from the builder stage.
+COPY --from=builder --chown=nervcenter:nervcenter /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=nervcenter:nervcenter /usr/local/bin /usr/local/bin
+
+WORKDIR /app
+
+EXPOSE 8000
+
+USER nervcenter
+
+# In-image health probe; matches k8s readinessProbe path (/api/health).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD ["/usr/local/bin/python", "-c", "import sys,urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3).status == 200 else 1)"]
+
+CMD ["uvicorn", "backend.api.app:app", "--host", "0.0.0.0", "--port", "8000"]

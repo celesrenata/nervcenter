@@ -32,12 +32,11 @@ Spec sections
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Mapping, Sequence
+from typing import TYPE_CHECKING
 
 import structlog
-
-from schemas.goals import Goal
 
 if TYPE_CHECKING:
     from backend.goals.service import GoalService
@@ -166,8 +165,8 @@ class GoalReconciler:
 
     def __init__(
         self,
-        goal_service: "GoalService",
-        task_service: "TaskServiceProtocol",
+        goal_service: GoalService,
+        task_service: TaskServiceProtocol,
         *,
         tolerance: float = 0.01,
     ) -> None:
@@ -326,5 +325,5 @@ class ReconcilerReport:
 class TaskServiceProtocol:
     """Structural protocol for the task service consumed by the reconciler."""
 
-    async def list_for_goal(self, goal_id: str) -> "list[Task]":  # noqa: D400
+    async def list_for_goal(self, goal_id: str) -> list[Task]:  # noqa: D400
         ...

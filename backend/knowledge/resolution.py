@@ -22,7 +22,7 @@ Spec sections
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
@@ -205,7 +205,7 @@ class EntityResolver:
         if canonical_id in absorbed_ids:
             raise ValueError("canonical_id cannot be in absorbed_ids")
 
-        at = datetime.now(timezone.utc)
+        at = datetime.now(UTC)
 
         # Load all entities.
         all_ids = [canonical_id, *absorbed_ids]

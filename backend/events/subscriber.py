@@ -23,16 +23,17 @@ Usage::
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
-from typing import Any, Callable, Coroutine
+from typing import Any
 
 import structlog
 
 from schemas.events import Event
 
 from .models import DeliveryMetadata, EventEnvelope
-from .nats_client import NATSConfig, NatsClient
-from .validators import EventValidator, ValidationResult
+from .nats_client import NatsClient, NATSConfig
+from .validators import EventValidator
 
 log = structlog.get_logger(__name__)
 
@@ -229,7 +230,7 @@ class EventSubscriber:
             self._task.cancel()
             try:
                 await asyncio.wait_for(self._task, timeout=5.0)
-            except (asyncio.TimeoutError, asyncio.CancelledError):
+            except (TimeoutError, asyncio.CancelledError):
                 pass
             self._task = None
 
@@ -291,7 +292,7 @@ class EventSubscriber:
             while self._running:
                 try:
                     msgs = await self._subscriber.fetch(1, timeout=1.0)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     # No messages within the window; loop again so that
                     # ``stop()`` can be observed promptly.
                     continue

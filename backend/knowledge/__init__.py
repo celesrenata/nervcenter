@@ -43,10 +43,10 @@ Spec sections
 
 from .derivation import (
     DEFAULT_RULES,
-    DerivedRelationship,
     DerivationEngine,
     DerivationResult,
     DerivationRule,
+    DerivedRelationship,
 )
 from .entity import (
     EntityConflictError,
@@ -60,7 +60,7 @@ from .history import (
     StateDiff,
     TimeTravelQuery,
 )
-from .relationship import UnknownEntityError, RelationshipService
+from .relationship import RelationshipService, UnknownEntityError
 from .resolution import EntityResolver, MatchCandidate, MergeResult
 from .service import KnowledgeService
 

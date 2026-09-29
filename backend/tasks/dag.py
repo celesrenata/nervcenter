@@ -23,11 +23,10 @@ Spec sections
 
 from __future__ import annotations
 
-import collections
 from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from schemas.tasks import Task

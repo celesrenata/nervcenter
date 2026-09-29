@@ -55,16 +55,13 @@ Design notes
 
 from __future__ import annotations
 
-import asyncio
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 from schemas.connectors import Connector as ConnectorRecord
 
 from .base import (
-    CommandResult,
-    Connector,
-    ConnectorError,
     ConnectError,
+    Connector,
     HTTPPool,
     RetryPolicy,
     Snapshot,

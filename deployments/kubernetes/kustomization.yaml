@@ -1,33 +1,12 @@
-# Kustomize configuration for NerveCenter Kubernetes deployment
-
+# Kustomize entrypoint for the NerveCenter cluster install.
+#
+#   kubectl apply -k deployments/kubernetes
+#
+# The full resource set lives in base/; this file is a pass-through so both
+# `apply -k deployments/kubernetes` and `apply -k deployments/kubernetes/base`
+# resolve to the same objects.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Common labels for all resources
-commonLabels:
-  app: nervcenter
-  version: v1
-
-# Base resources
 resources:
-  - base/deployment.yaml
-  - base/service.yaml
-  - base/configmap.yaml
-  - base/secret.yaml
-
-# ConfigMap generation
-configMapGenerator:
-  - name: nervcenter-config
-    files:
-      - config.env
-
-# Secret generation (use generators for sensitive data)
-secretGenerator:
-  - name: nervcenter-secrets
-    files:
-      - secrets.env
-
-# Common annotations
-commonAnnotations:
-  version: v1
-  description: NerveCenter deployment
+  - base

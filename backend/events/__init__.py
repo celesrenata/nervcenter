@@ -42,7 +42,6 @@ Typical wiring::
     await subscriber.start()
 """
 
-from .nats_client import NATSConfig, NatsClient, config_from_env
 from .models import (
     DeliveryMetadata,
     EventEnvelope,
@@ -52,9 +51,10 @@ from .models import (
     encode_event,
     generate_correlation_id,
 )
+from .nats_client import NatsClient, NATSConfig, config_from_env
 from .processor import EventReplay, EventStorageProcessor
 from .publisher import EventPublisher, PublishResult
-from .subscriber import EventSubscriber, EventHandler, SubscriptionConfig
+from .subscriber import EventHandler, EventSubscriber, SubscriptionConfig
 from .validators import (
     EventValidator,
     PayloadValidatorRegistry,

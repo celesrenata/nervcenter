@@ -1,10 +1,10 @@
 """Authentication endpoints for the NerveCenter API."""
-from datetime import datetime, timedelta
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel
 import secrets
+from datetime import datetime, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -28,7 +28,7 @@ token_store: dict = {}
 user_store: dict = {"admin": {"password": "password", "roles": ["admin"]}}
 
 
-def verify_credentials(username: str, password: str) -> Optional[dict]:
+def verify_credentials(username: str, password: str) -> dict | None:
     """Verify user credentials."""
     user = user_store.get(username)
     if user and user["password"] == password:
@@ -36,7 +36,7 @@ def verify_credentials(username: str, password: str) -> Optional[dict]:
     return None
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """Create an access token."""
     to_encode = data.copy()
     if expires_delta:

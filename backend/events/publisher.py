@@ -21,16 +21,16 @@ Usage::
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Sequence
+from datetime import UTC, datetime
 
 import structlog
 
 from schemas.events import Event
 
 from .models import encode_event, generate_correlation_id
-from .nats_client import NATSConfig, NatsClient
+from .nats_client import NatsClient, NATSConfig
 
 log = structlog.get_logger(__name__)
 
@@ -67,7 +67,7 @@ class PublishResult:
     subject: str = ""
     stream: str = ""
     sequence: int = 0
-    published_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    published_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     error: str | None = None
 
 

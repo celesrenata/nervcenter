@@ -21,13 +21,14 @@ Spec sections
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 import structlog
 
-from backend.tasks.dag import RunnableQueue, TaskDAG, RunnableState
+from backend.tasks.dag import RunnableQueue, TaskDAG
 
 if TYPE_CHECKING:
     from schemas.tasks import Task
@@ -191,12 +192,12 @@ class ParallelExecutor:
                             self._config.on_task_complete(t, result)
 
                         log.info("tasks.completed", task_id=tid, success=result.success)
-                    except asyncio.TimeoutError:
+                    except TimeoutError:
                         err_result = ExecutionResult(
                             task_id=tid,
                             success=False,
-                            started_at=datetime.now(timezone.utc),
-                            finished_at=datetime.now(timezone.utc),
+                            started_at=datetime.now(UTC),
+                            finished_at=datetime.now(UTC),
                             error="timeout",
                         )
                         results.append(err_result)
@@ -209,8 +210,8 @@ class ParallelExecutor:
                         err_result = ExecutionResult(
                             task_id=tid,
                             success=False,
-                            started_at=datetime.now(timezone.utc),
-                            finished_at=datetime.now(timezone.utc),
+                            started_at=datetime.now(UTC),
+                            finished_at=datetime.now(UTC),
                             error=str(exc),
                         )
                         results.append(err_result)
@@ -232,17 +233,17 @@ class ParallelExecutor:
         task: Task,
     ) -> ExecutionResult:
         """Execute a single task (for tests or manual dispatch)."""
-        started = datetime.now(timezone.utc)
+        started = datetime.now(UTC)
         try:
             result_task = self._runner(task)
             result = await asyncio.wait_for(result_task, timeout=self._config.task_timeout)
             return result
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return ExecutionResult(
                 task_id=task.id,
                 success=False,
                 started_at=started,
-                finished_at=datetime.now(timezone.utc),
+                finished_at=datetime.now(UTC),
                 error="timeout",
             )
         except Exception as exc:  # noqa: BLE001
@@ -250,7 +251,7 @@ class ParallelExecutor:
                 task_id=task.id,
                 success=False,
                 started_at=started,
-                finished_at=datetime.now(timezone.utc),
+                finished_at=datetime.now(UTC),
                 error=str(exc),
             )
 
@@ -274,8 +275,8 @@ def make_default_runner() -> Callable[[Task], asyncio.Task[ExecutionResult]]:
         return ExecutionResult(
             task_id=task.id,
             success=True,
-            started_at=datetime.now(timezone.utc),
-            finished_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
+            finished_at=datetime.now(UTC),
             error=None,
         )
 

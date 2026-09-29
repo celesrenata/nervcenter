@@ -1,0 +1,17 @@
+# NATS client port for the api pod (and any in-cluster NATS consumers).
+apiVersion: v1
+kind: Service
+metadata:
+  name: nats
+  namespace: nervecenter
+  labels:
+    app: nervcenter
+    app.kubernetes.io/name: nats
+spec:
+  selector:
+    app: nats
+  ports:
+    - name: nats
+      port: 4222
+      targetPort: 4222
+      protocol: TCP

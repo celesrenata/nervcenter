@@ -1,21 +1,18 @@
-"""Evidence service endpoints."""
+"""Evidence endpoints for the NerveCenter API."""
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List
 from backend.api.models import ListResponse, ApiResponseMeta
 from datetime import datetime
 
-router = APIRouter(prefix="/evidence", tags=["evidence"])
+router = APIRouter(prefix="/api/evidence", tags=["evidence"])
 
 
 @router.get("/", response_model=ListResponse)
 async def list_evidence():
-    """List all evidence items."""
-    # In a real implementation, this would query the database
+    """List all evidence records."""
     evidence = [
-        {"id": "ev-1", "name": "Evidence 1", "type": "document"},
-        {"id": "ev-2", "name": "Evidence 2", "type": "data"},
+        {"id": "ev-1", "source_type": "web_page", "source_ref": "https://example.com"},
     ]
-
     return ListResponse(
         data=evidence,
         meta=ApiResponseMeta(
@@ -29,13 +26,7 @@ async def list_evidence():
 
 @router.get("/{evidence_id}")
 async def get_evidence(evidence_id: str):
-    """Get evidence details."""
-    # In a real implementation, this would query the database
-    if evidence_id not in ["ev-1", "ev-2"]:
+    """Get evidence by ID."""
+    if evidence_id != "ev-1":
         raise HTTPException(status_code=404, detail="Evidence not found")
-
-    return {
-        "id": evidence_id,
-        "name": f"Evidence {evidence_id[-1]}",
-        "type": "document" if evidence_id == "ev-1" else "data",
-    }
+    return {"id": evidence_id, "source_type": "web_page", "source_ref": "https://example.com"}

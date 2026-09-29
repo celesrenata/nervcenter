@@ -26,17 +26,19 @@ Spec sections
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import datetime
-from typing import Any, Sequence
+from typing import Any
+
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from schemas.entities import Entity as EntitySchema
 from schemas.relationships import Relationship as RelationshipSchema
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from .derivation import DEFAULT_RULES, DerivationEngine, DerivationResult, DerivationRule
 from .entity import EntityConflictError, EntityNotFoundError, EntityService
 from .history import GraphState, LineageEvent, LineageTracker, StateDiff, TimeTravelQuery
-from .relationship import UnknownEntityError, RelationshipService
+from .relationship import RelationshipService, UnknownEntityError
 from .resolution import EntityResolver, MatchCandidate, MergeResult
 
 __all__ = [

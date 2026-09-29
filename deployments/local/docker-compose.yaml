@@ -1,39 +1,111 @@
-# Docker Compose configuration for NerveCenter local development
-
-version: '3.8'
+# NerveCenter local docker-compose stack (spec §14: postgres+pgvector, nats JetStream).
+#
+# Services:
+#   postgres   — pgvector/pgvector:pg16 (canonical entities + semantic retrieval)
+#   nats       — nats:2.10-alpine with --jetstream (event stream)
+#   migrate    — one-shot `python -m backend.persistence.migrate upgrade` (alembic)
+#   api        — uvicorn backend.api.app:app  :8000
+#   web        — nginx SPA + /api/ + /mcp/ reverse proxy  :80 -> host :8080
+#
+# The api is built from /Dockerfile.api and web from /web/Dockerfile (same as the
+# cluster deploy) so the local stack is a faithful stand-in for the K3s ns.
+#
+# Bring up with:  ./deployments/local/deploy-local.sh
+#   (which docker builds + exports API_IMAGE / WEB_IMAGE then runs `docker compose up -d --wait`).
+name: nervcenter-local
 
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
+  # --- persistence ---------------------------------------------------------------
+  postgres:
+    image: pgvector/pgvector:pg16
     environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/nervcenter
-      - REDIS_URL=redis://redis:6379
-    depends_on:
-      - db
-      - redis
-
-  db:
-    image: postgres:13
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=nervcenter
+      POSTGRES_DB: nervcenter
+      POSTGRES_USER: nervcenter
+      POSTGRES_PASSWORD: nervcenter
+      PGDATA: /var/lib/postgresql/pgdata
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nervcenter -d nervcenter"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
-  redis:
-    image: redis:6
+  nats:
+    image: nats:2.10-alpine
+    command: ["--jetstream", "--logtime"]
     ports:
-      - "6379:6379"
+      - "4222:4222"
+      - "8222:8222"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8222/varz || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     volumes:
-      - redis_data:/data
+      - jetstream:/data/jetstream
+
+  # --- one-shot migration (alembic upgrade head) --------------------------------------------------
+  migrate:
+    image: ${API_IMAGE:-nervecenter/api:latest}
+    entrypoint: ["python", "-m", "backend.persistence.migrate", "upgrade"]
+    environment:
+      NERVE_DB_URL: postgresql+asyncpg://nervcenter:nervcenter@postgres:5432/nervcenter
+      NERVECENTER_DATABASE_URL: postgresql+asyncpg://nervcenter:nervcenter@postgres:5432/nervcenter
+      NERVE_NATS_URL: nats://nats:4222
+      NERVECENTER_NATS_URL: nats://nats:4222
+      NERVE_MOCK_INFER: "1"
+      NERVECENTER_MOCK_INFER: "1"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # --- api (uvicorn backend.api.app:app :8000) -----------------------------------------------------
+  api:
+    image: ${API_IMAGE:-nervecenter/api:latest}
+    ports:
+      - "8000:8000"
+    environment:
+      # The app reads these at boot (see backend/persistence/connection.py,
+      # backend/events/nats_client.py). The NERVE_* contract keys are also
+      # set here so a future normalisation keeps working.
+      NERVE_DB_URL: postgresql+asyncpg://nervcenter:nervcenter@postgres:5432/nervcenter
+      NERVECENTER_DATABASE_URL: postgresql+asyncpg://nervcenter:nervcenter@postgres:5432/nervcenter
+      NERVE_NATS_URL: nats://nats:4222
+      NERVECENTER_NATS_URL: nats://nats:4222
+      NERVE_OMNIROUTE_URL: http://omniroute:8080
+      NERVE_MOCK_INFER: "1"
+      NERVECENTER_MOCK_INFER: "1"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request;urllib.request.urlopen(\"http://127.0.0.1:8000/api/health\",timeout=3)' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # --- web (nginx SPA + /api/ + /mcp/ proxy :80 -> host :8080) ------------------------------------------
+  web:
+    image: ${WEB_IMAGE:-nervecenter/web:latest}
+    environment:
+      API_UPSTREAM: api
+      API_PORT: "8000"
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  postgres_data:
-  redis_data:
+  pgdata:
+  jetstream:

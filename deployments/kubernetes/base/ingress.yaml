@@ -1,0 +1,52 @@
+# Ingress for nervecenter.celestium.life (Traefik / cert-manager cluster-wide).
+#
+# Path mapping (per task spec item 3):
+#   /        -> web  (nginx SPA + static bundles)
+#   /api/    -> api  (FastAPI service on :8000)
+#   /mcp/    -> api  (MCP endpoint on :8000)
+#
+# cert-manager picks up TLS automatically via the `cert-manager.io/cluster-issuer`
+# annotation (issuer `celestium-le-production` is the cluster-wide standard for
+# *.celestium.life). If you want a different issuer (e.g. internal CA), swap
+# the annotation.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nervcenter-celestium
+  namespace: nervecenter
+  labels:
+    app: nervcenter
+    app.kubernetes.io/name: ingress
+  annotations:
+    cert-manager.io/cluster-issuer: celestium-le-production
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - nervcenter.celestium.life
+      secretName: nervcenter-celestium-tls
+  rules:
+    - host: nervcenter.celestium.life
+      http:
+        paths:
+          - path: /api/
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 8000
+          - path: /mcp/
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 8000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 80

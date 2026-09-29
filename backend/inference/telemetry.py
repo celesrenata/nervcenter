@@ -13,8 +13,7 @@ Telemetry features:
 import asyncio
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -49,7 +48,7 @@ class LatencyWindow(BaseModel):
         """Record a new latency sample."""
         self.samples.append(
             LatencySnapshot(
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 ttft_ms=ttft_ms,
                 e2e_latency_ms=e2e_latency_ms,
             )
@@ -162,7 +161,7 @@ class InferenceTelemetry(BaseModel):
         return OmniRouteTelemetry(
             provider=provider,
             model=model,
-            sample_at=datetime.now(timezone.utc),
+            sample_at=datetime.now(UTC),
             requests=total_requests,
             success_rate=success_rate,
             ttft_ms=window.avg_ttft() if window else None,

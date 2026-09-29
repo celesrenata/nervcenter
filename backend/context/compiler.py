@@ -11,13 +11,11 @@ The context compiler:
 - Produces bounded ContextPackage for inference
 """
 
-from datetime import datetime, timezone
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 from schemas.context import ContextPackage, ContextPurpose, ContextSection, ContextSectionKind
-from schemas.models import ModelDescriptor
 
 
 class ContextSource(BaseModel):

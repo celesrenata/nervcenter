@@ -22,11 +22,13 @@ Spec sections
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Callable, Sequence
+from datetime import datetime
+from typing import Any
 
 import structlog
+
 from schemas.base import TemporalWindow
 from schemas.relationships import Relationship as RelationshipSchema
 
@@ -68,7 +70,7 @@ class DerivationRule:
     name: str
     premises: tuple[tuple[str, str | None, str], ...]
     conclusion_type: str
-    derive_fn: Callable[[list[RelationshipSchema]], "DerivedRelationship | None"]
+    derive_fn: Callable[[list[RelationshipSchema]], DerivedRelationship | None]
     valid_window: TemporalWindow | None = None
     properties: dict[str, Any] = field(default_factory=dict)
 
@@ -335,7 +337,7 @@ class DerivationEngine:
                 by_source[r.source_entity_id].append(r)
 
             second_type = rule.premises[1][0]
-            for source_id, first_hops in by_source.items():
+            for _source_id, first_hops in by_source.items():
                 for first_hop in first_hops:
                     # Find second-hop relationships from first_hop's target.
                     second_hops = [

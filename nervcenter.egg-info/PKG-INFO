@@ -18,6 +18,9 @@ Requires-Dist: sqlalchemy[asyncio]>=2.0.35
 Requires-Dist: asyncpg>=0.30.0
 Requires-Dist: alembic>=1.14.0
 Requires-Dist: pgvector>=0.3.0
+Requires-Dist: opentelemetry-sdk
+Requires-Dist: opentelemetry-exporter-prometheus
+Requires-Dist: prometheus-client
 Requires-Dist: tabulate>=0.9
 Provides-Extra: dev
 Requires-Dist: ruff>=0.4; extra == "dev"

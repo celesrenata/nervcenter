@@ -39,12 +39,12 @@ Design notes
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
 
-from .base import CommandResult, Connector, ConnectorEvent, Snapshot, SnapshotError, run_command
+from .base import CommandResult, Connector, SnapshotError, run_command
 
 log = structlog.get_logger(__name__)
 
@@ -89,7 +89,7 @@ class GPUConnector(Connector):
             - ``processes``: list of GPU processes (if include_processes)
         """
         snapshot: dict[str, Any] = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         if self._has_nvidia_smi is None:

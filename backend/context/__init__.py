@@ -10,7 +10,7 @@ Modules
 - ``prioritization`` — ContextPrioritizer for content ranking
 """
 
-from .compiler import ContextCompiler, BudgetConfig, ContextSource, CompiledSection
+from .compiler import BudgetConfig, CompiledSection, ContextCompiler, ContextSource
 from .prioritization import (
     ContextPrioritizer,
     PrioritizationConfig,

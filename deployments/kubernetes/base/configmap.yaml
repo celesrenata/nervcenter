@@ -1,24 +1,20 @@
-# NerveCenter ConfigMap
-
+# NerveCenter non-secret configuration.
+#
+# The web container (nginx) reads API_UPSTREAM/API_PORT to proxy /api/ and /mcp/
+# to the api service; the api container inherits them harmlessly.
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: nervcenter-config
+  namespace: nervecenter
   labels:
     app: nervcenter
+    app.kubernetes.io/name: nervcenter-config
 data:
-  # Application configuration
   APP_ENV: "production"
   LOG_LEVEL: "INFO"
-  
-  # Database configuration
-  DATABASE_HOST: "localhost"
-  DATABASE_PORT: "5432"
-  DATABASE_NAME: "nervcenter"
-  
-  # Redis configuration
-  REDIS_HOST: "localhost"
-  REDIS_PORT: "6379"
-  
-  # Service endpoints
-  API_PORT: "8080"
+  TZ: "UTC"
+  # api listens on 8000 inside the pod (uvicorn entrypoint).
+  API_PORT: "8000"
+  # web (nginx) proxies to the api Service in this namespace.
+  API_UPSTREAM: "api.nervecenter.svc"

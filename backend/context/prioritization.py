@@ -12,7 +12,7 @@ The prioritizer:
 - Produces prioritized orderings for context assembly
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -120,7 +120,7 @@ class ContextPrioritizer(BaseModel):
             List of prioritized sections, sorted by score descending.
         """
         config = config or PrioritizationConfig()
-        reference_time = reference_time or datetime.now(timezone.utc)
+        reference_time = reference_time or datetime.now(UTC)
 
         scored = []
         for section in sections:
@@ -167,7 +167,7 @@ class ContextPrioritizer(BaseModel):
         if "asserted_at" in section:
             asserted = section["asserted_at"]
             if isinstance(asserted, str):
-                from datetime import datetime, timezone
+                from datetime import datetime
 
                 asserted = datetime.fromisoformat(
                     asserted.replace("Z", "+00:00")

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { api } from '../api/client'
+import { incidentsApi } from '../api/client'
 
 interface Incident {
   id: string
@@ -20,7 +20,7 @@ const IncidentsView = () => {
   useEffect(() => {
     const fetchIncidents = async () => {
       try {
-        const response = await api.get('/incidents')
+        const response = await incidentsApi.list()
         setIncidents(response.data)
       } catch (error) {
         console.error('Error fetching incidents:', error)

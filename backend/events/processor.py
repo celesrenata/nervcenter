@@ -25,7 +25,7 @@ Usage (replay)::
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
@@ -35,7 +35,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from schemas.events import Event
 
 from .models import DeliveryMetadata, ReplayRequest, ReplayResult, decode_event
-from .nats_client import NATSConfig, NatsClient
+from .nats_client import NatsClient, NATSConfig
 from .validators import EventValidator
 
 log = structlog.get_logger(__name__)
@@ -399,7 +399,7 @@ class EventReplay:
 
         try:
             # Create a temporary consumer for replay
-            consumer_name = f"replay-{datetime.now(timezone.utc).isoformat()}"
+            consumer_name = f"replay-{datetime.now(UTC).isoformat()}"
             consumer = js.get_consumer(
                 self._config.stream_name,
                 consumer_name,

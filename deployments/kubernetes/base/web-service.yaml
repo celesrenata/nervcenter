@@ -1,0 +1,19 @@
+# ClusterIP service for the web — ClusterIP so only Ingress exposes it to the
+# world (avoids direct pod-to-SVC access for secrets).
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: nervecenter
+  labels:
+    app: nervcenter
+    app.kubernetes.io/name: web
+spec:
+  type: ClusterIP
+  selector:
+    app: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

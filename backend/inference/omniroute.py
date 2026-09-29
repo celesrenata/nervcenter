@@ -11,8 +11,7 @@ The adapter:
 - Collects telemetry for policy refinement
 """
 
-import httpx
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -179,7 +178,7 @@ class OmniRouteAdapter(BaseModel):
         sample = OmniRouteTelemetry(
             provider=provider,
             model=model,
-            sample_at=datetime.now(timezone.utc),
+            sample_at=datetime.now(UTC),
             requests=1,
             success_rate=1.0 if success else 0.0,
             ttft_ms=response.ttft_ms if response else None,

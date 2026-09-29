@@ -25,18 +25,19 @@ either schema.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, Sequence
+from collections.abc import Sequence
+from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
 import structlog
-from schemas.base import TemporalWindow
-from schemas.relationships import Relationship as RelationshipSchema
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from backend.persistence.models import Entity as EntityORM
 from backend.persistence.models import Relationship as RelationshipORM
+from schemas.base import TemporalWindow
+from schemas.relationships import Relationship as RelationshipSchema
 
 log = structlog.get_logger(__name__)
 
@@ -51,7 +52,7 @@ def _iso(dt: datetime | None) -> str | None:
     if dt is None:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     return dt.isoformat()
 
 
@@ -66,12 +67,12 @@ def _parse(value: str | datetime | None) -> datetime | None:
         return None
     if isinstance(value, datetime):
         if value.tzinfo is None:
-            return value.replace(tzinfo=timezone.utc)
+            return value.replace(tzinfo=UTC)
         return value
     if isinstance(value, str):
         dt = datetime.fromisoformat(value)
         if dt.tzinfo is None:
-            return dt.replace(tzinfo=timezone.utc)
+            return dt.replace(tzinfo=UTC)
         return dt
     raise TypeError(f"unsupported temporal value: {type(value).__name__}")
 
@@ -89,7 +90,7 @@ def _orm_to_schema(orm: RelationshipORM) -> RelationshipSchema:
         relation_type=orm.relation_type,  # type: ignore[arg-type]
         properties=dict(orm.properties or {}),
         valid=TemporalWindow(valid_from=_parse(orm.valid_from), valid_to=_parse(orm.valid_to)),
-        asserted_at=asserted or datetime.now(timezone.utc),
+        asserted_at=asserted or datetime.now(UTC),
         confidence=float(orm.confidence or 1.0),
         evidence=list(orm.evidence or []),
     )
@@ -196,7 +197,7 @@ class RelationshipService:
             relation_type=relation_type,
             properties=dict(properties or {}),
             valid=TemporalWindow(valid_from=valid_from, valid_to=valid_to),
-            asserted_at=asserted_at or datetime.now(timezone.utc),
+            asserted_at=asserted_at or datetime.now(UTC),
             confidence=confidence,
             evidence=list(evidence or []),
         )
@@ -285,7 +286,7 @@ class RelationshipService:
         Idempotent: closing a relationship whose window already ended at or
         after ``at`` is a no-op. Closing *before* ``valid_from`` is an error.
         """
-        when = at or datetime.now(timezone.utc)
+        when = at or datetime.now(UTC)
         iso_at = _iso(when)
         assert iso_at is not None
         async with self._factory()() as session:
@@ -340,7 +341,7 @@ class RelationshipService:
         """
         if direction not in ("outgoing", "incoming", "both"):
             raise ValueError(f"unknown direction {direction!r}")
-        iso = _iso(at or datetime.now(timezone.utc))
+        iso = _iso(at or datetime.now(UTC))
         assert iso is not None
         stmt = select(RelationshipORM).where(_active_clause(iso))
         if direction == "outgoing":
@@ -370,7 +371,7 @@ class RelationshipService:
         relation_type: str | None = None,
     ) -> list[RelationshipSchema]:
         """Relationships from ``source_id`` to ``target_id`` active at ``at``."""
-        iso = _iso(at or datetime.now(timezone.utc))
+        iso = _iso(at or datetime.now(UTC))
         assert iso is not None
         stmt = select(RelationshipORM).where(
             _active_clause(iso),
@@ -475,7 +476,7 @@ class RelationshipService:
         Used by time-travel and derivation to load a consistent view of the
         graph at one instant.
         """
-        iso = _iso(at or datetime.now(timezone.utc))
+        iso = _iso(at or datetime.now(UTC))
         assert iso is not None
         stmt = select(RelationshipORM).where(_active_clause(iso))
         if relation_types is not None:

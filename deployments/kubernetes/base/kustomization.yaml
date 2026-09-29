@@ -1,13 +1,30 @@
-# Kustomize base configuration for NerveCenter
+# Kustomize base for NerveCenter (namespace: nervecenter).
+#
+# Secrets (nervecenter-env, harbor-pull) are intentionally NOT listed here:
+# they are managed out-of-band by the operator (copy from an existing ns) and,
+# for the app env secret, templated from secrets.yaml.example -> secrets.yaml
+# (gitignored). The workloads reference them via envFrom / imagePullSecrets,
+# which `kubectl apply` accepts without requiring the objects to be in this
+# kustomization (they are resolved at pod runtime).
+namespace: nervecenter
 
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
+# Metadata-only label for every object (not selectors).
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: nervcenter
+    includeSelectors: false
 
-# Base resources
 resources:
-  - deployment.yaml
-  - service.yaml
+  - namespace.yaml
   - configmap.yaml
-  - secret.yaml
-
-# Environment-specific overlays will extend this base
+  - postgres-pvc.yaml
+  - postgres-statefulset.yaml
+  - postgres-service.yaml
+  - nats-deployment.yaml
+  - nats-service.yaml
+  - migrate-job.yaml
+  - api-deployment.yaml
+  - api-service.yaml
+  - web-deployment.yaml
+  - web-service.yaml
+  - ingress.yaml

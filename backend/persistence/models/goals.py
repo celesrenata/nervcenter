@@ -49,7 +49,7 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy import BigInteger, Index, String
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, Jsonb, UUIDv4
