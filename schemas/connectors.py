@@ -15,7 +15,7 @@ Assumptions (spec not present in the repository):
       runtime adapters live in ``backend/connectors``.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import Field

@@ -18,6 +18,11 @@ All persisted records share these fields:
 - `payload`: `[String: AnyCodable]` - type-specific document
 - `severity`: One of `debug|info|warning|error|critical`
 - `trace_id`, `correlation_id`: Optional correlation headers
+- Integrity (spec §10 `hash`): `computeIntegrityHash()` -> lowercase hex SHA-256
+  (CryptoKit) over the canonical wire serialization of all fields **except
+  `hash`** (snake_case keys, ISO-8601 dates, sorted keys).
+  `verifyIntegrity()` -> `true` when `hash` is nil (unsigned) or matches the
+  recomputed digest; `stampIntegrity()` stamps the digest.
 
 ### Task
 - `title`: Short human-readable task title

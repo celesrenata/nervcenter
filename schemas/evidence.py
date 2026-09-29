@@ -13,7 +13,7 @@ Assumptions (spec Section 15 not present in the repository):
       the original artifact moves or disappears.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from pydantic import Field
@@ -56,7 +56,7 @@ class Evidence(Record):
         description="SHA-256 digest of the captured content for verifiability.",
     )
     captured_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="When the content was captured (UTC).",
     )
     trust: float = Field(

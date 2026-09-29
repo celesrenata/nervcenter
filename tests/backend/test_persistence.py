@@ -1,5 +1,4 @@
 """Tests for backend persistence subsystem."""
-import pytest
 
 
 class TestPersistence:

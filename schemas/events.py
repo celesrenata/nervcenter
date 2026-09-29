@@ -13,7 +13,7 @@ Assumptions (spec Section 10 not present in the repository):
     - ``sequence`` / ``stream`` support durable replay (WAL offset per stream).
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from pydantic import Field
@@ -54,7 +54,7 @@ class Event(Record):
         description="Coarse subsystem the event belongs to.",
     )
     occurred_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="When the underlying phenomenon occurred (UTC), as opposed to creation time.",
     )
     source: str = Field(

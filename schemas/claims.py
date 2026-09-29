@@ -12,7 +12,7 @@ Assumptions (spec Section 16 not present in the repository):
       the rationale, and a link to the resulting :class:`PlannedChange`/Task ids.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from pydantic import Field
@@ -105,6 +105,6 @@ class Decision(Record):
         description="Id of the resulting :class:`Task`, if one was scheduled.",
     )
     decided_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="When the decision was made (UTC).",
     )

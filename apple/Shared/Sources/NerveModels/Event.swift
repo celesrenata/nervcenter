@@ -111,4 +111,55 @@ public struct Event: Codable, Hashable, Sendable {
         self.schemaVersion = schemaVersion
         self.hash = hash
     }
+
+    // MARK: - Integrity (spec §10 `hash` field)
+
+    /// Recompute the SHA-256 integrity digest over the canonical serialization
+    /// of this event's body, excluding the `hash` field itself (spec §10:
+    /// `"hash": "sha256"`; see also ``RecordBase/hash``).
+    ///
+    /// The digest covers every wire field of the event — identity, provenance,
+    /// classification, payload, and correlation — serialized through the shared
+    /// ``NerveJSON`` contract (snake_case keys, ISO-8601 dates, sorted keys)
+    /// so it matches the backend's `Record.fingerprint()` behavior.
+    ///
+    /// - Returns: The lowercase hex SHA-256 digest, or `nil` when the event
+    ///   cannot be canonically encoded (never happens for a valid `Event`).
+    public func computeIntegrityHash() -> String? {
+        var encoder = NerveJSON.encoder
+        encoder.outputFormatting = [.sortedKeys]
+
+        guard let baseData = try? encoder.encode(self),
+              let json = try? JSONSerialization.jsonObject(with: baseData) as? [String: Any],
+              var cleaned = json as [String: Any]? else { return nil }
+
+        cleaned.removeValue(forKey: "hash")
+        guard let canonical = try? JSONSerialization.data(
+            withJSONObject: cleaned,
+            options: [.sortedKeys]
+        ) else { return nil }
+
+        return SHA256Helper.contentHash(canonical)
+    }
+
+    /// Verify the stored ``hash`` field against a freshly recomputed digest of
+    /// the event body (spec §10: events are immutable and integrity-checked).
+    ///
+    /// - Returns: `true` when the stored digest is `nil` (unsigned event) or
+    ///   matches the recomputed canonical digest; `false` on mismatch or when
+    ///   the canonical digest could not be recomputed.
+    public func verifyIntegrity() -> Bool {
+        guard let storedHash = hash else { return true }
+        guard let computed = computeIntegrityHash() else { return false }
+        return storedHash == computed
+    }
+
+    /// Convenience factory: stamp `hash` with the freshly computed integrity
+    /// digest (producer/test use per spec §10).
+    @discardableResult
+    public mutating func stampIntegrity() -> String {
+        let computed = computeIntegrityHash()
+        hash = computed
+        return computed ?? ""
+    }
 }

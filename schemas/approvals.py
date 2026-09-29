@@ -11,7 +11,7 @@ Assumptions (spec not present in the repository):
       cannot be applied via this approval.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Literal
 
 from pydantic import Field

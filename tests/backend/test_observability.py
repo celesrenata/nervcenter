@@ -1,5 +1,4 @@
 """Tests for backend observability subsystem."""
-import pytest
 
 
 class TestObservability:

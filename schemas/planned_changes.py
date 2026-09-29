@@ -15,7 +15,7 @@ Assumptions (spec not present in the repository):
       envelope; ``rollback`` describes how to revert.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from pydantic import Field
@@ -87,7 +87,7 @@ class PlannedChange(Record):
         description="Instructions/payload for reverting this change if applied.",
     )
     proposed_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="When the change was first proposed (UTC).",
     )
     expires_at: datetime | None = Field(

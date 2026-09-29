@@ -1,5 +1,4 @@
 """Tests for backend evidence subsystem."""
-import pytest
 
 
 class TestEvidenceModule:

@@ -12,7 +12,7 @@ Assumptions (spec not present in the repository):
     - ``status`` reflects operational state.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import Field

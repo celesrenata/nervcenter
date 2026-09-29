@@ -11,7 +11,7 @@ Assumptions (spec Section 13 not present in the repository):
     - Relationships are evidence-backed and carry a ``confidence``.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from pydantic import Field
@@ -61,7 +61,7 @@ class Relationship(Record):
         description="Temporal validity window: when this relationship is / was true.",
     )
     asserted_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="When the core first asserted this relationship (UTC).",
     )
     confidence: float = Field(

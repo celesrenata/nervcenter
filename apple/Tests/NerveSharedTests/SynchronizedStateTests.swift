@@ -19,12 +19,15 @@ final class SynchronizedStateTests: XCTestCase {
     }
 
     func testSynchronizedStateRoundtrip() throws {
+        // Integer-second timestamp: the shared `.iso8601` wire strategy
+        // (no fractional seconds) roundtrips these exactly.
         let state = SynchronizedState(
             systemHealth: "degraded",
             activeIncidents: 3,
             runningAgents: 5,
             pendingApprovals: 0,
-            primaryGoalProgress: 0.42
+            primaryGoalProgress: 0.42,
+            updatedAt: Date(timeIntervalSinceReferenceDate: 700_000_000)
         )
 
         let encoded = try NerveJSON.encode(state)

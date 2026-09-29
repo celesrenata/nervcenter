@@ -22,7 +22,7 @@ Assumptions (spec Sections 10-16 not present in the repository):
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -75,7 +75,7 @@ class Record(BaseModel):
 
     id: str = Field(..., description="Stable unique identifier for the record (UUID string).")
     created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="Timestamp of when the record was created (UTC).",
     )
     schema_version: str = Field(

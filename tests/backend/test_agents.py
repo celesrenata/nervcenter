@@ -1,5 +1,4 @@
 """Tests for backend agents subsystem."""
-import pytest
 
 
 class TestAgentRegistry:

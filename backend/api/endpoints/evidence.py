@@ -1,8 +1,9 @@
 """Evidence endpoints for the NerveCenter API."""
-from fastapi import APIRouter, Depends, HTTPException
-from typing import List
-from backend.api.models import ListResponse, ApiResponseMeta
 from datetime import datetime
+
+from fastapi import APIRouter, HTTPException
+
+from backend.api.models import ApiResponseMeta, ListResponse
 
 router = APIRouter(prefix="/api/evidence", tags=["evidence"])
 

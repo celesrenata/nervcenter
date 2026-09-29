@@ -11,7 +11,7 @@ Assumptions (spec not present in the repository):
       carries an optional ``structured_output`` payload.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import Field

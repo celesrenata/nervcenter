@@ -16,7 +16,7 @@ Assumptions (spec not present in the repository):
       circuit-breaker state.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from pydantic import Field
@@ -117,7 +117,7 @@ class OmniRouteTelemetry(Record):
         description="Id of the :class:`ComputeNode` the sample comes from, if any.",
     )
     sample_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="When the telemetry sample was taken (UTC).",
     )
     requests: int = Field(default=1, ge=0, description="Sampled request count in the window.")
