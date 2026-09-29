@@ -1,6 +1,8 @@
 # NATS server with JetStream (spec §14 event stream).
-# Probes use the monitoring HTTP endpoint (8222, enabled by default in NATS
-# >= 2.2): /varz returns a JSON status document for a live server.
+# Probes use the monitoring HTTP endpoint (8222): /varz returns a JSON
+# status document for a live server. --http_port is passed explicitly
+# (durable in source) so the readiness/liveness probes pass on fresh
+# images regardless of server defaults.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -27,6 +29,8 @@ spec:
             - "--jetstream"
             - "--store_dir"
             - "/data/jetstream"
+            - "--http_port"
+            - "8222"
           ports:
             - name: nats-client
               containerPort: 4222

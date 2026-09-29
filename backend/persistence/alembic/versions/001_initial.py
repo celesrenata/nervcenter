@@ -12,27 +12,25 @@ Migration order
    - evidence (no dependencies)
    - entities (no dependencies)
    - relationships (depends on entities)
-   - claims (no dependencies)
-   - decisions (depends on claims)
-   - tasks (no dependencies)
-   - task_runs (depends on tasks)
+   - claims (depends on entities)
+   - planned_changes (no FK dependencies; matches the ORM model, which
+     declares no FK on ``source_decision_id``)
+   - decisions (depends on claims, planned_changes)
    - goals (no dependencies)
-   - agent_results (depends on tasks)
+   - tasks (depends on goals, decisions)
+   - task_runs (depends on tasks)
+   - agent_results (depends on task_runs)
+3. Add the deferred ``decisions.task_id -> tasks.id`` FK (the decisions/tasks
+   pair forms a bidirectional cycle that cannot be created inline).
 
-Vector columns
---------------
-- ``events.embedding`` — for semantic search over event payloads.
-- ``entities.embedding`` — optional entity embedding storage.
-
-Run
----
-
-    alembic upgrade head
-
-Rollback
---------
-
-    alembic downgrade -1
+In-place fix note
+-----------------
+This revision is the initial (and only) migration and was never successfully
+stamped in any environment (the cluster DB has no ``alembic_version`` row),
+so it is corrected in place rather than superseded by a new revision. The
+original revision created ``decisions`` before its FK target tables and
+omitted the ``planned_changes`` table entirely, so ``alembic upgrade``
+aborted on a fresh database.
 """
 
 import sqlalchemy as sa
@@ -182,7 +180,43 @@ def upgrade() -> None:
     op.create_index("ix_claims_status_subject", "claims", ["status", "subject_entity_id"], unique=False)
     op.create_index("ix_claims_status_created_at", "claims", ["status", "created_at"], unique=False)
 
+    # planned_changes
+    #
+    # Created before ``decisions`` so the ``decisions.planned_change_id`` FK
+    # below resolves at DDL time. The ORM model declares no FK on
+    # ``source_decision_id`` (it is a plain indexed UUID), so no FK is added
+    # here either — adding one to ``decisions.id`` would create an unresolvable
+    # decisions <-> planned_changes cycle in a single-transaction migration.
+    op.create_table(
+        "planned_changes",
+        sa.Column("id", sa.String(), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("schema_version", sa.String(length=16), nullable=False),
+        sa.Column("hash", sa.String(length=64), nullable=True),
+        sa.Column("change_type", sa.String(length=32), nullable=False),
+        sa.Column("title", sa.String(), nullable=False),
+        sa.Column("description", sa.String(), nullable=True),
+        sa.Column("status", sa.String(length=32), nullable=False),
+        sa.Column("risk_level", sa.Integer(), nullable=False),
+        sa.Column("subject_ids", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column("source_decision_id", sa.String(), nullable=True),
+        sa.Column("diff", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column("rollback", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column("proposed_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("expires_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("approval_id", sa.String(), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index("ix_planned_changes_change_type", "planned_changes", ["change_type"], unique=False)
+    op.create_index("ix_planned_changes_status", "planned_changes", ["status"], unique=False)
+    op.create_index("ix_planned_changes_source_decision_id", "planned_changes", ["source_decision_id"], unique=False)
+
     # decisions
+    #
+    # ``planned_change_id -> planned_changes.id`` is created inline (the target
+    # exists now). ``task_id -> tasks.id`` is intentionally NOT created inline:
+    # ``tasks`` is created later and also references ``decisions``, forming a
+    # cycle. That FK is added after ``tasks`` exists, below.
     op.create_table(
         "decisions",
         sa.Column("id", sa.String(), nullable=False),
@@ -201,12 +235,34 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.ForeignKeyConstraint(["claim_id"], ["claims.id"], ),
         sa.ForeignKeyConstraint(["planned_change_id"], ["planned_changes.id"], ),
-        sa.ForeignKeyConstraint(["task_id"], ["tasks.id"], ),
     )
     op.create_index("ix_decisions_claim_id", "decisions", ["claim_id"], unique=False)
     op.create_index("ix_decisions_claim_id_mechanism", "decisions", ["claim_id", "mechanism"], unique=False)
     op.create_index("ix_decisions_action", "decisions", ["action"], unique=False)
     op.create_index("ix_decisions_action_created_at", "decisions", ["action", "created_at"], unique=False)
+
+    # goals
+    op.create_table(
+        "goals",
+        sa.Column("id", sa.String(), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("schema_version", sa.String(length=16), nullable=False),
+        sa.Column("hash", sa.String(length=64), nullable=True),
+        sa.Column("title", sa.String(), nullable=False),
+        sa.Column("description", sa.String(), nullable=True),
+        sa.Column("status", sa.String(length=32), nullable=False),
+        sa.Column("progress", sa.Float(), nullable=False),
+        sa.Column("criteria", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column("subgoal_ids", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column("priority", sa.BigInteger(), nullable=False),
+        sa.Column("deadline", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("related_entity_ids", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index("ix_goals_status", "goals", ["status"], unique=False)
+    op.create_index("ix_goals_status_priority", "goals", ["status", "priority", "created_at"], unique=False)
+    op.create_index("ix_goals_status_deadline", "goals", ["status", "deadline"], unique=False)
+    op.create_index("ix_goals_subgoal_ids_gin", "goals", ["subgoal_ids"], unique=False, postgresql_using="gin")
 
     # tasks
     op.create_table(
@@ -265,29 +321,6 @@ def upgrade() -> None:
     op.create_index("ix_task_runs_agent_id", "task_runs", ["agent_id"], unique=False)
     op.create_index("ix_task_runs_model_id", "task_runs", ["model_id"], unique=False)
 
-    # goals
-    op.create_table(
-        "goals",
-        sa.Column("id", sa.String(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("schema_version", sa.String(length=16), nullable=False),
-        sa.Column("hash", sa.String(length=64), nullable=True),
-        sa.Column("title", sa.String(), nullable=False),
-        sa.Column("description", sa.String(), nullable=True),
-        sa.Column("status", sa.String(length=32), nullable=False),
-        sa.Column("progress", sa.Float(), nullable=False),
-        sa.Column("criteria", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column("subgoal_ids", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column("priority", sa.BigInteger(), nullable=False),
-        sa.Column("deadline", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("related_entity_ids", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.PrimaryKeyConstraint("id"),
-    )
-    op.create_index("ix_goals_status", "goals", ["status"], unique=False)
-    op.create_index("ix_goals_status_priority", "goals", ["status", "priority", "created_at"], unique=False)
-    op.create_index("ix_goals_status_deadline", "goals", ["status", "deadline"], unique=False)
-    op.create_index("ix_goals_subgoal_ids_gin", "goals", ["subgoal_ids"], unique=False, postgresql_using="gin")
-
     # agent_results
     op.create_table(
         "agent_results",
@@ -313,50 +346,28 @@ def upgrade() -> None:
     op.create_index("ix_agent_results_agent_id", "agent_results", ["agent_id"], unique=False)
     op.create_index("ix_agent_results_agent_id_created_at", "agent_results", ["agent_id", "created_at"], unique=False)
 
-    # planned_changes (used by decisions)
-    op.create_table(
-        "planned_changes",
-        sa.Column("id", sa.String(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("schema_version", sa.String(length=16), nullable=False),
-        sa.Column("hash", sa.String(length=64), nullable=True),
-        sa.Column("change_type", sa.String(length=32), nullable=False),
-        sa.Column("title", sa.String(), nullable=False),
-        sa.Column("description", sa.String(), nullable=True),
-        sa.Column("status", sa.String(length=32), nullable=False),
-        sa.Column("risk_level", sa.Integer(), nullable=False),
-        sa.Column("subject_ids", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column("source_decision_id", sa.String(), nullable=True),
-        sa.Column("diff", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column("rollback", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column("proposed_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("expires_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("approval_id", sa.String(), nullable=True),
-        sa.PrimaryKeyConstraint("id"),
-        sa.ForeignKeyConstraint(["source_decision_id"], ["decisions.id"], ),
+    # Deferred FK: decisions.task_id -> tasks.id
+    # Added after ``tasks`` exists so the decisions <-> tasks cycle resolves.
+    op.create_foreign_key(
+        "decisions_fk_task_id_tasks",
+        source_table="decisions",
+        referent_table="tasks",
+        local_cols=["task_id"],
+        remote_cols=["id"],
     )
-    op.create_index("ix_planned_changes_change_type", "planned_changes", ["change_type"], unique=False)
-    op.create_index("ix_planned_changes_status", "planned_changes", ["status"], unique=False)
-    op.create_index("ix_planned_changes_source_decision_id", "planned_changes", ["source_decision_id"], unique=False)
 
 
 def downgrade() -> None:
-    op.drop_index("ix_planned_changes_source_decision_id", table_name="planned_changes")
-    op.drop_index("ix_planned_changes_status", table_name="planned_changes")
-    op.drop_index("ix_planned_changes_change_type", table_name="planned_changes")
-    op.drop_table("planned_changes")
+    # Drop the deferred cycle-breaking FK first, then reverse the create order.
+    op.drop_constraint(
+        "decisions_fk_task_id_tasks", "decisions", type_="foreignkey"
+    )
 
     op.drop_index("ix_agent_results_agent_id_created_at", table_name="agent_results")
     op.drop_index("ix_agent_results_agent_id", table_name="agent_results")
     op.drop_index("ix_agent_results_task_run_id_status", table_name="agent_results")
     op.drop_index("ix_agent_results_task_run_id", table_name="agent_results")
     op.drop_table("agent_results")
-
-    op.drop_index("ix_goals_subgoal_ids_gin", table_name="goals")
-    op.drop_index("ix_goals_status_deadline", table_name="goals")
-    op.drop_index("ix_goals_status_priority", table_name="goals")
-    op.drop_index("ix_goals_status", table_name="goals")
-    op.drop_table("goals")
 
     op.drop_index("ix_task_runs_model_id", table_name="task_runs")
     op.drop_index("ix_task_runs_agent_id", table_name="task_runs")
@@ -374,11 +385,22 @@ def downgrade() -> None:
     op.drop_index("ix_tasks_status", table_name="tasks")
     op.drop_table("tasks")
 
+    op.drop_index("ix_goals_subgoal_ids_gin", table_name="goals")
+    op.drop_index("ix_goals_status_deadline", table_name="goals")
+    op.drop_index("ix_goals_status_priority", table_name="goals")
+    op.drop_index("ix_goals_status", table_name="goals")
+    op.drop_table("goals")
+
     op.drop_index("ix_decisions_action_created_at", table_name="decisions")
     op.drop_index("ix_decisions_action", table_name="decisions")
     op.drop_index("ix_decisions_claim_id_mechanism", table_name="decisions")
     op.drop_index("ix_decisions_claim_id", table_name="decisions")
     op.drop_table("decisions")
+
+    op.drop_index("ix_planned_changes_source_decision_id", table_name="planned_changes")
+    op.drop_index("ix_planned_changes_status", table_name="planned_changes")
+    op.drop_index("ix_planned_changes_change_type", table_name="planned_changes")
+    op.drop_table("planned_changes")
 
     op.drop_index("ix_claims_status_created_at", table_name="claims")
     op.drop_index("ix_claims_status_subject", table_name="claims")

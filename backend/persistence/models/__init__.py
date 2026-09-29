@@ -23,6 +23,7 @@ from .entities import Entity
 from .events import Event
 from .evidence import Evidence
 from .goals import AgentResult, Goal
+from .planned_changes import PlannedChange
 from .relationships import Relationship
 from .tasks import Task, TaskRun
 
@@ -43,4 +44,5 @@ __all__ = [
     "TaskRun",
     "Goal",
     "AgentResult",
+    "PlannedChange",
 ]

@@ -7,7 +7,7 @@
 #   3. build    — Dockerfile.api (repo root) + web/Dockerfile -> local images
 #   4. push     — registry.celestium.life/nervecenter/{api,web}:TAG
 #   5. secrets  — ensure ns nervecenter exists; copy harbor-pull into the ns
-#   6. apply    — kubectl apply -k deployments/kubernetes (retag via --image)
+#   6. apply    — render kustomize to yaml, sed-retag :latest -> TAG, apply (amd64)
 #   7. wait     — migration Job Complete, then workloads Available/Ready
 #   8. probe    — in-pod /api/health (python stdlib) + web index (wget)
 #   9. print    — ingress URL https://nervecenter.celestium.life
@@ -79,10 +79,10 @@ else
 fi
 
 # --- 4. build + push -----------------------------------------------------------
-log "building ${API_TAG}"
-docker build -f Dockerfile.api -t "${API_TAG}" .
-log "building ${WEB_TAG}"
-docker build -f web/Dockerfile -t "${WEB_TAG}" web/
+log "building ${API_TAG} (linux/amd64)"
+docker build --platform linux/amd64 -f Dockerfile.api -t "${API_TAG}" .
+log "building ${WEB_TAG} (linux/amd64)"
+docker build --platform linux/amd64 -f web/Dockerfile -t "${WEB_TAG}" web/
 log "pushing images"
 docker push "${API_TAG}"
 docker push "${WEB_TAG}"
@@ -103,15 +103,27 @@ if ! kubectl -n "${NS}" get secret harbor-pull >/dev/null 2>&1; then
 fi
 
 # --- 6. apply manifests (image retag to build tag) ---------------------------------
-# Base manifests carry the :latest placeholder; the kustomize --image transformer
-# rewrites every occurrence (api Deployment, migrate Job, web Deployment).
+# Base manifests carry the :latest placeholder. `kubectl apply` has no --image
+# flag (that invocation fails with "unknown flag: --image"). To retag, we render
+# the full kustomize tree to yaml, rewrite the api/web :latest tags to the build
+# tag with sed (portable to BSD/macOS sed — no in-place -i), and apply the
+# rendered file. This rewrites every occurrence (api Deployment, migrate Job,
+# web Deployment).
+#
+# IMPORTANT — the render MUST use `kubectl kustomize`, NOT `kubectl apply -k -o yaml`.
+# `kubectl apply` is a *live* apply even with `-o yaml`: it writes to the cluster
+# first (retagging the RUNNING api/web to the placeholder :latest -> ImagePullBackOff
+# and re-rolling the Deployments) and only then prints the YAML to stdout.
+# `kubectl kustomize` is the pure, no-side-effect render that produces the identical
+# manifest set, so the single `kubectl apply -f` below is the only cluster write.
 # Delete the old Job first so the migration re-runs on the new image
 # (alembic upgrade head is idempotent — no-op when the schema is at head).
 log "re-running migration job + applying kustomize base (image retag -> ${TAG})"
 kubectl -n "${NS}" delete job nervecenter-migrate --ignore-not-found=true
-kubectl apply -k "${KUSTOMIZE_DIR}" \
-  --image "${API_IMAGE}:latest=${API_TAG}" \
-  --image "${WEB_IMAGE}:latest=${WEB_TAG}"
+kubectl kustomize "${KUSTOMIZE_DIR}" \
+  | sed "s|${API_IMAGE}:latest|${API_IMAGE}:${TAG}|g; s|${WEB_IMAGE}:latest|${WEB_IMAGE}:${TAG}|g" \
+  > /tmp/rendered.yaml
+kubectl apply -f /tmp/rendered.yaml
 
 # --- 7. wait for workloads ------------------------------------------------------
 # Migration Job completes first (schema at head before the api is useful).

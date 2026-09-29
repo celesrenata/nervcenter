@@ -117,7 +117,14 @@ workstreams:
       - Result: Init command implemented
       - File: `backend/persistence/migrate.py` - initdb entrypoint
       - File: `backend/persistence/connection.py` (408 lines)
-      - File: `backend/persistence/models/*.py` - 11 model files
+      - File: `backend/persistence/models/*.py` - 12 model files (incl. new planned_changes.py)
+      - Command: `.venv/bin/python -c "from backend.persistence.models import Base, PlannedChange; print('TAB', PlannedChange.__tablename__)"`
+      - Result: `TAB planned_changes` (T-DEPMIGRATE)
+      - Command: FK check — `Base.metadata.tables['decisions'].columns['planned_change_id'].foreign_keys`
+      - Result: FK_OK — `target_fullname == 'planned_changes.id'` (attached via `Table.append_constraint` in planned_changes.py; the verbatim one-liner in the task spec has a SyntaxError in its list-comp, so the corrected equivalent is what runs)
+      - Command: `alembic upgrade head` against a throwaway pgvector/pgvector:pg16 container (not the cluster)
+      - Result: upgraded to 001_initial — 12 tables, planned_changes (16 cols, 3 indexes + PK), decisions FKs {claim_id, planned_change_id, task_id}, tasks FKs {goal_id, decision_id, parent_task_id}; `alembic downgrade -1` returns to empty schema
+      - Defect fixed (T-DEPMIGRATE): 001_initial.py created `decisions` before its FK target tables (`planned_changes` was created last / after `decisions`, `goals` after `tasks`) and the ORM `Decision` had no FK on `planned_change_id`; fresh `alembic upgrade` aborted with `relation "planned_changes" does not exist`. Fixed in place (revision was never stamped anywhere): `planned_changes` now created before `decisions`, `goals` before `tasks`, and the decisions<->tasks cycle is broken by a deferred `op.create_foreign_key` after `tasks`
 
   - id: ws-07
     name: Testing
@@ -131,6 +138,26 @@ workstreams:
       - Command: `.venv/bin/python -m pytest tests/ -m "not integration" -q`
       - Result: 9 collected, 9 passed (post-integration)
       - Files: `tests/backend/test_agents.py`, `tests/backend/test_persistence.py`, etc.
+
+  - id: ws-08
+    name: Deploy (Docker + k8s + Harbor)
+    owner: deploy
+    paths:
+      - deployments
+      - Dockerfile.api
+      - web/Dockerfile
+    description: >
+      Container images, Kubernetes base manifests, and the Harbor-based
+      deploy.sh flow (build, push, retag, apply, probe).
+    status: done
+    evidence:
+      - Command: `bash -n deployments/harbor/deploy.sh`
+      - Result: exit 0 (T-DEPMIGRATE)
+      - Command: `kubectl apply -k deployments/kubernetes --dry-run=server`
+      - Result: objects accepted in server dry-run (T-DEPMIGRATE; the pre-existing cluster Job already exists so apply reports field-immutable — expected)
+      - Defect fixed (T-DEPMIGRATE): deploy.sh retag step invoked `kubectl apply -k ... --image` — `kubectl apply` has no `--image` flag; replaced with `kubectl kustomize` (pure render, no cluster write) piped through `sed` to /tmp/rendered.yaml, then `kubectl apply -f /tmp/rendered.yaml`
+      - Defect fixed (T-DEPMIGRATE): both `docker build` invocations now pass `--platform linux/amd64` (cluster nodes are amd64; prior arm64 builds caused `exec /usr/local/bin/uvicorn: no such file or directory`)
+      - Defect fixed (T-DEPMIGRATE): nats-deployment.yaml container args now include `--http_port 8222` so the :8222/varz liveness+readiness probes pass on fresh images (durable in source; parent had live-patched the cluster)
 
 cross-workstream-defects:
   - id: def-001
