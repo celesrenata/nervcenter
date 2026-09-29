@@ -34,6 +34,7 @@ from backend.api.endpoints import (
 )
 from backend.api.health import router as health_router
 from backend.api.observability import router as observability_router
+from backend.api.wiring import install_dependency_wiring
 
 ALL_ROUTERS = (
     agents.router,
@@ -132,6 +133,7 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 _configure(app)
+install_dependency_wiring(app)
 
 
 @app.on_event("startup")
@@ -155,6 +157,7 @@ def create_app() -> FastAPI:
         openapi_url="/openapi.json",
     )
     _configure(new_app)
+    install_dependency_wiring(new_app)
 
     @new_app.on_event("startup")
     async def setup_openapi():

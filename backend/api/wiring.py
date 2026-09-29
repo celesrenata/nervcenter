@@ -1,0 +1,253 @@
+"""Startup wiring of durable dependencies (DB engine + NATS client) onto app.state.
+
+The health probes in :mod:`backend.api.health` read ``app.state.db_engine`` and
+``app.state.nats_client``.  Before this module, neither attribute was ever
+populated, so ``GET /api/health`` always reported ``"not configured"`` even
+when the deployment environment carried valid URLs.
+
+Environment contract
+--------------------
+The deploy contract names the variables ``NERVE_DB_URL`` / ``NERVE_NATS_URL``;
+the backend runtime historically read ``NERVECENTER_DATABASE_URL`` /
+``NERVECENTER_NATS_URL`` (see :data:`backend.persistence.connection.ENV_DATABASE_URL`
+and :data:`backend.events.nats_client.ENV_NATS_URL`).  The ``NERVE_*`` names
+take precedence; the ``NERVECENTER_*`` names are the fallback.
+
+Tolerance rules
+---------------
+- URL env missing  → the attribute is set to ``None``, health reports
+  ``not configured`` (liveness and readiness keep returning HTTP 200).
+- Dependency unreachable → the attribute is still set to a real object: the
+  async engine is lazy (created without connecting) and the NATS client is
+  stored after a *bounded* connect attempt, so health reports a real
+  ``unreachable`` probe result instead of ``not configured``.
+- Startup must never raise or block for more than a few seconds.
+
+Known factory defect (worked around, not fixed — ``backend/persistence`` is
+out of scope): :func:`backend.persistence.connection.create_engine` logs via
+``redact_url``, which calls ``urlsplit(url)._replace(password="***")``.  Since
+``SplitResult`` is a named tuple of ``(scheme, netloc, path, query,
+fragment)`` and ``password`` is only a property, that call raises
+``ValueError: Got unexpected field names: ['password']`` for **any** URL with
+embedded credentials.  :func:`build_db_engine` therefore falls back to
+equivalent direct engine construction (same pool class, knobs, and connect
+args) whenever the factory raises.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import os
+from dataclasses import replace
+from typing import Any
+from urllib.parse import urlsplit, urlunsplit
+
+import structlog
+from fastapi import FastAPI
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.pool import AsyncAdaptedQueuePool
+
+from backend.events.nats_client import (
+    ENV_NATS_URL,
+    NatsClient,
+)
+from backend.events.nats_client import config_from_env as nats_config_from_env
+from backend.persistence.connection import (
+    ENV_DATABASE_URL,
+    DatabaseConfig,
+    create_engine,
+    dispose_engine,
+)
+
+log = structlog.get_logger(__name__)
+
+#: Deploy-contract DB URL name; takes precedence over ``ENV_DATABASE_URL``.
+ENV_DB_URL_PRIMARY = "NERVE_DB_URL"
+
+#: Deploy-contract NATS URL name; takes precedence over ``ENV_NATS_URL``.
+ENV_NATS_URL_PRIMARY = "NERVE_NATS_URL"
+
+#: Hard upper bound (seconds) for the eager NATS connect attempt at startup.
+NATS_CONNECT_TIMEOUT_S = 5.0
+
+
+def _safe_redact(url: str) -> str:
+    """Mask the password in ``url`` for safe logging.
+
+    Uses only real :class:`~urllib.parse.SplitResult` fields (``netloc``), so
+    — unlike :func:`backend.persistence.connection.redact_url` — it cannot
+    raise for URLs with embedded credentials.
+    """
+
+    parts = urlsplit(url)
+    netloc = parts.netloc
+    if "@" in netloc:
+        userinfo, _, host = netloc.rpartition("@")
+        netloc = f"{userinfo.split(':', 1)[0]}:***@{host}"
+    return urlunsplit(parts._replace(netloc=netloc))
+
+
+def resolve_db_url() -> str | None:
+    """Return the configured DB URL, or ``None`` when no URL env is set.
+
+    Reads ``NERVE_DB_URL`` first, then the historical ``NERVECENTER_DATABASE_URL``
+    (``ENV_DATABASE_URL``).  Unlike
+    :func:`backend.persistence.connection.config_from_env`, this returns
+    ``None`` instead of falling back to the local dev default, so missing
+    configuration degrades to ``not configured`` rather than silently pointing
+    at ``localhost:5432``.
+    """
+
+    return os.environ.get(ENV_DB_URL_PRIMARY) or os.environ.get(ENV_DATABASE_URL)
+
+
+def resolve_nats_url() -> str | None:
+    """Return the configured NATS URL, or ``None`` when no URL env is set.
+
+    Reads ``NERVE_NATS_URL`` first, then the historical ``NERVECENTER_NATS_URL``
+    (``ENV_NATS_URL``).
+    """
+
+    return os.environ.get(ENV_NATS_URL_PRIMARY) or os.environ.get(ENV_NATS_URL)
+
+
+def _build_fallback_engine(url: str) -> AsyncEngine:
+    """Build the engine directly when the standard factory is unusable.
+
+    Mirrors :func:`backend.persistence.connection.create_engine` exactly
+    (same pool class, knobs, and connect args) except for the URL-redaction
+    logging step, which currently raises for URLs with embedded credentials.
+    """
+
+    cfg = DatabaseConfig(url=url)  # validates the asyncpg dialect
+    connect_args: dict[str, Any] = {}
+    if cfg.connect_timeout is not None:
+        connect_args["timeout"] = cfg.connect_timeout
+    if cfg.ssl_mode is not None:
+        connect_args["ssl"] = cfg.ssl_mode == "require"
+
+    engine = create_async_engine(
+        cfg.url,
+        poolclass=AsyncAdaptedQueuePool,
+        pool_size=cfg.pool_size,
+        max_overflow=cfg.max_overflow,
+        pool_recycle=cfg.pool_recycle,
+        pool_pre_ping=cfg.pool_pre_ping,
+        echo=cfg.echo,
+        connect_args=connect_args or None,
+    )
+    return engine
+
+
+def build_db_engine() -> AsyncEngine | None:
+    """Create the async engine from the resolved URL; ``None`` when unset.
+
+    Uses the existing URL→engine factory
+    :func:`backend.persistence.connection.create_engine`, which is lazy: no
+    network I/O happens until the first query, so this cannot block startup
+    even when the database is unreachable.  If the factory itself raises (see
+    the known ``redact_url`` defect in the module docstring), an equivalent
+    engine is built directly instead of letting startup fail.
+    """
+
+    url = resolve_db_url()
+    if url is None:
+        return None
+    try:
+        engine = create_engine(url=url)
+    except Exception as exc:  # noqa: BLE001 - factory defect must not break startup
+        log.warning("api.wiring.db_factory_failed", error=str(exc))
+        engine = _build_fallback_engine(url)
+    log.info("api.wiring.db_engine_created", url=_safe_redact(url))
+    return engine
+
+
+def build_nats_client() -> NatsClient | None:
+    """Build the NATS client from the resolved URL; ``None`` when unset.
+
+    The other ``NERVECENTER_NATS_*`` knobs still come from
+    :func:`backend.events.nats_client.config_from_env`; only the URL is
+    overridden when the deploy-contract variable wins the precedence.  No
+    connection is opened here — see :func:`wire_dependencies`.
+    """
+
+    url = resolve_nats_url()
+    if url is None:
+        return None
+    config = nats_config_from_env()
+    if config.url != url:
+        config = replace(config, url=url)
+    return NatsClient(config)
+
+
+async def wire_dependencies(target: FastAPI) -> None:
+    """Populate ``target.state.db_engine`` / ``target.state.nats_client``.
+
+    Every failure (bad URL, unreachable server, timeout) is logged, never
+    raised: the Kubernetes liveness and readiness probes both hit
+    ``/api/health`` and must keep receiving HTTP 200.
+    """
+
+    try:
+        target.state.db_engine = build_db_engine()
+    except Exception as exc:  # noqa: BLE001 - startup must not crash on config errors
+        log.warning("api.wiring.db_engine_failed", error=str(exc))
+        target.state.db_engine = None
+
+    nats_client: NatsClient | None
+    try:
+        nats_client = build_nats_client()
+    except Exception as exc:  # noqa: BLE001 - startup must not crash on config errors
+        log.warning("api.wiring.nats_client_failed", error=str(exc))
+        nats_client = None
+
+    target.state.nats_client = nats_client
+    if nats_client is not None:
+        # Store the client even when the connect attempt fails: health must
+        # report a real ``unreachable`` probe (``connected: false``) instead
+        # of ``"NATS is not configured"``.  The attempt is bounded so startup
+        # never blocks for more than a few seconds.
+        try:
+            await asyncio.wait_for(nats_client.connect(), timeout=NATS_CONNECT_TIMEOUT_S)
+        except Exception as exc:  # noqa: BLE001 - unreachable NATS must not block startup
+            log.warning("api.wiring.nats_connect_failed", error=str(exc))
+
+
+async def teardown_dependencies(target: FastAPI) -> None:
+    """Dispose the engine and disconnect NATS; absence of either is a no-op."""
+
+    engine = getattr(target.state, "db_engine", None)
+    if engine is not None:
+        try:
+            await dispose_engine(engine)
+        except Exception as exc:  # noqa: BLE001 - shutdown must not raise
+            log.warning("api.wiring.db_dispose_failed", error=str(exc))
+        target.state.db_engine = None
+
+    client = getattr(target.state, "nats_client", None)
+    if client is not None:
+        try:
+            await client.disconnect()
+        except Exception as exc:  # noqa: BLE001 - shutdown must not raise
+            log.warning("api.wiring.nats_disconnect_failed", error=str(exc))
+        target.state.nats_client = None
+
+
+def install_dependency_wiring(target: FastAPI) -> None:
+    """Register the startup/shutdown handlers on ``target``.
+
+    Applied to BOTH the module-level ``app`` and ``create_app()`` in
+    :mod:`backend.api.app` so that both instances wire their dependencies the
+    same way.  Kept in the existing ``@app.on_event`` style (no lifespan
+    refactor).
+    """
+
+    @target.on_event("startup")
+    async def _wire_dependencies() -> None:
+        """Wire the DB engine and NATS client onto app.state at startup."""
+        await wire_dependencies(target)
+
+    @target.on_event("shutdown")
+    async def _unwrap_dependencies() -> None:
+        """Dispose the DB engine and disconnect NATS at shutdown."""
+        await teardown_dependencies(target)
