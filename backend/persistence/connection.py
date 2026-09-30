@@ -144,12 +144,20 @@ def config_from_env() -> DatabaseConfig:
 
 
 def redact_url(url: str) -> str:
-    """Return ``url`` with any embedded password masked, for safe logging."""
+    """Return ``url`` with any embedded password masked, for safe logging.
+
+    Masks via ``netloc`` only (a real :class:`~urllib.parse.SplitResult`
+    field) so URLs with embedded credentials never raise: ``password`` is
+    a read-only property on ``SplitResult`` and cannot be set via
+    ``_replace``.
+    """
 
     parts = urlsplit(url)
-    if parts.password:
-        parts = parts._replace(password="***")
-    return urlunsplit(parts)
+    netloc = parts.netloc
+    if "@" in netloc:
+        userinfo, _, host = netloc.rpartition("@")
+        netloc = f"{userinfo.split(':', 1)[0]}:***@{host}"
+    return urlunsplit(parts._replace(netloc=netloc))
 
 
 def create_engine(config: DatabaseConfig | None = None, *, url: str | None = None) -> AsyncEngine:

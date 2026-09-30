@@ -240,7 +240,6 @@ class NatsClient:
                 allow_reconnect=True,
                 max_reconnect_attempts=self._config.max_reconnects,
                 reconnect_time_wait=self._config.reconnect_wait_ms / 1000.0,
-                max_payload=self._config.max_msg_size,
                 error_cb=self._on_error,
                 disconnected_cb=self._on_disconnect,
                 reconnected_cb=self._on_reconnect,
@@ -256,6 +255,17 @@ class NatsClient:
         self._js = client.jetstream()
         self._connected = True
         log.info("nats.connected", url=self._config.url)
+
+        # The payload limit is advertised by the server in the INFO
+        # frame (nats-py exposes it via ``client.max_payload``); check it
+        # against our configured expectation without failing the connect.
+        server_max = client.max_payload
+        if server_max is not None and server_max < self._config.max_msg_size:
+            log.warning(
+                "nats.payload_limit_smaller",
+                server_max=server_max,
+                configured_max=self._config.max_msg_size,
+            )
 
     async def disconnect(self) -> None:
         """Cleanly disconnect from the NATS server.
