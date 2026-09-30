@@ -456,12 +456,12 @@ class NatsClient:
             return report
 
         try:
-            info = self._client.info
-            if info is not None:
+            info = getattr(self._client, "_server_info", None) or {}
+            if info:
                 report["server_info"] = {
-                    "server_id": getattr(info, "id", None),
-                    "version": getattr(info, "version", None),
-                    "git_commit": getattr(info, "git_commit", None),
+                    "server_id": info.get("server_id") or info.get("id"),
+                    "version": info.get("version"),
+                    "git_commit": info.get("git_commit"),
                 }
         except Exception as exc:
             report["error"] = str(exc)

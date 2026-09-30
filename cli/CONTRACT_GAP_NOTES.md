@@ -8,7 +8,7 @@ the **actual** backend routes (read-only audit of `backend/api/app.py` and
 
 The backend currently exposes **only GET routes** for the §46 collections
 (plus `/auth/login|refresh|logout`). There is no POST router anywhere in
-`backend/api/**` for any of the §47 mutation/ask operations:
+`backend/api/**` for any of the §7 mutation/ask operations:
 
 | §47 command      | Canonical target path        | Backend status |
 |------------------|------------------------------|----------------|
@@ -74,3 +74,36 @@ rendered output — matching the "health stays 200" contract.
 (`mcp/api.py`) sends it as the HTTP header `Nerve-Trace-Id`. The CLI and
 both SDKs follow the same convention (`Nerve-Trace-Id`) so all three
 client layers correlate identically.
+
+## Resolved
+
+T-BE-FIX (this commit) implemented the four canonical POST endpoints listed
+in section 1. The historical findings above are preserved verbatim; the
+paths now exist and no longer return 405:
+
+| §47 command      | Implemented route                  | Service / method probe (in order)            | Request body                      |
+|------------------|------------------------------------|----------------------------------------------|-----------------------------------|
+| `nerve ask "…"`  | `POST /api/context/ask`            | `context` → `ask`, `compile`, `list`         | `{"question": "..."}` (alias `query`) |
+| `nerve pause-agents` | `POST /api/agents/pause`       | `agents` → `pause`, `pause_agents`           | none                              |
+| `nerve stop-mutations` | `POST /api/changes/stop-mutations` | `orchestration` → `stop_mutations`, `stop_mutation` | none                          |
+| `nerve incident investigate <name>` | `POST /api/incidents/investigate` | `orchestration` → `investigate`     | `{"entity": "..."}` (alias `name`) |
+
+Response contract (all four routes), via `make_write_endpoint` in
+`backend/api/endpoints/_helpers.py`:
+
+- **200** when a configured service method executed successfully:
+  `{"accepted": true, "executed": true, "service": <name>, "method":
+  <method used>, "detail": null, "result": <json-safe result>,
+  "request_id": <uuid4>, "timestamp": <iso8601>}`.
+- **202** when the contract is acknowledged but nothing executed — no
+  service configured, no matching method, or the method raised — keeping
+  the API bootable without dependencies (mirrors the `make_read_router`
+  dependency-tolerance): `{"accepted": true, "executed": false,
+  "service": <name>, "detail": <reason>, "result": null,
+  "request_id": <uuid4>, "timestamp": <iso8601>}`.
+
+When a request body is accepted, the first present key from the
+endpoint's `arg_keys` is forwarded as the single positional argument to
+the service method, but only when the method's signature (checked with
+`inspect.signature`) accepts a positional parameter; zero-arg methods are
+called with no arguments.
