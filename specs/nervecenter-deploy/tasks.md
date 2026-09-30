@@ -85,3 +85,13 @@ Scope: `apple/Shared/` SwiftPM package (NerveModels/NerveAPI/NerveAuth/NervePers
 ## Verification Log
 
 *(updated per task completion — commands, results, gaps)*
+
+### T-WEBE2E / AC005 — Web UI e2e audit (Playwright)
+
+- Command: `cd web && npm run e2e` (self-contained: globalSetup boots `NERVE_MOCK_INFER=1 .venv/bin/python -m uvicorn backend.api.app:app` on :8000, Vite dev server on :3000 with `VITE_API_BASE=/api`, then 10 view-render tests + Ask round-trip on chromium; globalTeardown stops the backend)
+- Result: **11 passed (14.1s)** under Node v24.20.0 / chromium 1243 — every spec view (Overview, Systems, Timeline, Goals, Task DAG, Agents, Inference, Incidents, Decisions, Ask) renders without console errors; Ask round-trip asserts the real 202 `accepted/executed:false/service:context` ack and renders it with zero console errors.
+- Defect found & fixed (blocking): `@playwright/test` 1.48 wedged indefinitely under Node 24 — its `requireOrImport` (`lib/transform/transform.js`) does `eval(import(global-setup.mjs))` and the dynamic import never resolves (sample stack: stuck in `ImportModuleDynamicallyWithPhase`, 0 output, 10+ min; minimal A/B repro with the real global-setup hook: Node 22 = 1s pass, Node 24 = hard-timeout hang). Fixed by bumping `@playwright/test` 1.48 → `^1.63.0`; requires `npx playwright install chromium` once after install.
+- Defect found & fixed: the documented 404 console filter in `views.spec.ts`/`ask.spec.ts` parsed the URL out of the console *text* (`text.split(' (').pop()` → `"Not Found"`), which can never match — the URL of a "Failed to load resource" console error is on `msg.location().url`, not `msg.text()` (verified empirically). The proven dead-ends `/api/systems` + `/api/decisions` (404 live; neither is in spec §46's endpoint groups; views degrade to empty state) therefore failed `/systems` + `/decisions`.
+- Defect found & fixed: `ask.spec.ts` user-bubble assertion was a strict-mode violation — the question string also renders in the permanent "Quick Questions" suggestion button; scoped to `p.whitespace-pre-wrap`.
+- Companion gates: `cd web && npm run build` → exit 0 (tsc + vite, 49 modules); `.venv/bin/python -m pytest tests/ -m "not integration" -q` → 38 passed.
+- Commit: `c34712b`
