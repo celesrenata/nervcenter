@@ -19,8 +19,8 @@ import { LoginView } from './views/LoginView'
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginView />} />
           <Route
@@ -41,8 +41,8 @@ function App() {
             <Route path="/ask" element={<AskView />} />
           </Route>
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   )
 }
 

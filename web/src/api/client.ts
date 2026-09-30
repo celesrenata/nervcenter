@@ -19,6 +19,37 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 // ─── Real API implementation ──────────────────────────────────────────────────
 
+/**
+ * Extract the item list from a real API list response.
+ *
+ * The backend list endpoints (§46) wrap collections in a
+ * `{ data: [...], meta: {...} }` envelope, while the views (and the mock
+ * fixtures) consume plain arrays. Non-list responses — a 404 body, a
+ * single-item object (e.g. `/models/history` when the backend resolves it as
+ * one resource), or an unparsable body — degrade to an empty list so that a
+ * view renders its empty state instead of crashing on `.map()`.
+ */
+// Returns `any[]` (not `unknown[]`) so the views keep assigning
+// `response.data` to their typed state exactly as the mock fixtures do.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const listFromResponse = async (res: Response): Promise<any[]> => {
+  let body: any
+  try {
+    body = await res.json()
+  } catch {
+    return []
+  }
+  if (Array.isArray(body)) return body
+  if (
+    body !== null &&
+    typeof body === 'object' &&
+    Array.isArray((body as { data?: unknown }).data)
+  ) {
+    return (body as { data: unknown[] }).data
+  }
+  return []
+}
+
 const realApi = {
   // Health & Overview
   getOverview: async () => {
@@ -33,7 +64,7 @@ const realApi = {
   // Tasks (Task DAG with 8 states)
   getTasks: async () => {
     const res = await fetch(`${API_BASE}/tasks`)
-    return { data: await res.json(), status: res.status }
+    return { data: await listFromResponse(res), status: res.status }
   },
   getTask: async (taskId: string) => {
     const res = await fetch(`${API_BASE}/tasks/${taskId}`)
@@ -43,7 +74,7 @@ const realApi = {
   // Agents
   getAgents: async () => {
     const res = await fetch(`${API_BASE}/agents`)
-    return { data: await res.json(), status: res.status }
+    return { data: await listFromResponse(res), status: res.status }
   },
   getAgent: async (agentId: string) => {
     const res = await fetch(`${API_BASE}/agents/${agentId}`)
@@ -53,7 +84,7 @@ const realApi = {
   // Compute nodes (for Inference view)
   getComputeNodes: async () => {
     const res = await fetch(`${API_BASE}/compute`)
-    return { data: await res.json(), status: res.status }
+    return { data: await listFromResponse(res), status: res.status }
   },
   getComputeNode: async (nodeId: string) => {
     const res = await fetch(`${API_BASE}/compute/${nodeId}`)
@@ -63,7 +94,7 @@ const realApi = {
   // OmniRoute routes (for Inference view)
   getRoutes: async () => {
     const res = await fetch(`${API_BASE}/routes`)
-    return { data: await res.json(), status: res.status }
+    return { data: await listFromResponse(res), status: res.status }
   },
   getRoute: async (routeId: string) => {
     const res = await fetch(`${API_BASE}/routes/${routeId}`)
@@ -73,13 +104,13 @@ const realApi = {
   // Historical model performance (for Inference view)
   getModelHistory: async () => {
     const res = await fetch(`${API_BASE}/models/history`)
-    return { data: await res.json(), status: res.status }
+    return { data: await listFromResponse(res), status: res.status }
   },
 
   // Incidents
   getIncidents: async () => {
     const res = await fetch(`${API_BASE}/incidents`)
-    return { data: await res.json(), status: res.status }
+    return { data: await listFromResponse(res), status: res.status }
   },
   getIncident: async (incidentId: string) => {
     const res = await fetch(`${API_BASE}/incidents/${incidentId}`)
@@ -89,7 +120,7 @@ const realApi = {
   // Decisions
   getDecisions: async () => {
     const res = await fetch(`${API_BASE}/decisions`)
-    return { data: await res.json(), status: res.status }
+    return { data: await listFromResponse(res), status: res.status }
   },
   getDecision: async (decisionId: string) => {
     const res = await fetch(`${API_BASE}/decisions/${decisionId}`)
@@ -99,7 +130,7 @@ const realApi = {
   // Events (Timeline)
   getEvents: async () => {
     const res = await fetch(`${API_BASE}/events`)
-    return { data: await res.json(), status: res.status }
+    return { data: await listFromResponse(res), status: res.status }
   },
   getEvent: async (eventId: string) => {
     const res = await fetch(`${API_BASE}/events/${eventId}`)
@@ -109,19 +140,22 @@ const realApi = {
   // Systems health
   getSystems: async () => {
     const res = await fetch(`${API_BASE}/systems`)
-    return { data: await res.json(), status: res.status }
+    return { data: await listFromResponse(res), status: res.status }
   },
   getMetrics: async () => {
     const res = await fetch(`${API_BASE}/metrics`)
     return { data: await res.json(), status: res.status }
   },
 
-  // Ask endpoint
+  // Ask endpoint — §47 `nerve ask` → POST /api/context/ask.
+  // Returns the full answer (200) or the accepted-but-not-executed ack
+  // (202, `{accepted, executed, detail, request_id, ...}`); AskView renders
+  // whichever shape arrives.
   postAsk: async (message: string) => {
-    const res = await fetch(`${API_BASE}/ask`, {
+    const res = await fetch(`${API_BASE}/context/ask`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ question: message, message }),
     })
     return { data: await res.json(), status: res.status }
   },
@@ -129,7 +163,7 @@ const realApi = {
   // Goals
   getGoals: async () => {
     const res = await fetch(`${API_BASE}/goals`)
-    return { data: await res.json(), status: res.status }
+    return { data: await listFromResponse(res), status: res.status }
   },
   getGoal: async (goalId: string) => {
     const res = await fetch(`${API_BASE}/goals/${goalId}`)
@@ -139,7 +173,7 @@ const realApi = {
   // Models
   getModels: async () => {
     const res = await fetch(`${API_BASE}/models`)
-    return { data: await res.json(), status: res.status }
+    return { data: await listFromResponse(res), status: res.status }
   },
   getModel: async (modelId: string) => {
     const res = await fetch(`${API_BASE}/models/${modelId}`)

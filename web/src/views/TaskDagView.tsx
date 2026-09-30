@@ -7,6 +7,9 @@ interface Task {
   description: string
   state: 'PENDING' | 'READY' | 'RUNNING' | 'BLOCKED' | 'VERIFYING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED'
   priority: number
+  // The real §46 backend records carry `id`/`name`/`status` instead of the
+  // mock fixture's `task_id`/`title`/`state` (see CONTRACT_GAPS.md).
+  id?: string
   dependencies: string[]
   capabilities: string[]
   estimatedDuration?: string
@@ -85,9 +88,9 @@ const TaskDagView = () => {
               <div className="text-center py-12">Loading...</div>
             ) : (
               <div className="space-y-4">
-                {tasks.map((task) => (
+                {tasks.map((task, index) => (
                   <div
-                    key={task.task_id}
+                    key={task.task_id ?? task.id ?? `task-${index}`}
                     className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border-l-4"
                     style={{ borderLeftColor: getStatusColor(task.state) }}
                   >
@@ -124,13 +127,13 @@ const TaskDagView = () => {
                         </div>
                       )}
                     </div>
-                    {task.dependencies.length > 0 && (
+                    {(task.dependencies ?? []).length > 0 && (
                       <div className="mt-2 pt-2 border-t border-gray-300 dark:border-gray-600">
                         <span className="text-xs text-gray-500 dark:text-gray-400">
                           Dependencies:
                         </span>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {task.dependencies.map((depId) => (
+                          {(task.dependencies ?? []).map((depId) => (
                             <span
                               key={depId}
                               className="text-xs bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded"

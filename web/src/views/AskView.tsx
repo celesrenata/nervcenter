@@ -61,18 +61,41 @@ const AskView = () => {
 
     try {
       const response = await askApi.post(input)
-      const data: AskResponse = response.data
+      const data = response.data as (AskResponse & {
+        accepted?: boolean
+        executed?: boolean
+        detail?: string
+      }) | null
+
+      // The backend answers either with a full answer payload (200) or an
+      // accepted-but-not-executed ack (202, no `answer` field). Render
+      // whichever shape actually arrived instead of crashing on missing
+      // fields.
+      const content =
+        data && typeof data.answer === 'string' && data.answer.length > 0
+          ? data.answer
+          : data && data.accepted === true
+            ? `Request accepted (execution: ${
+                data.executed ? 'completed' : 'pending'
+              }). ${data.detail || ''}`.trim()
+            : 'Sorry, I encountered an error processing your request.'
 
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.answer,
+        content,
         timestamp: new Date().toISOString(),
-        provenance: {
-          facts: data.facts,
-          hypotheses: data.hypotheses,
-          reasoning: `Confidence: ${(data.confidence * 100).toFixed(0)}%`,
-        },
+        provenance:
+          data && Array.isArray(data.facts)
+            ? {
+                facts: data.facts,
+                hypotheses: Array.isArray(data.hypotheses) ? data.hypotheses : [],
+                reasoning:
+                  typeof data.confidence === 'number'
+                    ? `Confidence: ${(data.confidence * 100).toFixed(0)}%`
+                    : undefined,
+              }
+            : undefined,
       }
 
       setMessages((prev) => [...prev, assistantMessage])
