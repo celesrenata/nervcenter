@@ -1,0 +1,47 @@
+# syntax=docker/dockerfile:1
+# NerveCenter MCP server image (spec §45 / §46).
+#
+# Serves the §45 MCP tool list over JSON-RPC 2.0 — stdio is `python -m mcp`,
+# the HTTP transport is `uvicorn mcp.core:app` (POST /mcp, GET /mcp/health),
+# proxying every tool call to the §46 NerveCenter HTTP API (NERVE_MCP_API /
+# NERVE_API base URL; in-cluster default http://api:8000 via ConfigMap).
+#
+# Single stage: the mcp/ package is not part of the `nervcenter` wheel
+# (setuptools only ships backend*/schemas*), so it is copied in place and run
+# from /app. Deps are installed from the monorepo pyproject so versions match
+# the api image (fastapi, uvicorn, httpx, pydantic, ...).
+#
+# Build (from repo root):
+#   docker build -f Dockerfile.mcp -t registry.celestium.life/nervecenter/mcp:TAG .
+#
+# Entry:  uvicorn mcp.core:app --host 0.0.0.0 --port 8000
+
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Non-root runtime user (uid/gid 10001 — same identity as the api image so
+# the k8s securityContexts stay uniform).
+RUN groupadd --gid 10001 nervcenter \
+    && useradd --uid 10001 --gid 10001 --home-dir /app --shell /usr/sbin/nologin nervcenter
+
+WORKDIR /app
+
+# Dependencies from the monorepo manifest, then the mcp package itself.
+# (No schemas COPY needed: mcp/ does not import schemas.)
+COPY pyproject.toml README.md ./
+COPY mcp/ ./mcp/
+RUN pip install --no-deps . && pip install "fastapi" "uvicorn[standard]" "httpx"
+
+USER nervcenter
+
+EXPOSE 8000
+
+# In-image health probe; matches the k8s readiness/liveness path (/mcp/health).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD ["/usr/local/bin/python", "-c", "import sys,urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/mcp/health', timeout=3).status == 200 else 1)"]
+
+CMD ["uvicorn", "mcp.core:app", "--host", "0.0.0.0", "--port", "8000"]

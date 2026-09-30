@@ -1,7 +1,8 @@
 """NerveCenter Model Context Protocol (MCP) package.
 
 NerveCenter functions as both an MCP *client* and an MCP *server* (spec §45).
-The server exposes the §45 tool list (17 tools) over stdio and over HTTP,
+The server exposes the §45 tool list (18 tools) over stdio (``python -m mcp``)
+and over HTTP (``POST /mcp`` + ``GET /mcp/health`` via ``uvicorn mcp.core:app``),
 proxying every call to the §46 NerveCenter HTTP API. The client can speak to
 any MCP server implementing the same subset: ``initialize``, ``ping``,
 ``tools/list``, ``tools/call``.
@@ -36,7 +37,6 @@ __all__ = [
     "PROTOCOL_VERSION",
     "MCPClient",
     "NerveAPI",
-    "PARSE_ERROR",
     "SERVER_INFO",
     "Tool",
     "ToolError",

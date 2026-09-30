@@ -25,6 +25,8 @@ resources:
   - migrate-job.yaml
   - api-deployment.yaml
   - api-service.yaml
+  - mcp-deployment.yaml
+  - mcp-service.yaml
   - web-deployment.yaml
   - web-service.yaml
   - ingress.yaml

@@ -18,3 +18,5 @@ data:
   API_PORT: "8000"
   # web (nginx) proxies to the api Service in this namespace.
   API_UPSTREAM: "api.nervecenter.svc"
+  # mcp server proxies §45 tool calls to the §46 API service in-cluster.
+  NERVE_MCP_API: "http://api:8000"

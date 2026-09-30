@@ -3,7 +3,7 @@
 # Path mapping (per task spec item 3):
 #   /        -> web  (nginx SPA + static bundles)
 #   /api/    -> api  (FastAPI service on :8000)
-#   /mcp/    -> api  (MCP endpoint on :8000)
+#   /mcp/    -> mcp  (MCP JSON-RPC server on :8000; POST /mcp + GET /mcp/health)
 #
 # cert-manager picks up TLS automatically via the `cert-manager.io/cluster-issuer`
 # annotation (issuer `celestium-le-production` is the cluster-wide standard for
@@ -40,7 +40,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: api
+                name: mcp
                 port:
                   number: 8000
           - path: /

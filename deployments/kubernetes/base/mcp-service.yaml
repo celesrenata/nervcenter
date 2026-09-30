@@ -1,0 +1,19 @@
+# ClusterIP service for the mcp — exposes :8000 inside the cluster only
+# (POST /mcp JSON-RPC + GET /mcp/health). The ingress fronts it at /mcp/.
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp
+  namespace: nervecenter
+  labels:
+    app: nervcenter
+    app.kubernetes.io/name: mcp
+spec:
+  type: ClusterIP
+  selector:
+    app: mcp
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP
