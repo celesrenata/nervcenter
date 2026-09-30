@@ -470,15 +470,15 @@ class NatsClient:
     # -- connection event handlers ---------------------------------------------
 
     @staticmethod
-    def _on_reconnect(client: NatsConnection) -> None:
+    async def _on_reconnect(client: NatsConnection) -> None:
         log.info("nats.reconnected")
 
     @staticmethod
-    def _on_disconnect(client: NatsConnection, err: Any = None) -> None:
+    async def _on_disconnect(client: NatsConnection, err: Any = None) -> None:
         log.warning("nats.disconnected_unexpected", error=str(err) if err else None)
 
     @staticmethod
-    def _on_error(client: NatsConnection, err: Any) -> None:
+    async def _on_error(client: NatsConnection, err: Any) -> None:
         log.error("nats.protocol_error", error=str(err))
 
 
