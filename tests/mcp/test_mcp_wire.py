@@ -1,6 +1,7 @@
 """Wire-model tests for the NerveCenter MCP server (mcp.core / mcp.protocol).
 
-No live server is used: dispatch runs in-process, and tools/call is exercised
+No live server is used: dispatch runs in-process, the HTTP app is exercised
+with ``fastapi.testclient`` (lifespan-driven), and tools/call is exercised
 against a ``httpx.MockTransport``-backed :class:`mcp.api.NerveAPI` so the
 whole path — JSON-RPC envelope → tool registry → §46 proxy → trace header —
 is covered offline.
@@ -12,10 +13,11 @@ import json
 from typing import Any
 
 import httpx
+from fastapi.testclient import TestClient
 
 import mcp
 from mcp.api import TRACE_HEADER, NerveAPI
-from mcp.core import build_registry, build_server, handle_message
+from mcp.core import build_registry, build_server, create_app, handle_message
 from mcp.protocol import METHOD_NOT_FOUND, PROTOCOL_VERSION, SERVER_INFO
 
 SPEC_TOOLS = {
@@ -213,3 +215,38 @@ def test_build_server_stdio_and_http() -> None:
     http_server = build_server("http")
     assert http_server.app is not None
     assert http_server.transport == "http"
+
+
+def test_http_app_serves_both_mcp_path_spellings() -> None:
+    """The JSON-RPC POST handler is registered on BOTH ``/mcp`` and ``/mcp/``.
+
+    The ingress serves the ``/mcp/`` prefix behind TLS while plain ``/mcp``
+    falls through to the web SPA; if only one spelling existed, the other
+    would answer with a trailing-slash redirect (307) built from the plain
+    HTTP connection behind the ingress. Both spellings must therefore be
+    served directly — the route table contains both and TestClient
+    (``follow_redirects=False``) must never see a redirect.
+    """
+    app = create_app(api=_mock_api(lambda request: httpx.Response(200, json={})))
+    post_paths = sorted(
+        route.path for route in app.routes if "POST" in getattr(route, "methods", set())
+    )
+    assert "/mcp" in post_paths
+    assert "/mcp/" in post_paths
+    assert app.router.redirect_slashes is True  # app-wide redirects stay enabled
+
+    with TestClient(app, follow_redirects=False) as client:
+        for path in ("/mcp", "/mcp/"):
+            response = client.post(
+                path, json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}
+            )
+            assert response.status_code == 200, path  # no 307/301 redirect
+            body = response.json()
+            assert body["jsonrpc"] == "2.0"
+            assert body["id"] == 1
+            tools = body["result"]["tools"]
+            assert {tool["name"] for tool in tools} == SPEC_TOOLS
+        # Sanity: the explicit health route is unaffected.
+        health = client.get("/mcp/health")
+        assert health.status_code == 200
+        assert health.json() == {"status": "healthy"}

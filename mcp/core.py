@@ -7,8 +7,10 @@ Implements the wave-2 JSON-RPC 2.0 wire subset (spec §45) against the
 
 - stdio: one JSON-RPC message per stdin line, one response line to stdout
   (``python -m mcp``).
-- HTTP: ``POST /mcp`` (JSON body = JSON-RPC message, response = JSON-RPC
-  response) plus ``GET /mcp/health`` → ``{"status": "healthy"}``
+- HTTP: ``POST /mcp`` and ``POST /mcp/`` (both registered explicitly, so
+  neither spelling triggers a trailing-slash redirect; JSON body = JSON-RPC
+  message, response = JSON-RPC response) plus ``GET /mcp/health`` →
+  ``{"status": "healthy"}``
   (``uvicorn mcp.core:app``, used by the k8s deployment).
 
 Unknown methods answer with the ``protocol.METHOD_NOT_FOUND`` envelope via
@@ -205,7 +207,7 @@ def build_server(transport: str = "stdio", **kwargs: Any) -> MCPServer:
 
 
 # ---------------------------------------------------------------------------
-# HTTP transport (k8s deployment: POST /mcp + GET /mcp/health)
+# HTTP transport (k8s deployment: POST /mcp and POST /mcp/ + GET /mcp/health)
 # ---------------------------------------------------------------------------
 
 
@@ -216,8 +218,11 @@ def create_app(
 ) -> FastAPI:
     """FastAPI app exposing the MCP handler over HTTP.
 
-    ``POST /mcp`` — JSON-RPC message in, JSON-RPC response out (204 for
-    notifications, per JSON-RPC 2.0). ``GET /mcp/health`` →
+    ``POST /mcp`` and ``POST /mcp/`` — JSON-RPC message in, JSON-RPC
+    response out (204 for notifications, per JSON-RPC 2.0). Both spellings
+    are registered explicitly so neither triggers a trailing-slash redirect
+    (the ingress serves the ``/mcp/`` prefix behind TLS, so a 307 would
+    bounce callers off the secure endpoint). ``GET /mcp/health`` →
     ``{"status": "healthy"}``.
 
     When no API is supplied, one is created against the base URL
@@ -241,7 +246,6 @@ def create_app(
 
     app = FastAPI(title=SERVER_INFO["name"], version=SERVER_INFO["version"], lifespan=lifespan)
 
-    @app.post("/mcp")
     async def mcp_endpoint(request: Request) -> JSONResponse:
         # JSON body = one JSON-RPC message (FastAPI: read the raw body — a
         # typed `body: Any` parameter would be interpreted as a query param).
@@ -260,6 +264,11 @@ def create_app(
         if response is None:  # notification: no response body
             return JSONResponse(content=None, status_code=204)
         return JSONResponse(content=response)
+
+    # Register the JSON-RPC endpoint on BOTH spellings; the handler logic is
+    # identical for each — a redirect must never be needed to reach it.
+    app.add_api_route("/mcp", mcp_endpoint, methods=["POST"])
+    app.add_api_route("/mcp/", mcp_endpoint, methods=["POST"])
 
     @app.get("/mcp/health")
     async def health() -> dict[str, str]:
