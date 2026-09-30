@@ -27,6 +27,7 @@ RUN apt-get update \
 # pyproject README reference: README.md is required for metadata.
 COPY pyproject.toml README.md ./
 COPY backend/ ./backend/
+COPY schemas/ ./schemas/
 RUN pip install .
 
 FROM python:3.11-slim AS runtime
