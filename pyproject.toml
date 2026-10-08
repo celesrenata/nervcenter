@@ -16,6 +16,10 @@ dependencies = [
     "fastapi>=0.110",
     "click>=8.1",
     "uvicorn>=0.27",
+    # WebSocket upgrade support for the uvicorn server (spec §46
+    # /api/events/ws): uvicorn needs `websockets` (or `wsproto`) to answer
+    # 101; without it the handshake 404s as a plain HTTP GET.
+    "websockets>=12.0",
     "httpx>=0.27",
     "structlog>=24.0",
     # Auth (S101: signed JWTs, HS256 + RS256 SSO via JWKS)
