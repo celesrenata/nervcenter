@@ -17,6 +17,93 @@ export interface ApiResponse<T> {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+// ─── Auth transport (S102: SSO + authorized fetches) ──────────────────────────
+
+/**
+ * Session-scoped token storage. Tokens live in sessionStorage (NOT localStorage)
+ * so a closed tab ends the session — the security model the SSO spec calls for.
+ */
+const ACCESS_TOKEN_KEY = 'nc.accessToken'
+const REFRESH_TOKEN_KEY = 'nc.refreshToken'
+/** Code-verifier + state for the in-flight PKCE authorization-code exchange. */
+const PKCE_VERIFIER_KEY = 'nc.pkce.codeVerifier'
+const PKCE_STATE_KEY = 'nc.pkce.state'
+
+function safeGetSession(key: string): string | null {
+  try {
+    return window.sessionStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function safeSetSession(key: string, value: string): void {
+  try {
+    window.sessionStorage.setItem(key, value)
+  } catch {
+    /* sessionStorage unavailable (private mode) — ignore, session is ephemeral anyway */
+  }
+}
+
+function safeRemoveSession(key: string): void {
+  try {
+    window.sessionStorage.removeItem(key)
+  } catch {
+    /* ignore */
+  }
+}
+
+export function getAccessToken(): string | null {
+  return safeGetSession(ACCESS_TOKEN_KEY)
+}
+
+/** Store a fresh access token (from break-glass login or the SSO token exchange). */
+export function setAccessToken(token: string | null, refreshToken?: string | null): void {
+  if (token) safeSetSession(ACCESS_TOKEN_KEY, token)
+  else safeRemoveSession(ACCESS_TOKEN_KEY)
+  if (refreshToken) safeSetSession(REFRESH_TOKEN_KEY, refreshToken)
+  else safeRemoveSession(REFRESH_TOKEN_KEY)
+}
+
+/** Clear the whole session (logout or an un-recoverable 401). */
+export function clearSessionTokens(): void {
+  safeRemoveSession(ACCESS_TOKEN_KEY)
+  safeRemoveSession(REFRESH_TOKEN_KEY)
+  safeRemoveSession(PKCE_VERIFIER_KEY)
+  safeRemoveSession(PKCE_STATE_KEY)
+}
+
+/**
+ * The 401 handler is registered by AuthProvider so the API layer can force a
+ * redirect to /login without importing React (avoids a module cycle).
+ */
+export type UnauthorizedHandler = () => void
+let unauthorizedHandler: UnauthorizedHandler | null = null
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
+  unauthorizedHandler = handler
+}
+
+/**
+ * The single fetch wrapper every real-API request goes through. Adds
+ * `Authorization: Bearer <token>` when a session token is present, and routes
+ * any 401 (except the break-glass login itself, where a 401 is a credential
+ * error the form should surface, not a redirect) to the registered handler.
+ */
+export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const base = API_BASE ?? ''
+  const url = path.startsWith('http') ? path : `${base}${path}`
+  const headers = new Headers(init.headers)
+  const token = getAccessToken()
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`)
+  }
+  const res = await fetch(url, { ...init, headers })
+  if (res.status === 401 && !path.startsWith('/auth/login') && unauthorizedHandler) {
+    unauthorizedHandler()
+  }
+  return res
+}
+
 // ─── Real API implementation ──────────────────────────────────────────────────
 
 /**

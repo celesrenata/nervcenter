@@ -5,10 +5,18 @@ full spec §46 API surface: the legacy core collections (``/agents``,
 ``/goals``, ``/tasks``, ``/knowledge``), the canonical ``/api/*`` aliases for
 those collections, the event/entity/evidence routers, all twelve read-only
 collection routers, and the dependency-tolerant health endpoints.
+
+T208: The backend honours X-Forwarded-Proto via uvicorn's proxy_headers flag.
+When uvicorn is started with ``--proxy-headers --forwarded-allow-ips``, it
+modifies the request scope ``scheme`` and ``client`` based on X-Forwarded-*
+headers, preventing 307 redirects to http:// behind TLS-terminating ingresses.
 """
+from __future__ import annotations
+
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.api.auth import approvals_router as auth_approvals_router
 from backend.api.auth import router as auth_router
 from backend.api.docs import custom_openapi, get_version_info
 from backend.api.endpoints import (
@@ -19,22 +27,28 @@ from backend.api.endpoints import (
     clients,
     compute,
     context,
+    decisions,
     entities,
     events,
     evidence,
     goals,
     incidents,
     knowledge,
+    metrics,
     models,
+    models_history,
+    overview,
     relationships,
     routes,
     runs,
     search,
+    systems,
     tasks,
 )
 from backend.api.health import router as health_router
 from backend.api.observability import router as observability_router
 from backend.api.wiring import install_dependency_wiring
+
 
 ALL_ROUTERS = (
     agents.router,
@@ -59,37 +73,25 @@ ALL_ROUTERS = (
     health_router,
     observability_router,
     auth_router,
+    auth_approvals_router,
+    overview.router,
+    decisions.router,
+    systems.router,
+    models_history.router,
+    metrics.router,
 )
 
 
 def canonical_aliases() -> APIRouter:
-    """Build the canonical ``/api/goals``/``/api/tasks``/``/api/agents`` aliases.
+    """Build the canonical ``/api/agents`` read aliases.
 
-    The legacy routers live under ``/goals``, ``/tasks`` and ``/agents``; the
-    spec §46 canonical paths must resolve without trailing-slash redirects, so
-    these thin handlers delegate to the original implementations.
+    Goals and tasks now serve their canonical ``/api/goals`` / ``/api/tasks``
+    read AND write routes directly from :mod:`backend.api.endpoints.goals`
+    and :mod:`backend.api.endpoints.tasks` (see the spec §46 contract and T-H33
+    write/mutation work). The alias router therefore only covers the legacy
+    read routes that no endpoint module owns under the ``/api`` prefix.
     """
     alias = APIRouter(tags=["canonical-aliases"])
-
-    @alias.get("/api/goals")
-    async def api_list_goals():
-        """List goals under the canonical prefix."""
-        return await goals.list_goals()
-
-    @alias.get("/api/goals/{goal_id}")
-    async def api_get_goal(goal_id: str):
-        """Get a goal by ID under the canonical prefix."""
-        return await goals.get_goal(goal_id)
-
-    @alias.get("/api/tasks")
-    async def api_list_tasks():
-        """List tasks under the canonical prefix."""
-        return await tasks.list_tasks()
-
-    @alias.get("/api/tasks/{task_id}")
-    async def api_get_task(task_id: str):
-        """Get a task by ID under the canonical prefix."""
-        return await tasks.get_task(task_id)
 
     @alias.get("/api/agents")
     async def api_list_agents():
@@ -100,6 +102,21 @@ def canonical_aliases() -> APIRouter:
     async def api_get_agent(agent_id: str):
         """Get an agent by ID under the canonical prefix."""
         return await agents.get_agent(agent_id)
+
+    @alias.get("/api/overview")
+    async def api_get_overview():
+        """Get overview data under the canonical prefix."""
+        return await overview.get_overview()
+
+    @alias.get("/api/decisions")
+    async def api_list_decisions():
+        """List decisions under the canonical prefix."""
+        return await decisions.list_decisions()
+
+    @alias.get("/api/decisions/{decision_id}")
+    async def api_get_decision(decision_id: str):
+        """Get a decision by ID under the canonical prefix."""
+        return await decisions.get_decision(decision_id)
 
     return alias
 
@@ -124,31 +141,13 @@ def _configure(target: FastAPI) -> None:
         return get_version_info()
 
 
-app = FastAPI(
-    title="NerveCenter API",
-    description="HTTP/gRPC interface for the NerveCenter core",
-    version="0.1.0",
-    docs_url="/docs",
-    redoc_url=None,
-    openapi_url="/openapi.json",
-)
-_configure(app)
-install_dependency_wiring(app)
-
-
-@app.on_event("startup")
-async def setup_openapi():
-    """Setup OpenAPI schema on startup"""
-    app.openapi_schema = custom_openapi(app)
-
-
 def create_app() -> FastAPI:
     """Factory function for creating and configuring the FastAPI application.
 
     Returns:
         FastAPI: Configured FastAPI application instance
     """
-    new_app = FastAPI(
+    target = FastAPI(
         title="NerveCenter API",
         description="HTTP/gRPC interface for the NerveCenter core",
         version="0.1.0",
@@ -156,12 +155,10 @@ def create_app() -> FastAPI:
         redoc_url=None,
         openapi_url="/openapi.json",
     )
-    _configure(new_app)
-    install_dependency_wiring(new_app)
+    _configure(target)
+    install_dependency_wiring(target)
 
-    @new_app.on_event("startup")
-    async def setup_openapi():
-        """Setup OpenAPI schema on startup"""
-        new_app.openapi_schema = custom_openapi(new_app)
+    return target
 
-    return new_app
+
+app = create_app()

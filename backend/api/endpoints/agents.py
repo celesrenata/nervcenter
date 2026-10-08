@@ -1,9 +1,16 @@
-"""Agent service endpoints."""
+"""Agent service endpoints.
+
+Read routes expose the (read-only) agent registry data. The ``pause``
+mutation under ``/api/agents`` has **no** backing persistence/service
+contract (the agent registry is an in-memory, non-mutable surface), so the
+endpoint returns an explicit, honest ``501 Not Implemented`` rather than a
+fake ``202 accepted`` that would pretend the pause was applied.
+"""
 from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
-from backend.api.endpoints._helpers import make_write_endpoint
 from backend.api.models import ApiResponseMeta, ListResponse
 
 # The agents collection spans two prefix families:
@@ -52,11 +59,20 @@ async def get_agent(agent_id: str):
 
 
 # §47 `nerve pause-agents` → POST /api/agents/pause (canonical path).
-make_write_endpoint(
-    router,
-    "/api/agents/pause",
-    tag="agents",
-    service_name="agents",
-    method_names=("pause", "pause_agents"),
-    summary="Pause all agents (§47 `nerve pause-agents`)",
-)
+@router.post("/api/agents/pause", status_code=501)
+async def pause_agents() -> dict[str, Any]:
+    """Pause all agents.
+
+    There is no durable agent-mutation persistence/service contract behind
+    this endpoint yet, so we refuse to pretend the pause took effect.
+    Callers must treat a ``501`` as "not implemented".
+    """
+    return {
+        "status": "not_implemented",
+        "detail": (
+            "POST /api/agents/pause is not implemented: no agent-mutation "
+            "persistence/service contract exists. This endpoint returns 501 "
+            "rather than a fake 202 acceptance, so callers cannot assume "
+            "the agents were paused."
+        ),
+    }

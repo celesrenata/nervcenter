@@ -15,6 +15,8 @@ backs NerveCenter:
   consuming events.
 - :mod:`~backend.events.processor` — :class:`EventStorageProcessor` (writes
   validated events to PostgreSQL) and :class:`EventReplay` (durable replay).
+- :mod:`~backend.events.query` — bounded read helpers for the listing API
+  (:func:`list_events`, :func:`find_event`) with honest error surfacing.
 
 Typical wiring::
 
@@ -54,6 +56,7 @@ from .models import (
 from .nats_client import NatsClient, NATSConfig, config_from_env
 from .processor import EventReplay, EventStorageProcessor
 from .publisher import EventPublisher, PublishResult
+from .query import EventBusError, EventQueryResult, find_event, list_events
 from .subscriber import EventHandler, EventSubscriber, SubscriptionConfig
 from .validators import (
     EventValidator,
@@ -92,4 +95,9 @@ __all__ = [
     # processor
     "EventStorageProcessor",
     "EventReplay",
+    # query
+    "EventBusError",
+    "EventQueryResult",
+    "list_events",
+    "find_event",
 ]

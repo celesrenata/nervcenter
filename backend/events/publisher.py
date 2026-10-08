@@ -24,6 +24,7 @@ import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from typing import Any
 
 import structlog
 
@@ -286,27 +287,35 @@ class EventPublisher:
         correlation_id: str | None = None,
         trace_id: str | None = None,
     ) -> Event:
-        """Return a copy of the event with fingerprint and correlation set."""
-        # Pydantic v2 model_copy creates a shallow copy
-        prepared = event.model_copy(deep=True)
+        """Return a copy of the event with fingerprint and correlation set.
+
+        :class:`~schemas.events.Event` is frozen (spec §10), so the derived
+        values are applied in a single ``model_copy(update=...)`` rather than
+        by mutating the copy.
+        """
+        updates: dict[str, Any] = {}
 
         # Correlation propagation
         if correlation_id is not None:
-            prepared.correlation_id = correlation_id
-        elif self._auto_correlation and prepared.correlation_id is None:
-            prepared.correlation_id = self._generate_correlation()
+            updates["correlation_id"] = correlation_id
+        elif self._auto_correlation and event.correlation_id is None:
+            updates["correlation_id"] = self._generate_correlation()
 
         # Trace propagation: default to correlation_id if trace is unset
-        if trace_id is not None:
-            prepared.trace_id = trace_id
-        elif prepared.trace_id is None and prepared.correlation_id is not None:
-            prepared.trace_id = prepared.correlation_id
+        effective_trace = trace_id if trace_id is not None else event.trace_id
+        if effective_trace is None:
+            effective_trace = updates.get("correlation_id") or event.correlation_id
+        if effective_trace is not None and effective_trace != event.trace_id:
+            updates["trace_id"] = effective_trace
 
-        # Fingerprint
+        # Fingerprint (must be computed after correlation/trace are fixed)
         if self._auto_fingerprint:
-            prepared.hash = prepared.fingerprint()
+            staged = event.model_copy(update=updates)
+            updates["hash"] = staged.fingerprint()
 
-        return prepared
+        if not updates:
+            return event
+        return event.model_copy(update=updates)
 
     def _generate_correlation(self) -> str:
         return str(uuid.uuid4())

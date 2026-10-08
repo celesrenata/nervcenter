@@ -1,9 +1,12 @@
-"""Startup wiring of durable dependencies (DB engine + NATS client) onto app.state.
+"""Startup wiring of durable dependencies (DB engine, NATS client, services) onto app.state.
 
 The health probes in :mod:`backend.api.health` read ``app.state.db_engine`` and
 ``app.state.nats_client``.  Before this module, neither attribute was ever
 populated, so ``GET /api/health`` always reported ``"not configured"`` even
-when the deployment environment carried valid URLs.
+when the deployment environment carried valid URLs.  Service-backed routers
+(e.g. :mod:`backend.api.endpoints.evidence`) read
+``app.state.services["evidence"]``; the evidence service is built here from
+the same durable engine whenever a DB URL is configured.
 
 Environment contract
 --------------------
@@ -52,12 +55,17 @@ from backend.events.nats_client import (
     NatsClient,
 )
 from backend.events.nats_client import config_from_env as nats_config_from_env
+from backend.evidence.service import EvidenceService
+from backend.goals.service import GoalService
+from backend.knowledge.entity import EntityService
+from backend.knowledge.relationship import RelationshipService
 from backend.persistence.connection import (
     ENV_DATABASE_URL,
     DatabaseConfig,
     create_engine,
     dispose_engine,
 )
+from backend.tasks.service import TaskService
 
 log = structlog.get_logger(__name__)
 
@@ -180,8 +188,34 @@ def build_nats_client() -> NatsClient | None:
     return NatsClient(config)
 
 
+async def build_services(engine: AsyncEngine) -> dict[str, Any]:
+    """Construct the write-path application services over a live engine.
+
+    Returns the service instances keyed by the names the endpoint modules
+    read from ``app.state.services``:
+
+    - ``goals`` — :class:`~backend.goals.service.GoalService`
+    - ``tasks`` — :class:`~backend.tasks.service.TaskService`
+    - ``entities`` — :class:`~backend.knowledge.entity.EntityService`
+    - ``relationships`` — :class:`~backend.knowledge.relationship.RelationshipService`
+
+    Only entities backed by a real persistence/service contract are wired
+    here. Claims and agents have no such contract, so their write endpoints
+    must (and do) answer ``501 Not Implemented`` rather than accept writes
+    without storing anything.
+    """
+
+    return {
+        "goals": GoalService(engine),
+        "tasks": TaskService(engine),
+        "entities": EntityService(engine),
+        "relationships": RelationshipService(engine),
+    }
+
+
 async def wire_dependencies(target: FastAPI) -> None:
-    """Populate ``target.state.db_engine`` / ``target.state.nats_client``.
+    """Populate ``target.state.db_engine`` / ``target.state.nats_client`` /
+    ``target.state.services``.
 
     Every failure (bad URL, unreachable server, timeout) is logged, never
     raised: the Kubernetes liveness and readiness probes both hit
@@ -193,6 +227,28 @@ async def wire_dependencies(target: FastAPI) -> None:
     except Exception as exc:  # noqa: BLE001 - startup must not crash on config errors
         log.warning("api.wiring.db_engine_failed", error=str(exc))
         target.state.db_engine = None
+
+    # Service-backed routers read ``app.state.services``.  The evidence and
+    # write-path services (goals, tasks, entities, relationships) are bound
+    # to the same durable engine when one exists; when the engine is absent
+    # (NERVE_DB_URL unset) their keys are dropped so the endpoints keep
+    # their honest empty/503 degradation — never a fake 202.
+    services = dict(getattr(target.state, "services", None) or {})
+    if target.state.db_engine is not None:
+        try:
+            services["evidence"] = EvidenceService(target.state.db_engine)
+        except Exception as exc:  # noqa: BLE001 - startup must not crash on config errors
+            log.warning("api.wiring.evidence_service_failed", error=str(exc))
+            services.pop("evidence", None)
+        try:
+            services.update(await build_services(target.state.db_engine))
+        except Exception as exc:  # noqa: BLE001 - startup must not crash on config errors
+            log.warning("api.wiring.services_failed", error=str(exc))
+    else:
+        services.pop("evidence", None)
+        for key in ("goals", "tasks", "entities", "relationships"):
+            services.pop(key, None)
+    target.state.services = services
 
     nats_client: NatsClient | None
     try:
@@ -223,6 +279,12 @@ async def teardown_dependencies(target: FastAPI) -> None:
         except Exception as exc:  # noqa: BLE001 - shutdown must not raise
             log.warning("api.wiring.db_dispose_failed", error=str(exc))
         target.state.db_engine = None
+
+    # Every service held a reference to the now-disposed engine; clear them
+    # all so a later startup rebuilds fresh services from the new engine.
+    services = getattr(target.state, "services", None)
+    if isinstance(services, dict):
+        services.clear()
 
     client = getattr(target.state, "nats_client", None)
     if client is not None:

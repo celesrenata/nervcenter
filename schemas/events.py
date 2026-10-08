@@ -16,7 +16,7 @@ Assumptions (spec Section 10 not present in the repository):
 from datetime import UTC, datetime
 from typing import Any, Literal
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from .base import Record
 
@@ -43,7 +43,14 @@ class Event(Record):
     Events are append-only; corrections are emitted as new events referencing the
     original via ``parent_event_id``. The ``payload`` is an opaque, type-specific
     document whose shape is described by the matching ``event_type`` contract.
+
+    Spec §10 freezes this shape: the record is immutable, so any field mutation
+    (including the integrity ``hash``) raises :class:`pydantic.ValidationError`.
+    Derivations (e.g. correlation propagation) must go through
+    ``model_copy(update=...)``.
     """
+
+    model_config = ConfigDict(frozen=True)
 
     event_type: str = Field(
         ...,

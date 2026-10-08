@@ -8,15 +8,20 @@ by schema contract:
 - :mod:`~backend.persistence.models.entities` — :class:`~schemas.entities.Entity`.
 - :mod:`~backend.persistence.models.relationships` — :class:`~schemas.relationships.Relationship`.
 - :mod:`~backend.persistence.models.evidence` — :class:`~schemas.evidence.Evidence`.
-- :mod:`~backend.persistence.models.claims` — :class:`~schemas.claims.Claim`, :class:`~schemas.claims.Decision`.
-- :mod:`~backend.persistence.models.tasks` — :class:`~schemas.tasks.Task`, :class:`~schemas.tasks.TaskRun`.
-- :mod:`~backend.persistence.models.goals` — :class:`~schemas.goals.Goal`, :class:`~schemas.goals.AgentResult`.
+- :mod:`~backend.persistence.models.claims` — Claim, Decision.
+- :mod:`~backend.persistence.models.tasks` — Task, TaskRun.
+- :mod:`~backend.persistence.models.goals` — Goal, AgentResult.
+- :mod:`~backend.persistence.models.planned_changes` — PlannedChange.
+- :mod:`~backend.persistence.models.auth` — auth infrastructure (S101):
+  :class:`AuthSession`, :class:`AuthDevice`, :class:`PairingChallenge`,
+  :class:`ApprovalRecord`.
 
 Usage::
 
     from backend.persistence.models import Event, Entity, Goal, Task
 """
 
+from .auth import ApprovalRecord, AuthDevice, AuthSession, PairingChallenge
 from .base import Base, Jsonb, RootRecord, TimedRecord, UUIDv4, Vector
 from .claims import Claim, Decision
 from .entities import Entity
@@ -45,4 +50,8 @@ __all__ = [
     "Goal",
     "AgentResult",
     "PlannedChange",
+    "AuthSession",
+    "AuthDevice",
+    "PairingChallenge",
+    "ApprovalRecord",
 ]

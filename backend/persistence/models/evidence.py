@@ -32,14 +32,19 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Boolean, Index, String
+from sqlalchemy import Boolean, DateTime, Float, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, Jsonb, UUIDv4
 
 
 class Evidence(Base):
-    """ORM mapping of :class:`~schemas.evidence.Evidence`."""
+    """ORM mapping of :class:`~schemas.evidence.Evidence`.
+
+    ``metadata`` shadows :class:`DeclarativeBase.metadata` on the class; the
+    resulting ``SAWarning`` is pre-existing and intentional (column name
+    matches the spec/contract field ``metadata``).
+    """
 
     __tablename__ = "evidence"
 
@@ -52,8 +57,17 @@ class Evidence(Base):
     source_ref: Mapped[str] = mapped_column(String, nullable=False, index=True)
     content: Mapped[str | None] = mapped_column(String, nullable=True)
     content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
-    captured_at: Mapped[datetime] = mapped_column(String, nullable=False, index=True)
-    trust: Mapped[float] = mapped_column(default=0.5, nullable=False)
+    # NOTE: captured_at must be a real timestamp column (matches the alembic
+    # 001 DDL ``sa.DateTime(timezone=True)``). An earlier draft declared it as
+    # ``String`` while the annotation said ``datetime``, which broke inserts on
+    # any dialect that enforces type fidelity.
+    captured_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+    trust: Mapped[float] = mapped_column(Float, default=0.5, nullable=False)
+    # Pre-existing SAWarning: the ``metadata`` column shadows
+    # ``DeclarativeBase.metadata``. Kept because the v0 contract field is
+    # named ``metadata`` and renaming would break the schemas contract.
     metadata: Mapped[dict[str, Any]] = mapped_column(Jsonb, default=dict)
     redacted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 

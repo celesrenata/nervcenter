@@ -29,8 +29,8 @@ public enum AgentResultStatus: String, Codable, CaseIterable, Sendable {
 /// A desired state the core works toward, with measurable criteria.
 ///
 /// Mirrors `schemas/goals.py` `Goal`.
-public struct Goal: Codable, Hashable, Sendable {
-    public var id: String
+public struct Goal: Codable, Hashable, Sendable, Identifiable {
+    public let id: String
     public var createdAt: Date
     public var schemaVersion: String
     public var hash: String?

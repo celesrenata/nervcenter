@@ -19,6 +19,16 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
+
+# T206 — bake real-mode API base into the production bundle.
+# Vite only reads VITE_API_BASE from the build-time env; without it the bundle
+# defaults to mock mode (see web/src/api/client.ts: useMockMode = !VITE_API_BASE).
+# nginx reverse-proxies /api/ + /mcp/ same-origin (see nginx.conf.template), so
+# /api is the correct base. Overridable at build time:
+#   docker build --build-arg VITE_API_BASE=... -f web/Dockerfile -t web:TAG web/
+ARG VITE_API_BASE=/api
+ENV VITE_API_BASE="${VITE_API_BASE}"
+
 # `npm run build` = `tsc && vite build` -> dist/
 RUN npm run build
 

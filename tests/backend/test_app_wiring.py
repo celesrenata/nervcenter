@@ -10,11 +10,20 @@ Environment contract under test: ``NERVE_DB_URL`` (deploy contract) takes
 precedence, with fallback to the legacy ``NERVECENTER_DATABASE_URL``.
 """
 
+import asyncio
+import warnings
+
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from backend.api.app import app as module_app
 from backend.api.app import create_app
+from backend.evidence.service import EvidenceService
+from backend.goals.service import GoalService
+from backend.knowledge.entity import EntityService
+from backend.knowledge.relationship import RelationshipService
+from backend.tasks.service import TaskService
 
 ENV_NAMES = (
     "NERVE_DB_URL",
@@ -158,3 +167,41 @@ class TestCreateAppWiring:
         assert body["status"] == "degraded"
         assert body["checks"]["db"]["message"] == "database is not configured"
         assert body["checks"]["nats"]["message"] == "NATS is not configured"
+
+
+class TestServicesWiring:
+    """``build_services`` is awaited so the write-path services land on state.
+
+    Regression guard for the un-awaited coroutine at the ``wire_dependencies``
+    call site: without the ``await`` the coroutine is passed to
+    ``dict.update`` (TypeError, swallowed by the startup-tolerance handler)
+    and is later GC'd with a "coroutine was never awaited" ``RuntimeWarning``
+    — and none of the four service keys ever reach ``app.state.services``.
+    """
+
+    def test_db_engine_wires_all_service_backends(self, monkeypatch):
+        """Engine present → all four write-path services are constructed."""
+        import backend.api.wiring as wiring
+
+        _clear_dependency_env(monkeypatch)
+        engine = create_async_engine("sqlite+aiosqlite://")
+        monkeypatch.setattr(wiring, "build_db_engine", lambda: engine)
+
+        # Note: the ``with TestClient`` shutdown handler runs
+        # ``teardown_dependencies`` which clears ``state.services`` in place, so
+        # the assertions must run while the app is still in the startup phase.
+        try:
+            app = create_app()
+            with warnings.catch_warnings():
+                # The never-awaited coroutine would raise here if the bug
+                # regressed; the isinstance checks below fail independently.
+                warnings.simplefilter("error", RuntimeWarning)
+                with TestClient(app) as client:
+                    services = client.app.state.services or {}
+                    assert isinstance(services.get("goals"), GoalService)
+                    assert isinstance(services.get("tasks"), TaskService)
+                    assert isinstance(services.get("entities"), EntityService)
+                    assert isinstance(services.get("relationships"), RelationshipService)
+                    assert isinstance(services.get("evidence"), EvidenceService)
+        finally:
+            asyncio.run(engine.dispose())
