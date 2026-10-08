@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { WebSocketClient } from '../api/WebSocketClient'
+import { WebSocketClient, WebSocketConnectionState } from '../api/WebSocketClient'
 
 interface RealtimeState<T> {
   data: T
@@ -8,7 +8,18 @@ interface RealtimeState<T> {
   lastUpdate: Date | null
 }
 
-export function useRealtimeUpdates<T>(url: string, initialData: T) {
+/**
+ * Subscribe to a realtime update channel over WebSocket.
+ *
+ * `enabled` (default true) gates the socket: when false, no WebSocket is
+ * opened and `connection` stays 'closed' — use it to avoid opening a socket
+ * against a route the backend does not serve.
+ *
+ * `connection` mirrors the underlying socket state machine
+ * (connecting/open/closed/error) so views can render an honest status
+ * indicator with text instead of a bare colored dot.
+ */
+export function useRealtimeUpdates<T>(url: string, initialData: T, enabled: boolean = true) {
   const [state, setState] = useState<RealtimeState<T>>({
     data: initialData,
     loading: true,
@@ -17,8 +28,15 @@ export function useRealtimeUpdates<T>(url: string, initialData: T) {
   })
 
   const [ws, setWs] = useState<WebSocketClient | null>(null)
+  const [connection, setConnection] = useState<WebSocketConnectionState>('closed')
 
   useEffect(() => {
+    if (!enabled) {
+      setConnection('closed')
+      setWs(null)
+      return
+    }
+
     const wsClient = new WebSocketClient(url)
     setWs(wsClient)
 
@@ -40,16 +58,18 @@ export function useRealtimeUpdates<T>(url: string, initialData: T) {
     }
 
     const unsubscribe = wsClient.onMessage(handleUpdate)
+    const unsubscribeState = wsClient.onStateChange(setConnection)
 
     return () => {
       unsubscribe()
+      unsubscribeState()
       wsClient.disconnect()
     }
-  }, [url])
+  }, [url, enabled])
 
   const refresh = useCallback(() => {
     setState((prev) => ({ ...prev, loading: true }))
   }, [])
 
-  return { ...state, refresh, ws }
+  return { ...state, connection, refresh, ws }
 }

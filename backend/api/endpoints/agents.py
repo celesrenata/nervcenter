@@ -1,78 +1,204 @@
 """Agent service endpoints.
 
-Read routes expose the (read-only) agent registry data. The ``pause``
-mutation under ``/api/agents`` has **no** backing persistence/service
-contract (the agent registry is an in-memory, non-mutable surface), so the
-endpoint returns an explicit, honest ``501 Not Implemented`` rather than a
-fake ``202 accepted`` that would pretend the pause was applied.
+The read routes expose the *real* agent registry — :class:`AgentRegistry`
+from :mod:`backend.agents.registry` — instead of a hardcoded fixture. The
+registry holds the 14 native agent types and their capability manifests
+(spec §26). Agent *instances* created through the API are now persisted to
+the ``agents`` table (migration 004) via
+:class:`~backend.services.incident_agent.AgentService`; ``GET /agents``
+merges the native registry rows first, then the persisted instances.
+
+Write routes (AG-3, added in round 3)
+-------------------------------------
+- ``POST /api/agents`` — create a durable agent instance (201).
+
+Honest degradation
+------------------
+When no DB engine is configured the create route answers ``503`` (mirroring
+the :mod:`backend.api.endpoints.incidents` / goals precedent) and
+``GET /agents`` serves the native registry rows only. No fake acceptance.
+
+Fields with no backing store (``lastHeartbeat``/``cpuUsage``/
+``memoryUsage``/``tasksCompleted``/``tasksFailed``) are returned as
+``None`` instead of being fabricated.
+
+The ``pause`` mutation under ``/api/agents`` still has **no** backing
+persistence/service contract (the agent registry is an in-memory,
+non-mutable surface), so it returns an explicit, honest ``501 Not
+Implemented`` rather than a fake ``202 accepted``.
 """
-from datetime import datetime
+from __future__ import annotations
+
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
 
-from backend.api.models import ApiResponseMeta, ListResponse
+from backend.agents.registry import AgentRegistry
+from backend.api.models import ListResponse
+from backend.api.endpoints._helpers import list_response
+from backend.services.incident_agent import AgentNameConflictError, AgentService
+
+# A single process-wide registry (the native types are static and shared);
+# building it per-request would just repeat the same 14 manifests.
+_REGISTRY = AgentRegistry()
 
 # The agents collection spans two prefix families:
 #   - legacy read routes under ``/agents`` (``GET /agents/``, ``GET /agents/{id}``);
 #   - the spec §47 mutation endpoint under the canonical ``/api/agents`` prefix.
 # ``backend.api.app`` registers this single router and *separately* installs the
 # ``/api/agents`` GET canonical aliases (see ``canonical_aliases``), which
-# delegate to the module-level :func:`list_agents` / :func:`get_agent` below.
+# delegate to the module-level :func:`list_agents` / :func:`get_agent` below
+# (the alias passes its ``Request`` through so the persisted-agent merge works
+# under the canonical prefix too).
 # The router is therefore prefix-less and declares full paths so both families
 # resolve without a trailing-slash redirect.
 router = APIRouter(tags=["agents"])
 
 
-@router.get("/agents/", response_model=ListResponse)
-async def list_agents():
-    """List all agents."""
-    # In a real implementation, this would query the database
-    agents = [
-        {"id": "agent-1", "name": "Agent 1", "status": "active"},
-        {"id": "agent-2", "name": "Agent 2", "status": "inactive"},
-    ]
+def _manifest_to_row(manifest) -> dict[str, Any]:
+    """Map a real :class:`AgentManifest` to the web ``Agent`` row shape.
 
-    return ListResponse(
-        data=agents,
-        meta=ApiResponseMeta(
-            version="1.0.0",
-            request_id="req-123",
-            timestamp=datetime.utcnow(),
-            pagination={"total": len(agents), "page": 1, "per_page": 10},
+    Telemetry fields have no backing store, so they are ``None`` (honest)
+    rather than invented numbers.
+    """
+    capabilities = manifest.capabilities
+    return {
+        "id": manifest.agent_type,
+        "name": manifest.name,
+        "type": manifest.agent_type,
+        "status": "active",
+        "description": manifest.description,
+        "tools": list(manifest.tools),
+        "prompt_template": manifest.prompt_template,
+        "capabilities": (
+            {
+                "tools": list(capabilities.tools),
+                "policy": capabilities.policy,
+                "verification": capabilities.verification,
+            }
+            if capabilities is not None
+            else None
         ),
-    )
+        # No backing store yet — do not fabricate live telemetry.
+        "lastHeartbeat": None,
+        "cpuUsage": None,
+        "memoryUsage": None,
+        "tasksCompleted": None,
+        "tasksFailed": None,
+    }
+
+
+@router.get("/agents/", response_model=ListResponse)
+async def list_agents(request: Request):
+    """List all agents.
+
+    Native agent-*type* registry rows come first; when a DB engine is
+    configured, persisted agent *instances* (created via
+    ``POST /api/agents``) follow. Without a DB the list is the native
+    registry only (honest degradation, not a fabricated merge).
+    """
+    agents = [_manifest_to_row(m) for m in _REGISTRY.list_all()]
+    svc = _agent_service(request)
+    if svc is not None:
+        agents.extend(await svc.list_persisted())
+    return list_response(agents)
 
 
 @router.get("/agents/{agent_id}")
 async def get_agent(agent_id: str):
-    """Get agent details."""
-    # In a real implementation, this would query the database
-    if agent_id not in ["agent-1", "agent-2"]:
-        raise HTTPException(status_code=404, detail="Agent not found")
+    """Get a single agent (native agent type) by id.
 
-    return {
-        "id": agent_id,
-        "name": f"Agent {agent_id[-1]}",
-        "status": "active" if agent_id == "agent-1" else "inactive",
-    }
+    ``agent_id`` is the native agent *type* (e.g. ``planner``); an unknown id
+    returns 404 (not a fabricated fallback).
+    """
+    manifest = _REGISTRY.get(agent_id)
+    if manifest is None:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    return _manifest_to_row(manifest)
 
 
 # §47 `nerve pause-agents` → POST /api/agents/pause (canonical path).
+class AgentCreateRequest(BaseModel):
+    """Payload for ``POST /api/agents``.
+
+    ``name`` is unique across the persisted agent table; a collision
+    surfaces as a ``409`` rather than a duplicate row.
+    """
+
+    name: str = Field(..., min_length=1, description="Unique agent name")
+    type: str = Field(..., min_length=1, description="Agent type (spec §26)")
+    description: str | None = Field(default=None, description="What the agent does")
+    prompt_template: str | None = Field(
+        default=None, description="Optional system prompt template"
+    )
+    tools: list[str] = Field(default_factory=list, description="Tool names")
+
+
+def _agent_service(request: Request) -> AgentService | None:
+    """Resolve the agents write-path service for this request.
+
+    Prefers an explicitly wired ``services["agents"]`` (so a future
+    :func:`backend.api.wiring.build_services` entry wins), then falls back to a
+    per-app service built from the configured ``db_engine``. Returns ``None``
+    when neither is available (no ``NERVE_DB_URL`` set).
+    """
+    services = getattr(request.app.state, "services", {})
+    svc = services.get("agents") if isinstance(services, dict) else None
+    if svc is not None:
+        return svc
+    engine = getattr(request.app.state, "db_engine", None)
+    if engine is None:
+        return None
+    state = request.app.state
+    memo = getattr(state, "_agents_service", None)
+    if memo is None:
+        memo = AgentService(engine)
+        setattr(state, "_agents_service", memo)
+    return memo
+
+
+@router.post("/api/agents", status_code=201)
+async def create_agent(
+    request: Request, payload: AgentCreateRequest
+) -> dict[str, Any]:
+    """Create a durable agent instance (AG-3, round 3).
+
+    Returns the web row for the new instance (201). Degrades to ``503`` when
+    no DB engine is configured; duplicate names return ``409``.
+    """
+    svc = _agent_service(request)
+    if svc is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Agent persistence is not configured; set NERVE_DB_URL.",
+        )
+    try:
+        return await svc.create(
+            name=payload.name,
+            agent_type=payload.type,
+            description=payload.description,
+            prompt_template=payload.prompt_template,
+            tools=payload.tools,
+        )
+    except AgentNameConflictError:
+        raise HTTPException(
+            status_code=409,
+            detail=f"An agent named '{payload.name}' already exists.",
+        ) from None
+
+
 @router.post("/api/agents/pause", status_code=501)
 async def pause_agents() -> dict[str, Any]:
     """Pause all agents.
 
-    There is no durable agent-mutation persistence/service contract behind
-    this endpoint yet, so we refuse to pretend the pause took effect.
-    Callers must treat a ``501`` as "not implemented".
+    There is no durable agent-mutation persistence/service contract; the
+    registry is an in-memory, non-mutable surface, so we answer an honest
+    ``501`` instead of a fake ``202`` that would pretend the pause applied.
     """
     return {
-        "status": "not_implemented",
         "detail": (
-            "POST /api/agents/pause is not implemented: no agent-mutation "
-            "persistence/service contract exists. This endpoint returns 501 "
-            "rather than a fake 202 acceptance, so callers cannot assume "
-            "the agents were paused."
-        ),
+            "Agent pause is not implemented: there is no durable agent "
+            "persistence/service contract to record the mutation."
+        )
     }

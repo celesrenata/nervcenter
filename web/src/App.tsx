@@ -16,6 +16,7 @@ import { IncidentsView } from './views/IncidentsView'
 import { DecisionsView } from './views/DecisionsView'
 import { AskView } from './views/AskView'
 import { LoginView } from './views/LoginView'
+import { AuthCallback } from './auth/AuthCallback'
 
 function App() {
   return (
@@ -23,6 +24,10 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginView />} />
+          {/* SSO PKCE authorization-code callback (S102 / AC-S06). Ungated and
+              rendered outside Layout so the provider redirect lands standalone
+              before the session is established. */}
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route
             path="/"
             element={

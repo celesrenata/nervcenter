@@ -46,6 +46,15 @@ function attachConsoleCapture(page: import('@playwright/test').Page, cap: Consol
       const url = msg.location()?.url ?? ''
       if (KNOWN_MISSING_BACKEND_PATHS.some((p) => url.endsWith(p))) return
     }
+    // The honest connection badge (SystemsView) opens a real socket at
+    // /ws/systems; the mock backend has no such route, so the failed
+    // handshake is provably unrelated to view rendering and is handled
+    // in-state (badge → Reconnecting). Mirrors views-a.spec.ts.
+    if (
+      text.includes('WebSocket') ||
+      (msg.location()?.url ?? '').includes('/ws/')
+    )
+      return
     cap.errors.push(text)
   }
   const onPageError = (err: Error) => cap.pageErrors.push(err.message)

@@ -65,6 +65,7 @@ from backend.persistence.connection import (
     create_engine,
     dispose_engine,
 )
+from backend.services.systems import SystemsService
 from backend.tasks.service import TaskService
 
 log = structlog.get_logger(__name__)
@@ -228,12 +229,26 @@ async def wire_dependencies(target: FastAPI) -> None:
         log.warning("api.wiring.db_engine_failed", error=str(exc))
         target.state.db_engine = None
 
+    # Build the NATS client up front (bounded connect below) so that services
+    # which need it — the systems status service probes it — can be registered
+    # in the same pass as the DB-backed services.
+    target.state.nats_client = await _build_and_connect_nats(target)
+
     # Service-backed routers read ``app.state.services``.  The evidence and
     # write-path services (goals, tasks, entities, relationships) are bound
     # to the same durable engine when one exists; when the engine is absent
     # (NERVE_DB_URL unset) their keys are dropped so the endpoints keep
-    # their honest empty/503 degradation — never a fake 202.
+    # their honest empty/503 degradation — never a fake 202.  The
+    # ``systems`` service is always registered (it composes its report from
+    # whatever dependencies are configured, omitting rows for the absent ones).
     services = dict(getattr(target.state, "services", None) or {})
+    try:
+        services["systems"] = SystemsService(
+            target.state.db_engine, target.state.nats_client
+        )
+    except Exception as exc:  # noqa: BLE001 - startup must not crash on config errors
+        log.warning("api.wiring.systems_service_failed", error=str(exc))
+        services.pop("systems", None)
     if target.state.db_engine is not None:
         try:
             services["evidence"] = EvidenceService(target.state.db_engine)
@@ -250,23 +265,31 @@ async def wire_dependencies(target: FastAPI) -> None:
             services.pop(key, None)
     target.state.services = services
 
-    nats_client: NatsClient | None
+
+async def _build_and_connect_nats(target: FastAPI) -> NatsClient | None:
+    """Build the NATS client and run a bounded connect attempt.
+
+    The client is stored on ``target.state.nats_client`` even when the
+    connect attempt fails: health must report a real ``unreachable`` probe
+    (``connected: false``) instead of ``"NATS is not configured"``.  The
+    attempt is bounded so startup never blocks for more than a few seconds.
+    Returns the client (or ``None`` when no NATS URL is configured / the
+    factory fails) so callers can hand it to services.
+    """
+
     try:
         nats_client = build_nats_client()
     except Exception as exc:  # noqa: BLE001 - startup must not crash on config errors
         log.warning("api.wiring.nats_client_failed", error=str(exc))
         nats_client = None
 
-    target.state.nats_client = nats_client
     if nats_client is not None:
-        # Store the client even when the connect attempt fails: health must
-        # report a real ``unreachable`` probe (``connected: false``) instead
-        # of ``"NATS is not configured"``.  The attempt is bounded so startup
-        # never blocks for more than a few seconds.
         try:
             await asyncio.wait_for(nats_client.connect(), timeout=NATS_CONNECT_TIMEOUT_S)
         except Exception as exc:  # noqa: BLE001 - unreachable NATS must not block startup
             log.warning("api.wiring.nats_connect_failed", error=str(exc))
+
+    return nats_client
 
 
 async def teardown_dependencies(target: FastAPI) -> None:

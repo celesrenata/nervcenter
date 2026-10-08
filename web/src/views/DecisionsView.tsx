@@ -1,5 +1,14 @@
 import { useState, useEffect } from 'react'
-import { decisionsApi } from '../api/client'
+import { decisionsApi, ApiError } from '../api/client'
+
+/**
+ * Decisions view — gap-closure round 2 (DC-1).
+ *
+ * Round 1 swallowed the fetch error and degraded to a silent empty list,
+ * which made a 501/500 endpoint look like "no decisions". This round keeps
+ * the empty list for the genuine no-data case, but a *rejected* fetch now
+ * surfaces a `role=alert` banner with the ApiError `status — detail`.
+ */
 
 interface Decision {
   id: string
@@ -17,14 +26,21 @@ interface Decision {
 const DecisionsView = () => {
   const [decisions, setDecisions] = useState<Decision[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<{ status: number; detail: string } | null>(null)
 
   useEffect(() => {
     const fetchDecisions = async () => {
       try {
         const response = await decisionsApi.list()
-        setDecisions(response.data)
+        setDecisions(response.data as Decision[])
+        setFetchError(null)
       } catch (error) {
-        console.error('Error fetching decisions:', error)
+        // DC-1: surface the failure instead of a silent empty list.
+        if (error instanceof ApiError) {
+          setFetchError({ status: error.status, detail: error.detail })
+        } else {
+          setFetchError({ status: 0, detail: 'Request failed (network error)' })
+        }
       } finally {
         setLoading(false)
       }
@@ -54,17 +70,44 @@ const DecisionsView = () => {
         Decisions
       </h1>
 
+      {fetchError && (
+        <div
+          role="alert"
+          data-testid="decisions-error"
+          className="p-3 rounded-md bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300 text-sm font-medium"
+        >
+          Failed to load decisions: {fetchError.status} — {fetchError.detail}
+        </div>
+      )}
+
       <div className="flex justify-between items-center">
         <div className="text-gray-500 dark:text-gray-400">
           {decisions.length} total decisions
         </div>
-        <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+        <button
+          disabled
+          title="No decision-create route is exposed by the backend yet."
+          className="bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-4 py-2 rounded-lg cursor-not-allowed"
+        >
           + New Decision
         </button>
       </div>
 
       {loading ? (
         <div className="text-center py-12">Loading...</div>
+      ) : !fetchError && decisions.length === 0 ? (
+        <div
+          data-testid="decisions-empty"
+          className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg text-center"
+        >
+          <p className="text-gray-700 dark:text-gray-300 font-medium">
+            No decisions recorded.
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            Decisions are appended as they are made. Nothing has been recorded
+            yet — this is an honest empty state, not a failed fetch.
+          </p>
+        </div>
       ) : (
         <div className="space-y-4">
           {decisions.map((decision) => (

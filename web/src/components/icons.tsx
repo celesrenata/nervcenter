@@ -1,0 +1,193 @@
+/**
+ * Inline SVG icon set for NerveCenter web UI.
+ *
+ * Replaces the emoji glyph nav icons (audit defect D-4): one uniform set,
+ * stroke-based (2px stroke on a 24-unit viewBox), rendered at 18px by
+ * default (inside the required 16–20px band) and tinted with `currentColor`.
+ * All icons are decorative (`aria-hidden="true"`); the accessible name of a
+ * navigation item is always its text label.
+ *
+ * Geometry follows the common open-source stroke-icon conventions
+ * (Lucide-style, ISC-licensed shapes) so the set reads as a single family.
+ */
+import type { SVGProps } from 'react'
+
+export interface IconProps extends SVGProps<SVGSVGElement> {
+  /** Rendered size in px; default 18 (uniform across the set). */
+  size?: number
+}
+
+function baseProps(size: number, extra: IconProps): SVGProps<SVGSVGElement> {
+  const { size: _size, ...rest } = extra
+  return {
+    viewBox: '0 0 24 24',
+    width: size,
+    height: size,
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    'aria-hidden': true,
+    focusable: false,
+    ...rest,
+  }
+}
+
+/* ─── Navigation icons (Layout sidebar) ───────────────────────────────────── */
+
+/** Overview — dashboard tiles. */
+export function OverviewIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <rect x="3" y="3" width="7" height="9" rx="1" />
+      <rect x="14" y="3" width="7" height="5" rx="1" />
+      <rect x="14" y="12" width="7" height="9" rx="1" />
+      <rect x="3" y="16" width="7" height="5" rx="1" />
+    </svg>
+  )
+}
+
+/** Systems — stacked server nodes. */
+export function SystemsIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <rect x="2" y="3" width="20" height="7" rx="2" />
+      <rect x="2" y="14" width="20" height="7" rx="2" />
+      <line x1="6" y1="6.5" x2="6.01" y2="6.5" />
+      <line x1="6" y1="17.5" x2="6.01" y2="17.5" />
+    </svg>
+  )
+}
+
+/** Timeline — clock face. */
+export function TimelineIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <circle cx="12" cy="12" r="9" />
+      <polyline points="12 7 12 12 15.5 14" />
+    </svg>
+  )
+}
+
+/** Goals — concentric target rings. */
+export function GoalsIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="12" cy="12" r="1" />
+    </svg>
+  )
+}
+
+/** Task DAG — checklist. */
+export function TasksIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <path d="m3 7 2 2 4-4" />
+      <path d="m3 17 2 2 4-4" />
+      <line x1="13" y1="6" x2="21" y2="6" />
+      <line x1="13" y1="12" x2="21" y2="12" />
+      <line x1="13" y1="18" x2="21" y2="18" />
+    </svg>
+  )
+}
+
+/** Agents — robot head. */
+export function AgentsIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <rect x="4" y="9" width="16" height="11" rx="2" />
+      <line x1="12" y1="9" x2="12" y2="5" />
+      <circle cx="12" cy="3.5" r="1.5" />
+      <line x1="2" y1="14" x2="4" y2="14" />
+      <line x1="20" y1="14" x2="22" y2="14" />
+      <line x1="9" y1="14" x2="9.01" y2="16" />
+      <line x1="15" y1="14" x2="15.01" y2="16" />
+    </svg>
+  )
+}
+
+/** Inference — CPU chip. */
+export function InferenceIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <rect x="5" y="5" width="14" height="14" rx="2" />
+      <rect x="9.5" y="9.5" width="5" height="5" />
+      <line x1="9" y1="2" x2="9" y2="5" />
+      <line x1="15" y1="2" x2="15" y2="5" />
+      <line x1="9" y1="19" x2="9" y2="22" />
+      <line x1="15" y1="19" x2="15" y2="22" />
+      <line x1="2" y1="9" x2="5" y2="9" />
+      <line x1="2" y1="15" x2="5" y2="15" />
+      <line x1="19" y1="9" x2="22" y2="9" />
+      <line x1="19" y1="15" x2="22" y2="15" />
+    </svg>
+  )
+}
+
+/** Incidents — warning triangle. */
+export function IncidentsIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <path d="M10.3 4.2 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="16.5" x2="12.01" y2="16.5" />
+    </svg>
+  )
+}
+
+/** Decisions — document with ruled text. */
+export function DecisionsIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="13" y2="17" />
+    </svg>
+  )
+}
+
+/** Ask — speech bubble. */
+export function AskIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.5 8.5 0 1 1 16.1-3.8Z" />
+    </svg>
+  )
+}
+
+/* ─── Action icons ────────────────────────────────────────────────────────── */
+
+/** Hamburger — opens the mobile navigation drawer. */
+export function MenuIcon({ size = 20, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <line x1="4" y1="6" x2="20" y2="6" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <line x1="4" y1="18" x2="20" y2="18" />
+    </svg>
+  )
+}
+
+/** Close — dismisses the mobile navigation drawer. */
+export function CloseIcon({ size = 20, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  )
+}
+
+/** Shield check — SSO (federated identity) sign-in. */
+export function ShieldCheckIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1 1 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  )
+}

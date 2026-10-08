@@ -13,7 +13,7 @@ headers, preventing 307 redirects to http:// behind TLS-terminating ingresses.
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.auth import approvals_router as auth_approvals_router
@@ -30,6 +30,7 @@ from backend.api.endpoints import (
     decisions,
     entities,
     events,
+    events_ws,
     evidence,
     goals,
     incidents,
@@ -57,6 +58,7 @@ ALL_ROUTERS = (
     evidence.router,
     knowledge.router,
     events.router,
+    events_ws.router,
     entities.router,
     relationships.router,
     claims.router,
@@ -94,9 +96,9 @@ def canonical_aliases() -> APIRouter:
     alias = APIRouter(tags=["canonical-aliases"])
 
     @alias.get("/api/agents")
-    async def api_list_agents():
+    async def api_list_agents(request: Request):
         """List agents under the canonical prefix."""
-        return await agents.list_agents()
+        return await agents.list_agents(request)
 
     @alias.get("/api/agents/{agent_id}")
     async def api_get_agent(agent_id: str):
@@ -104,9 +106,9 @@ def canonical_aliases() -> APIRouter:
         return await agents.get_agent(agent_id)
 
     @alias.get("/api/overview")
-    async def api_get_overview():
+    async def api_get_overview(request: Request):
         """Get overview data under the canonical prefix."""
-        return await overview.get_overview()
+        return await overview.get_overview(request)
 
     @alias.get("/api/decisions")
     async def api_list_decisions():

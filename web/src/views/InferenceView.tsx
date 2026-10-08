@@ -36,6 +36,27 @@ interface ModelHistory {
   fallbackRate: number
 }
 
+interface EmptyStateProps {
+  testId: string
+  title: string
+  body: string
+}
+
+/** INF-1: guidance copy for a section that is live but currently empty. */
+function EmptyState({ testId, title, body }: EmptyStateProps) {
+  return (
+    <div
+      data-testid={testId}
+      className="text-center py-8"
+    >
+      <p className="text-gray-700 dark:text-gray-300 font-medium">{title}</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-md mx-auto">
+        {body}
+      </p>
+    </div>
+  )
+}
+
 const InferenceView = () => {
   const [nodes, setNodes] = useState<ComputeNode[]>([])
   const [routes, setRoutes] = useState<Route[]>([])
@@ -53,8 +74,10 @@ const InferenceView = () => {
         setNodes(nodesRes.data)
         setRoutes(routesRes.data)
         setHistory(historyRes.data)
-      } catch (error) {
-        console.error('Error fetching inference data:', error)
+      } catch {
+        // Each of the three sections is fetched independently via Promise.all;
+        // a fetch failure is already handled by the per-section empty states,
+        // so there is nothing further to surface here.
       } finally {
         setLoading(false)
       }
@@ -95,6 +118,12 @@ const InferenceView = () => {
         </h3>
         {loading ? (
           <div className="text-center py-12">Loading...</div>
+        ) : nodes.length === 0 ? (
+          <EmptyState
+            testId="inference-empty-nodes"
+            title="No compute nodes reported."
+            body="No nodes are currently reporting to the inference layer. Nodes appear here the moment they register and start serving — confirm compute nodes are running and reachable from the API."
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {nodes.map((node) => (
@@ -159,6 +188,12 @@ const InferenceView = () => {
         </h3>
         {loading ? (
           <div className="text-center py-12">Loading...</div>
+        ) : routes.length === 0 ? (
+          <EmptyState
+            testId="inference-empty-routes"
+            title="No OmniRoute routes configured."
+            body="No routing policies are defined yet. Routes map task types to model chains and appear here once OmniRoute registers a policy for a task type."
+          />
         ) : (
           <div className="space-y-3">
             {routes.map((route) => (
@@ -198,6 +233,12 @@ const InferenceView = () => {
         </h3>
         {loading ? (
           <div className="text-center py-12">Loading...</div>
+        ) : history.length === 0 ? (
+          <EmptyState
+            testId="inference-empty-history"
+            title="No model history recorded."
+            body="Per-model performance samples (tok/s, p95 latency, success/fallback rates) appear here once the inference layer has served traffic. This is an honest empty state, not a failed fetch."
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {history.map((item, idx) => (

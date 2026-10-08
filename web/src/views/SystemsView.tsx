@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { systemsApi } from '../api/client'
+import { useRealtimeUpdates } from '../hooks/useRealtimeUpdates'
+import type { WebSocketConnectionState } from '../api/WebSocketClient'
 
 interface SystemStatus {
   name: string
@@ -9,19 +11,116 @@ interface SystemStatus {
   checkedAt: string
 }
 
+/**
+ * Honest connection-state metadata. Every state carries visible text and an
+ * `aria-label` — the status dot is decorative and never the sole signal.
+ */
+const WS_STATUS: Record<
+  WebSocketConnectionState,
+  { label: string; dot: string; ring: string; text: string }
+> = {
+  connecting: {
+    label: 'Connecting',
+    dot: 'bg-yellow-500',
+    ring: 'border-yellow-300 dark:border-yellow-600',
+    text: 'text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/40',
+  },
+  open: {
+    label: 'Connected',
+    dot: 'bg-green-500',
+    ring: 'border-green-300 dark:border-green-700',
+    text: 'text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/40',
+  },
+  closed: {
+    label: 'Disconnected',
+    dot: 'bg-gray-400',
+    ring: 'border-gray-300 dark:border-gray-600',
+    text: 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700',
+  },
+  error: {
+    label: 'Reconnecting',
+    dot: 'bg-red-500',
+    ring: 'border-red-300 dark:border-red-700',
+    text: 'text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/40',
+  },
+}
+
+/**
+ * Render an API failure as `<status> — <detail>`. Duck-types the shared
+ * `ApiError { status, detail }` contract so it works whether or not the
+ * client has adopted `ApiError` yet (SY-3).
+ */
+function formatApiError(err: unknown): string {
+  const e = err as { status?: number; detail?: string; message?: string } | null
+  if (e && typeof e.status === 'number' && typeof e.detail === 'string') {
+    return `${e.status} — ${e.detail}`
+  }
+  if (e && typeof e.message === 'string' && e.message) return e.message
+  return 'Request failed'
+}
+
+type ApiResult = {
+  ok?: boolean
+  status?: number
+  detail?: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data?: any
+}
+
+/**
+ * Defensive status guard for the transitional client contract. The in-flight
+ * `ApiError` contract (sibling task) will make `realApi` reject on non-2xx;
+ * until it lands, `realApi` still *resolves* `{ data, status }` on 5xx — which
+ * is what let the 501 detail get swallowed into a generic banner (SY-3).
+ */
+function assertOk(res: ApiResult | undefined | null, context: string): ApiResult {
+  if (res && typeof res.status === 'number' && res.status >= 400 && !res.ok) {
+    const status = res.status
+    const detail = res.detail
+    const err: any = new Error(
+      `${status} — ${typeof detail === 'string' && detail ? detail : `${context}: HTTP ${status}`}`,
+    )
+    err.status = status
+    err.detail = typeof detail === 'string' && detail ? detail : `${context}: HTTP ${status}`
+    throw err
+  }
+  if (!res) {
+    const err: any = new Error(`${context}: no response`)
+    err.status = 500
+    err.detail = `${context}: no response`
+    throw err
+  }
+  return res
+}
+
 const SystemsView = () => {
   const [systems, setSystems] = useState<SystemStatus[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Live update channel: when the backend exposes a /ws route, systems
+  // snapshots stream in over the socket and this list refreshes live. When
+  // the route does not exist, the socket fails and the badge honestly shows
+  // "Reconnecting" instead of a fake green dot (SY-2). The state rendered
+  // here always comes from the real WebSocketClient state machine.
+  const realtime = useRealtimeUpdates<SystemStatus[]>('/ws/systems', systems)
+
   useEffect(() => {
     const fetchSystems = async () => {
       try {
-        const response = await systemsApi.health()
-        setSystems(response.data)
+        const response = await assertOk(await systemsApi.health(), 'systems')
+        const rows = (response.data ?? []) as any[]
+        setSystems(rows.map((s) => ({
+          name: s?.name ?? 'unknown',
+          status: s?.status ?? 'unknown',
+          version: s?.version ?? '—',
+          message: s?.message ?? '',
+          checkedAt: s?.checkedAt ?? '',
+        })))
+        setError(null)
       } catch (err) {
-        setError('Failed to fetch system status')
-        console.error(err)
+        setError(formatApiError(err))
+        console.warn('systems endpoint failed:', err)
       } finally {
         setLoading(false)
       }
@@ -29,6 +128,14 @@ const SystemsView = () => {
 
     fetchSystems()
   }, [])
+
+  // When a realtime update arrives, fold it into the list (live refresh).
+  useEffect(() => {
+    if (!realtime.data || realtime.data.length === 0) return
+    setSystems(realtime.data)
+    if (realtime.lastUpdate) setError(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [realtime.data, realtime.lastUpdate])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -43,87 +150,103 @@ const SystemsView = () => {
     }
   }
 
+  const conn = WS_STATUS[realtime.connection] ?? WS_STATUS.closed
+  const lastUpdate = realtime.lastUpdate
+
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-        Systems
-      </h1>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Systems</h1>
+        <div
+          role="status"
+          aria-label={`Real-time connection: ${conn.label}`}
+          className={`flex items-center px-3 py-1.5 rounded-full border ${conn.ring} ${conn.text}`}
+        >
+          <span
+            className={`w-2.5 h-2.5 rounded-full mr-2 ${conn.dot}`}
+            aria-hidden="true"
+          />
+          <span className="text-sm font-medium">
+            Real-time: {conn.label}
+          </span>
+        </div>
+      </div>
+
+      {lastUpdate && (
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Last live update:{' '}
+          {lastUpdate.toLocaleTimeString()}
+        </p>
+      )}
 
       {loading ? (
-        <div className="text-center py-12">Loading...</div>
+        <div className="text-center py-12" role="status">
+          Loading system status…
+        </div>
       ) : error ? (
-        <div className="text-red-500 bg-red-100 dark:bg-red-900 p-4 rounded">
-          {error}
+        <div
+          role="alert"
+          className="text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/40 border border-red-300 dark:border-red-700 p-4 rounded-lg"
+        >
+          <p className="font-semibold mb-1">System status unavailable</p>
+          <p className="text-sm font-mono break-words">{error}</p>
+          <p className="text-sm mt-2">
+            The /api/systems endpoint is not wired yet; check the backend service for details.
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {systems.map((system, index) => (
-            <div
-              key={index}
-              className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-                  {system.name}
-                </h3>
-                <div
-                  className={`w-3 h-3 rounded-full ${getStatusColor(
-                    system.status
-                  )}`}
-                />
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">
-                    Status
-                  </span>
-                  <span className="text-gray-800 dark:text-white capitalize">
+        <>
+          {systems.length === 0 && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                No systems reported. The /api/systems endpoint will populate this list once the
+                backend wiring is complete.
+              </p>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {systems.map((system) => (
+              <div
+                key={system.name}
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      role="img"
+                      aria-label={`${system.name} status: ${system.status}`}
+                      className="shrink-0 w-3 h-3 rounded-full flex"
+                    >
+                      <span
+                        className={`w-3 h-3 rounded-full ${getStatusColor(system.status)}`}
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <span className="font-semibold text-gray-800 dark:text-white truncate">
+                      {system.name}
+                    </span>
+                    <span className="text-xs text-gray-400">{system.version}</span>
+                  </div>
+                  <span
+                    className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 capitalize"
+                    aria-label={`Status: ${system.status}`}
+                  >
                     {system.status}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">
-                    Version
-                  </span>
-                  <span className="text-gray-800 dark:text-white">
-                    {system.version}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">
-                    Message
-                  </span>
-                  <span className="text-gray-800 dark:text-white">
-                    {system.message}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">
-                    Last Check
-                  </span>
-                  <span className="text-gray-800 dark:text-white">
-                    {system.checkedAt}
-                  </span>
-                </div>
+                {system.message && (
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{system.message}</p>
+                )}
+                {system.checkedAt && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    Checked {system.checkedAt}
+                  </p>
+                )}
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-          Real-time Updates
-        </h3>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-green-500 rounded-full mr-2" />
-            <span className="text-gray-600 dark:text-gray-400">
-              WebSocket Connected
-            </span>
+            ))}
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   )
 }

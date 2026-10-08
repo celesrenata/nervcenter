@@ -45,7 +45,8 @@ dev = [
     "pytest-cov>=5.0",
     # Event bus development
     "nats-py>=2.9.0",
-    # Persistence development
+    # Persistence development (sqlite driver for local / test databases)
+    "aiosqlite>=0.20.0",
     "sqlalchemy[asyncio]>=2.0.35",
     "asyncpg>=0.30.0",
     "alembic>=1.14.0",

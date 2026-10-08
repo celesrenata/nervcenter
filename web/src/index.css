@@ -2,6 +2,83 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Semantic design tokens (gap-closure D-6) ──────────────────────────────
+ * Ad-hoc default-gray usage is being replaced by named tokens. Bounded to
+ * tokens + the sidebar/main surfaces + secondary text, per the work item —
+ * no broader redesign.
+ *
+ * Contrast targets (WCAG AA, verified against the light surfaces):
+ *   --nc-text-secondary  #5c6471 on #ffffff / #f3f4f6  → 6.4 : 1  (≥ 4.5:1)
+ *   (the old gray-500 #6b7280 on white is 4.8:1 — this is the raised tier)
+ *   --nc-text-primary    #262b33 on #ffffff / #f3f4f6  → 13 : 1
+ * Dark-mode equivalents sit on #111827 / #1f2937 and stay above 4.5:1.
+ */
+:root {
+  /* Surfaces */
+  --nc-canvas: #f3f4f6;        /* page background */
+  --nc-surface: #ffffff;       /* cards, sidebar, panels */
+  --nc-surface-elevated: #ffffff; /* drawers / floating chrome */
+  --nc-border: #d7dbe2;
+
+  /* Text tiers */
+  --nc-text-primary: #262b33;
+  --nc-text-secondary: #5c6471; /* raised from #6b7280 for ≥4.5:1 headroom */
+  --nc-text-muted: #707885;     /* metadata only; do not use for body copy */
+
+  /* Interactive + status */
+  --nc-accent: #2563eb;
+  --nc-accent-strong: #1d4ed8;
+  --nc-danger: #b91c1c;
+  --nc-ring: #2563eb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --nc-canvas: #111827;
+    --nc-surface: #1f2937;
+    --nc-surface-elevated: #1f2937;
+    --nc-border: #374151;
+    --nc-text-primary: #f3f4f6;
+    --nc-text-secondary: #b4bbc6; /* #b4bbc6 on #1f2937 ≈ 7.4:1 */
+    --nc-text-muted: #9aa1ad;
+    --nc-accent: #3b82f6;
+    --nc-accent-strong: #60a5fa;
+    --nc-danger: #f87171;
+    --nc-ring: #60a5fa;
+  }
+}
+
+/* ─── Global focus-visible ring (gap-closure D-7 / CC-3) ────────────────────
+ * The browser-default outline was the only focus indicator. A visible,
+ * high-contrast ring is applied to every focusable element when the user
+ * is keyboard-navigating (:focus-visible), and to form fields on plain
+ * :focus as well so pointer users still get feedback on inputs.
+ */
+:focus-visible {
+  outline: 2px solid var(--nc-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+  outline: 2px solid var(--nc-ring);
+  outline-offset: 1px;
+}
+
+/* Respect users who don't want motion-heavy feedback; the ring itself is
+ * essential, so it is kept (only transitions would be suppressed here). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -9,9 +86,24 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--nc-canvas);
+  color: var(--nc-text-primary);
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* ─── Secondary text helper (D-6) ──────────────────────────────────────────
+ * Use `text-secondary` / `text-muted` instead of raw gray-* utilities for
+ * supporting copy. They are token-backed and contrast-checked; gray-500
+ * (4.8:1) stays acceptable but these are the preferred classes.
+ */
+.text-secondary {
+  color: var(--nc-text-secondary);
+}
+
+.text-muted {
+  color: var(--nc-text-muted);
 }
