@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: "registry.celestium.life/nervecenter/api:latest"
+          image: "registry.celestium.life/nervecenter/api:85a9e1a"
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
