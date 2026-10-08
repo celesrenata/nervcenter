@@ -29,7 +29,11 @@ spec:
     spec:
       containers:
         - name: mcp
-          image: "registry.celestium.life/nervecenter/mcp:latest"
+          # Pinned to the cluster-running image (kubectl -n nervecenter get
+          # deploy mcp -o jsonpath='...containers[0].image' on 2026-10-08);
+          # a later `kubectl apply -k` with the :latest placeholder would
+          # break mcp with ImagePullBackOff (no such tag in Harbor).
+          image: "registry.celestium.life/nervecenter/mcp:50e4c83"
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
