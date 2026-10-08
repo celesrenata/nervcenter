@@ -8,10 +8,20 @@ environment is left unset so no connection is ever attempted.  The
 
 Environment contract under test: ``NERVE_DB_URL`` (deploy contract) takes
 precedence, with fallback to the legacy ``NERVECENTER_DATABASE_URL``.
+
+Gap-closure addition: ``_build_and_connect_nats`` must now also call
+``NatsClient.ensure_stream()`` during API startup so the JetStream stream
+``NERVECENTER_EVENTS`` exists in the API deploy path (previously it was only
+created by the standalone ``backend.events`` entrypoint, leaving
+``GET /api/events`` / ``WS /api/events/ws`` in a permanent honest-503 state).
+The fake NATS below records calls and proves the success and the
+degradation (stream creation fails → startup still succeeds, honest 503
+reads are preserved) without touching a real server.
 """
 
 import asyncio
 import warnings
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -205,3 +215,97 @@ class TestServicesWiring:
                     assert isinstance(services.get("evidence"), EvidenceService)
         finally:
             asyncio.run(engine.dispose())
+
+
+# ===========================================================================
+# Gap-closure: API startup ensures the JetStream event stream exists
+# ===========================================================================
+class _FakeStreamNatsClient:
+    """Stub NATS client that records lifecycle calls (no real socket).
+
+    ``jetstream`` raises like a disconnected client so the events endpoints
+    keep their honest 503 degradation; ``ensure_stream`` records the call and
+    optionally raises to exercise the startup-failure path.
+    """
+
+    def __init__(self, stream_error: Exception | None = None) -> None:
+        self.stream_error = stream_error
+        self.connect_calls = 0
+        self.ensure_stream_calls = 0
+
+    @property
+    def config(self):
+        return SimpleNamespace(stream_name="NERVECENTER_EVENTS")
+
+    @property
+    def is_connected(self) -> bool:
+        return True
+
+    @property
+    def jetstream(self):
+        raise RuntimeError("NatsClient is not connected. Call connect() first.")
+
+    async def connect(self) -> None:
+        self.connect_calls += 1
+
+    async def ensure_stream(self) -> None:
+        self.ensure_stream_calls += 1
+        if self.stream_error is not None:
+            raise self.stream_error
+
+    async def disconnect(self) -> None:
+        pass
+
+
+class TestStartupEnsuresEventStream:
+    """``_build_and_connect_nats`` must ensure the stream on API startup.
+
+    Deploy root cause: the standalone ``backend.events`` entrypoint called
+    ``ensure_stream()`` but the API startup wiring never did, so the
+    ``NERVECENTER_EVENTS`` stream was absent in the deploy path and
+    ``GET /api/events`` / ``WS /api/events/ws`` degraded to a permanent
+    honest 503 ``event_bus_unavailable``.
+    """
+
+    def test_startup_ensures_stream_on_connected_nats(self, monkeypatch):
+        _clear_dependency_env(monkeypatch)
+        monkeypatch.setenv("NERVE_NATS_URL", "nats://nats:4222")
+
+        fake = _FakeStreamNatsClient()
+        import backend.api.wiring as wiring
+
+        monkeypatch.setattr(wiring, "build_nats_client", lambda: fake)
+
+        app = create_app()
+        with TestClient(app):
+            pass
+
+        assert fake.connect_calls == 1
+        assert fake.ensure_stream_calls == 1, (
+            "API startup must call ensure_stream() so NERVECENTER_EVENTS "
+            "exists in the deploy path"
+        )
+
+    def test_startup_succeeds_when_ensure_stream_fails(self, monkeypatch):
+        """Stream-creation failure is logged, never raised: startup + honest
+        503 degradation survive (no fake empty 200, no fake error 200)."""
+        _clear_dependency_env(monkeypatch)
+        monkeypatch.setenv("NERVE_NATS_URL", "nats://nats:4222")
+
+        fake = _FakeStreamNatsClient(
+            stream_error=RuntimeError("jetstream admin: no authorization")
+        )
+        import backend.api.wiring as wiring
+
+        monkeypatch.setattr(wiring, "build_nats_client", lambda: fake)
+
+        app = create_app()
+        with TestClient(app) as client:
+            # Startup survived: liveness probe contract (200) intact.
+            assert client.get("/api/health").status_code == 200
+            # Honest degradation preserved: configured-but-unreadable bus → 503.
+            response = client.get("/api/events/")
+            assert response.status_code == 503
+            assert response.json()["error"] == "event_bus_unavailable"
+
+        assert fake.ensure_stream_calls == 1

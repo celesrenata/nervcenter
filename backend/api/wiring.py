@@ -267,7 +267,8 @@ async def wire_dependencies(target: FastAPI) -> None:
 
 
 async def _build_and_connect_nats(target: FastAPI) -> NatsClient | None:
-    """Build the NATS client and run a bounded connect attempt.
+    """Build the NATS client, run a bounded connect attempt, then ensure the
+    JetStream event stream exists.
 
     The client is stored on ``target.state.nats_client`` even when the
     connect attempt fails: health must report a real ``unreachable`` probe
@@ -275,6 +276,15 @@ async def _build_and_connect_nats(target: FastAPI) -> NatsClient | None:
     attempt is bounded so startup never blocks for more than a few seconds.
     Returns the client (or ``None`` when no NATS URL is configured / the
     factory fails) so callers can hand it to services.
+
+    Gap-closure: the deploy path never created the ``NERVECENTER_EVENTS``
+    JetStream stream (only the standalone ``backend.events`` entrypoint
+    called ``ensure_stream``), so ``GET /api/events`` and
+    ``WS /api/events/ws`` degraded to a permanent 503
+    ``event_bus_unavailable``.  We now ensure the stream here, bounded and
+    idempotent (``ensure_stream`` checks ``stream_info`` first); on failure
+    the client is kept as-is and the read path keeps its honest 503
+    degradation instead of crashing startup.
     """
 
     try:
@@ -288,6 +298,18 @@ async def _build_and_connect_nats(target: FastAPI) -> NatsClient | None:
             await asyncio.wait_for(nats_client.connect(), timeout=NATS_CONNECT_TIMEOUT_S)
         except Exception as exc:  # noqa: BLE001 - unreachable NATS must not block startup
             log.warning("api.wiring.nats_connect_failed", error=str(exc))
+
+        if nats_client.is_connected:
+            try:
+                await asyncio.wait_for(
+                    nats_client.ensure_stream(), timeout=NATS_CONNECT_TIMEOUT_S
+                )
+            except Exception as exc:  # noqa: BLE001 - stream creation must not block startup
+                log.warning(
+                    "api.wiring.nats_ensure_stream_failed",
+                    stream=nats_client.config.stream_name,
+                    error=str(exc),
+                )
 
     return nats_client
 
