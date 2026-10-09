@@ -30,7 +30,7 @@ spec:
         - name: migrate
           # Same image as the api Deployment; deploy.sh retags both via
           # `kubectl kustomize --image registry.celestium.life/nervecenter/api=TAG`.
-          image: "registry.celestium.life/nervecenter/api:e59bc39"
+          image: "registry.celestium.life/nervecenter/api:bee3fa8"
           imagePullPolicy: IfNotPresent
           command:
             - "python"
