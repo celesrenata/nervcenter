@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: "registry.celestium.life/nervecenter/web:85a9e1a"
+          image: "registry.celestium.life/nervecenter/web:e59bc39"
           imagePullPolicy: IfNotPresent
           env:
             - name: API_UPSTREAM
