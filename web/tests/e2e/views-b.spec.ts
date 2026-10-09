@@ -42,6 +42,10 @@ const KNOWN_MISSING_BACKEND_PATHS: string[] = [
   '/api/incidents', // IN-1 (round 3): create submit → 409 conflict
   '/api/decisions', // DC-1: list → 501
   '/api/events', // TL: bus → 503
+  // Canonical endpoint since e59bc39: the client's `getEvents` issues
+  // `GET /api/events/` (trailing slash — the slashless form 307s). The
+  // resource-load URL ends with the slash, so filter that form too.
+  '/api/events/',
   '/api/agents', // AG-3 (round 3): create submit → 409 duplicate name
 ]
 
@@ -287,7 +291,10 @@ test.describe('Timeline (TL)', () => {
     const cap: ConsoleCapture = { errors: [], pageErrors: [], failedRequests: [] }
     const detach = attachConsoleCapture(page, cap)
 
-    await page.route('**/api/events', (r) =>
+    // Canonical contract: GET /api/events/ (trailing-slash form — the
+    // slashless form 307-redirects with an absolute Location that breaks in
+    // the browser, so the client always uses /api/events/).
+    await page.route('**/api/events/**', (r) =>
       fulfillJson(r, {
         data: [
           {
@@ -325,7 +332,8 @@ test.describe('Timeline (TL)', () => {
     const cap: ConsoleCapture = { errors: [], pageErrors: [], failedRequests: [] }
     const detach = attachConsoleCapture(page, cap)
 
-    await page.route('**/api/events', (r) =>
+    // Same canonical URL as the TL-1 test: GET /api/events/
+    await page.route('**/api/events/**', (r) =>
       fulfillError(r, 503, 'event bus unreachable: stream not found'),
     )
 
@@ -348,7 +356,8 @@ test.describe('Timeline (TL)', () => {
     const cap: ConsoleCapture = { errors: [], pageErrors: [], failedRequests: [] }
     const detach = attachConsoleCapture(page, cap)
 
-    await page.route('**/api/events', (r) => fulfillJson(r, { data: [], meta: {} }))
+    // Same canonical URL: GET /api/events/
+    await page.route('**/api/events/**', (r) => fulfillJson(r, { data: [], meta: {} }))
 
     try {
       await visitAuthenticated(page, '/timeline')

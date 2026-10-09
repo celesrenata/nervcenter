@@ -32,7 +32,16 @@ import { expect, test } from '@playwright/test'
 // induces a 500 on /api/tasks (page.route → status 500) to verify the
 // role=alert banner, so the browser's resource-load error for that induced
 // response is expected and must not fail the console-capture.
-const KNOWN_MISSING_BACKEND_PATHS = ['/api/systems', '/api/decisions', '/api/tasks']
+// Canonical endpoints (client contract as of e59bc39): the list GETs for
+// systems now issue `GET /api/systems/` — the slashless form answers with a
+// 307 whose absolute Location drops the port, so the client always uses the
+// trailing-slash form (see apiFetch callers in client.ts). Resource-load
+// errors for those canonical URLs are filtered, as are the deliberately
+// induced 5xx responses.
+const KNOWN_MISSING_BACKEND_PATHS = ['/api/systems/', '/api/systems', '/api/decisions', '/api/tasks']
+
+/** The view's live badge socket (SY-2) — the mock backend 404s it on purpose. */
+const HAS_WS_PATH = (url: string) => url.includes('/ws/') || url.endsWith('/api/events/ws')
 
 interface ConsoleCapture {
   errors: string[]
@@ -54,15 +63,15 @@ function attachConsoleCapture(page: import('@playwright/test').Page, cap: Consol
     const isResourceLoad = /Failed to load resource/i.test(text)
     // Documented filters: known-missing backend paths + the WS socket we open.
     if (isResourceLoad && KNOWN_MISSING_BACKEND_PATHS.some((p) => url.endsWith(p))) return
-    if (text.includes('WebSocket') || url.includes('/ws/')) return
+    if (text.includes('WebSocket') || HAS_WS_PATH(url)) return
     cap.errors.push(text)
   }
   const onPageError = (err: Error) => cap.pageErrors.push(err.message)
   const onReqFailed = (req: import('@playwright/test').Request) => {
-    // The honest connection badge opens a real socket at /ws/systems.
+    // The honest connection badge opens a real socket at /api/events/ws.
     // The mock backend has no ws route, so the failed upgrade is handled
     // in-state (badge → Reconnecting) and is not a request failure.
-    if (req.url().includes('/ws/')) return
+    if (HAS_WS_PATH(req.url())) return
     cap.failedRequests.push(
       `${req.method()} ${req.url()} -> ${req.failure()?.errorText ?? 'unknown'}`,
     )
@@ -175,7 +184,9 @@ test.describe('Systems (SY)', () => {
     const cap: ConsoleCapture = { errors: [], pageErrors: [], failedRequests: [] }
     const detach = attachConsoleCapture(page, cap)
 
-    await page.route('**/api/systems', (r) =>
+    // Canonical contract: GET /api/systems/ (trailing slash — the slashless
+    // form 307s with an absolute Location that drops the host port).
+    await page.route('**/api/systems/**', (r) =>
       fulfillList(r, [
         { name: 'nervecenter-api', status: 'healthy', version: '0.4.1', message: 'OK', checkedAt: '2026-10-08T00:00:00Z' },
         { name: 'lavalink', status: 'degraded', version: '4.2.1', message: 'monitoring', checkedAt: '2026-10-08T00:00:00Z' },
@@ -208,7 +219,8 @@ test.describe('Systems (SY)', () => {
     const cap: ConsoleCapture = { errors: [], pageErrors: [], failedRequests: [] }
     const detach = attachConsoleCapture(page, cap)
 
-    await page.route('**/api/systems', (r) =>
+    // Same canonical URL as the SY-2 test: GET /api/systems/
+    await page.route('**/api/systems/**', (r) =>
       fulfillList(r, { detail: 'Systems list endpoint requires the systems service to be wired.' }, 501),
     )
 
