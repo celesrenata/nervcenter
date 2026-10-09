@@ -11,10 +11,10 @@
 
 | Candidate | Result |
 |---|---|
-| `https://nervcenter.celestium.life/` (ingress `nervcenter-celestium`, traefik, 443; IPs 10.1.1.12–15) | TLS 200 when addressed via `--resolve` to each ingress IP; **but NXDOMAIN from the user's browser context** (local resolver, dns.google/1.1.1.1, 8.8.8.8 all return NXDOMAIN — the A record is not published on `celestium.life`; SOA-only NS answer from awsdns). Browser cannot navigate it. |
+| `https://nervecenter.celestium.life/` (ingress `nervcenter-celestium`, traefik, 443; IPs 10.1.1.12–15) | TLS 200 when addressed via `--resolve` to each ingress IP; **but NXDOMAIN from the user's browser context** (local resolver, dns.google/1.1.1.1, 8.8.8.8 all return NXDOMAIN — the A record is not published on `celestium.life`; SOA-only NS answer from awsdns). Browser cannot navigate it. |
 | **AUDIT URL: `http://127.0.0.1:8080`** | `kubectl port-forward -n nervecenter svc/web 8080:80` → the same `web-ddd6f8f99-vjqt8` pod + its nginx reverse proxy (`web/nginx.conf.template:37-49` proxies `/api/` → `api.nervecenter.svc:8000`), i.e. the exact upstream the ingress fronts. Used for the entire walkthrough. |
 
-Caveat: under port-forward, nginx `proxy_set_header Host $host` sends `Host: 127.0.0.1:8080`, so FastAPI 307 redirects emit absolute `Location: http://nervcenter.celestium.life/...` URLs (port stripped) — this is what turns `/api/systems` into a browser-visible `ERR_CONNECTION_REFUSED` (see §4.3). Through the real ingress host the same endpoint returns 501 directly (verified via `curl -H "Host: nervcenter.celestium.life" http://10.1.1.13/api/systems/` → 501).
+Caveat: under port-forward, nginx `proxy_set_header Host $host` sends `Host: 127.0.0.1:8080`, so FastAPI 307 redirects emit absolute `Location: http://nervecenter.celestium.life/...` URLs (port stripped) — this is what turns `/api/systems` into a browser-visible `ERR_CONNECTION_REFUSED` (see §4.3). Through the real ingress host the same endpoint returns 501 directly (verified via `curl -H "Host: nervecenter.celestium.life" http://10.1.1.13/api/systems/` → 501).
 
 ## 2. Login outcome — **FAIL (no working auth path exists live)**
 

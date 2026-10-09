@@ -270,7 +270,7 @@ These are **coverage gaps** from the specs audit. Most are already owned by othe
 - **AC450** — As R204: API no longer 307-redirects to `http://` behind the TLS terminating proxy. (Traces `specs/nervecenter-deploy/tasks.md` T208.)
 
 ### R402 · T207 — public DNS reachability
-- **AC460** — `nervcenter.celestium.life` resolves on the public internet (currently NXDOMAIN / authoritatively private-only). Chosen access path (public tunnel / public DNS) loads the UI. (Traces `specs/nervecenter-deploy/tasks.md` T207.)
+- **AC460** — `nervecenter.celestium.life` resolves on the public internet (currently NXDOMAIN / authoritatively private-only). Chosen access path (public tunnel / public DNS) loads the UI. (Traces `specs/nervecenter-deploy/tasks.md` T207.)
 
 ### R403 · Deployed-bundle real-mode gate (deploy D2)
 - **AC470** — The deployed web bundle runs in real mode: `VITE_API_BASE` baked into the image, `Overview` shows live data (not fixtures), per deploy spec T206 acceptance.

@@ -7,7 +7,7 @@
 
 ## URL used
 
-- Ingress `nervcenter-celestium` → host `nervcenter.celestium.life` (traefik, 80/443): **NXDOMAIN from this host** (`curl: (6) Could not resolve host`).
+- Ingress `nervcenter-celestium` → host `nervecenter.celestium.life` (traefik, 80/443): **NXDOMAIN from this host** (`curl: (6) Could not resolve host`).
 - Fallback used: `kubectl port-forward -n nervecenter svc/web 18321:80` → **`http://127.0.0.1:18321`** (nginx 1.27.5, HTTP 200, `GET /api/health` → 200 `{db: ok, nats: connected, jetstream: available}`).
 
 ## Login outcome (recorded verbatim)
@@ -123,5 +123,5 @@ Mobile 390px (844):
 - Authenticated-only flows (approval binding, role-gated mutations) — no valid credentials exist on live (G9).
 - Ask 200-answer + provenance rendering — blocked by unwired context service (G5).
 - Realtime reconnect under drop — no WS endpoint to attach to (G8).
-- Ingress TLS/host path (`nervcenter.celestium.life`) — unresolvable from this host; cluster-internal path only.
+- Ingress TLS/host path (`nervecenter.celestium.life`) — unresolvable from this host; cluster-internal path only.
 - Screenshot *content* interpretation was done via DOM text extraction, not vision review (no visual-auditor handoff performed in this worker; screenshots are provided for the auditor pass).

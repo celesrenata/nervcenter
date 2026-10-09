@@ -61,14 +61,14 @@ Scope:
 
 Scope:
 - Authentik admin: create `nervecenter` OIDC provider (slug `nervecenter`,
-  redirect `https://nervcenter.celestium.life/auth/callback` + dev
+  redirect `https://nervecenter.celestium.life/auth/callback` + dev
   `http://localhost:3000/auth/callback`, PKCE required) when credentials are
   available; otherwise document the exact manual steps in `docs/sso/`.
 - `deployments/kubernetes/**`: `NERVE_SSO_ISSUER`, `NERVE_JWT_SECRET` (Secret
   `nervecenter-auth`), `NERVE_LOCAL_ADMIN` unset in prod.
 - Verification: `/api/auth/sso/config` `enabled=true` + real endpoints once
   provider live; TLS valid for `sso.celestium.life` and
-  `nervcenter.celestium.life` (curl `-D -`).
+  `nervecenter.celestium.life` (curl `-D -`).
 
 ## S201 — Deploy auth stack to K3s
 

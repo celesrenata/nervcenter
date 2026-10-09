@@ -10,7 +10,7 @@
 | Backend auth | Toy: in-memory `token_store`, hardcoded `admin/password` (`backend/api/auth.py:27-28`), opaque tokens (not JWT), state wiped on restart | file inspection |
 | Web auth | `AuthContext` fake-decodes any `authToken` to `admin`; no Authorization header on API fetches; `LoginView` advertises default creds | `web/src/auth/AuthContext.tsx`, `web/src/views/LoginView.tsx` |
 | Apple auth | `NerveAuth` has biometric primitives only; no OIDC RP, no pairing, no Keychain credential flow | `apple/Shared/Sources/NerveAuth/**` |
-| Deploy | `nervcenter.celestium.life` live on LAN (TLS Let's Encrypt); public DNS NXDOMAIN (T207 open) | tasks.md verification log (nervecenter-deploy) |
+| Deploy | `nervecenter.celestium.life` live on LAN (TLS Let's Encrypt); public DNS NXDOMAIN (T207 open) | tasks.md verification log (nervecenter-deploy) |
 
 ## Architecture Decisions
 

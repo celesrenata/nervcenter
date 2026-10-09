@@ -84,7 +84,7 @@ Goal: the deployed system is reachable publicly and serves real data over https.
 
 | Step | Requirements | Notes |
 |---|---|---|
-| 5.1 T207 — public DNS/tunnel for nervous domain | R402 | `nervcenter.celestium.life` NXDOMAIN today |
+| 5.1 T207 — public DNS/tunnel for nervous domain | R402 | `nervecenter.celestium.life` NXDOMAIN today |
 | 5.2 T208 verified live (redirects fixed) | R401, R204 | deploy spec owns, this spec traces |
 | 5.3 Deployed bundle in real mode, live Overview | R403, R011 | `VITE_API_BASE` baked into image (deploy T206) |
 

@@ -66,7 +66,7 @@ nginx:1.27-alpine SPA + `/api/` + `/mcp/` reverse proxy, [`web/Dockerfile`](../w
   `/mcp/` → api ([`ingress.yaml`](kubernetes/base/ingress.yaml)).
 - `ingressClassName: traefik`; TLS is issued by cert-manager via
   `cert-manager.io/cluster-issuer: celestium-le-production` into secret
-  `nervcenter-celestium-tls` (mirrors the beeflow/comfyui pattern).
+  `nervecenter-celestium-tls` (mirrors the beeflow/comfyui pattern).
 - Point DNS at the same Traefik load-balancer IPs the other hosts use; cert
   is provisioned automatically once DNS resolves.
 

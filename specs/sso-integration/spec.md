@@ -61,7 +61,7 @@ surface that cannot ship:
   handling on all fetches, break-glass local login kept but demoted.
 - Apple: `NerveAuth` OIDC RP + Keychain credential storage + biometric gate
   for approvals; `NerveModels` regenerated from the live OpenAPI contract.
-- Deploy: ingress/traefik wiring so `nervcenter.celestium.life` sits behind
+- Deploy: ingress/traefik wiring so `nervecenter.celestium.life` sits behind
   the SSO realm (forward-auth or app-level redirect), TLS intact.
 - Audit: curl + Playwright matrices, mobile build evidence, defect log.
 
@@ -73,7 +73,7 @@ multi-tenant user management, provisioning Authentik users/roles beyond the
 ## Constraints
 
 - Registry/cluster unchanged: `registry.celestium.life` Harbor, K3s gremlin
-  cluster, traefik ingress, `nervcenter.celestium.life` host (LAN-only DNS
+  cluster, traefik ingress, `nervecenter.celestium.life` host (LAN-only DNS
   until T207 resolves — SSO must not depend on public reachability).
 - Authentik at `sso.celestium.life` is authoritative; we must not weaken its
   configuration. Provider creation requires Authentik admin credentials
@@ -94,7 +94,7 @@ multi-tenant user management, provisioning Authentik users/roles beyond the
   ships with a self-contained OIDC client that works the moment the provider
   exists.
 - The Authentik provider slug will be `nervecenter` (matching the namespace
-  convention); redirect URI `https://nervcenter.celestium.life/auth/callback`
+  convention); redirect URI `https://nervecenter.celestium.life/auth/callback`
   (dev: `http://localhost:3000/auth/callback`).
 - PKCE (S256) + authorization-code flow; no implicit flow, no tokens in URLs
   beyond the code.
@@ -138,7 +138,7 @@ multi-tenant user management, provisioning Authentik users/roles beyond the
   [tasks.md](./tasks.md) carries the verification log; every claim is backed
   by command output or a screenshot, never by assertion.
 - AC-S09: The deployed stack sits behind the SSO realm: unauthenticated
-  requests to `nervcenter.celestium.life` are redirected to
+  requests to `nervecenter.celestium.life` are redirected to
   `sso.celestium.life` (or the app-level login), and the TLS chain for both
   hosts is valid (curl-verified with `-D -`).
 

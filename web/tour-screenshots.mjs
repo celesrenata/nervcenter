@@ -1,6 +1,6 @@
 /**
  * Tour: capture a screenshot of every NerveCenter web view against the
- * live deployment (https://nervcenter.celestium.life).
+ * live deployment (https://nervecenter.celestium.life).
  *
  * Usage:  node tour-screenshots.mjs
  * Output:  screenshots/*.png  (one per view + login page)
@@ -8,7 +8,7 @@
 import { chromium } from 'playwright'
 import { mkdirSync } from 'fs'
 
-const BASE = 'https://nervcenter.celestium.life'
+const BASE = 'https://nervecenter.celestium.life'
 const OUT  = 'screenshots'
 const VIEWS = [
   ['login',  '/login'],

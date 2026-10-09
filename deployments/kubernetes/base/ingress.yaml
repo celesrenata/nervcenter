@@ -23,10 +23,10 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - nervcenter.celestium.life
-      secretName: nervcenter-celestium-tls
+        - nervecenter.celestium.life
+      secretName: nervecenter-celestium-tls
   rules:
-    - host: nervcenter.celestium.life
+    - host: nervecenter.celestium.life
       http:
         paths:
           - path: /api/
