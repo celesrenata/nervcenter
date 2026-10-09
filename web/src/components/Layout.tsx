@@ -90,10 +90,14 @@ export function Layout() {
         <span className="font-semibold text-gray-800 dark:text-white">NerveCenter</span>
       </header>
 
-      {/* Mobile drawer — off-canvas overlay, no full-screen scrim */}
+      {/* Mobile drawer — off-canvas overlay, no full-screen scrim. Starts below
+          the h-12 top bar (top-12) so it never paints over the hamburger
+          toggle: the old inset-y-0 overlapped the z-20 header and trapped the
+          44px button inside the drawer for the whole time it was open (r3
+          walk finding — the toggle could not be clicked while open). */}
       {menuOpen && (
         <div
-          className="fixed inset-y-0 left-0 z-30 w-64 max-w-[80%] bg-white dark:bg-gray-800 shadow-xl overflow-y-auto sm:hidden"
+          className="fixed top-12 bottom-0 left-0 z-30 w-64 max-w-[80%] bg-white dark:bg-gray-800 shadow-xl overflow-y-auto sm:hidden"
           role="dialog"
           aria-modal="false"
           aria-label="Navigation menu"
@@ -188,13 +192,16 @@ function UserFooter({
             {user?.roles?.join(', ') || 'No roles'}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onLogout}
-          className="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-        >
-          Logout
-        </button>
+        {/* r3 walk: no session ⇒ no Logout action (was visible for Guest) */}
+        {user && (
+          <button
+            type="button"
+            onClick={onLogout}
+            className="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+          >
+            Logout
+          </button>
+        )}
       </div>
     </div>
   )

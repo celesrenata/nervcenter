@@ -46,6 +46,20 @@ function normalizeGoal(g: any, idx: number): Goal {
 
 function formatDate(v: string | null): string {
   if (!v) return 'No due date'
+  // r3 walk (GL-2): deadlines are stored as UTC instants (`2026-11-30T00:00:00Z`).
+  // Formatting the instant with the browser's local zone shifts the calendar
+  // date back a day west of UTC (a Nov 30 deadline rendered as "Nov 29").
+  // Render the stored calendar date instead.
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v)
+  if (m) {
+    const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])))
+    return d.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC',
+    })
+  }
   const d = new Date(v)
   if (Number.isNaN(d.getTime())) return v
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
