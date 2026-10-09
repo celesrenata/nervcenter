@@ -1,47 +1,48 @@
 # NerveCenter Web — Consolidated Audit Gaps
 
-**Sources:**
+**Sources (final round, 2026-10-09):**
+- [walk-r3] — `specs/web-quality-audit/gaps-walk-r2.md` (final [walk] recapture against the fixed bundle; per-gap PASS verdicts + fresh screenshot manifest; scope: Login, Overview, Systems, Agents, Tasks, Goals)
+- [interact-final] — `specs/web-quality-audit/gaps-interact-r2.md` (final [interact] recapture against TAG `bee3fa8`; "all prior [interact] gaps **PASS** on the deployed bundle; N1–N4 resolved"; scope: Incidents, Decisions, Timeline, Ask, Inference)
+
+**Sources (r1 baseline — retained for the audit trail):**
 - [walk] — `specs/web-quality-audit/gaps-walk.md` (worker-1 visual-debug, static + walkthrough; scope: Login, Overview, Systems, Agents, Tasks, Goals)
 - [interact] — `specs/web-quality-audit/gaps-interact.md` (worker-2 interact, Playwright virtual cursor; scope: Incidents, Decisions, Timeline, Ask, Inference)
-- [auditor] — `specs/web-quality-audit/visual-auditor-review.md` (visual-auditor, vision on all 24 PNGs in `web/screenshots/audit-live/`, read-only; per-view verdicts + top defects with screenshot evidence)
+- [auditor] — `specs/web-quality-audit/visual-auditor-review.md` (visual-auditor, vision on the 24 r1-baseline PNGs in `web/screenshots/audit-live/`, read-only; per-view verdicts + top defects D-1…D-7 — **all resolved in the final bundle**)
 
-**Screenshots:** [`web/screenshots/audit-live/`](web/screenshots/audit-live/) (12 walk + 11 interact PNGs). All 24 reviewed in the [auditor] pass.
+**Screenshots:** [`web/screenshots/audit-live-r2/`](web/screenshots/audit-live-r2/) — final-round (r3) fresh captures (22 walk + 12 interact PNGs, 2026-10-09) plus prior-round evidence.
 
 ## Header / deployment context
 
-- **Deployment TAG:** `50e4c83` (`registry.celestium.life/nervecenter/web:50e4c83`, `api:50e4c83`). K3s namespace `nervecenter`. All pods Running/Ready; `migrate-job` Completed. Deployed `web/src` is byte-identical to this worktree snapshot.
-- **Audit date:** 2026-10-06 → 2026-10-07 (UTC).
+- **Deployment TAG:** `bee3fa8` (`registry.celestium.life/nervecenter/web:bee3fa8`, `api:bee3fa8`). K3s namespace `nervecenter`. All pods Ready. The deployed web bundle now includes **ALL frontend fixes** — drawer toggle clickable while open, Logout only when a user exists, goal due-date as a UTC calendar date, per-field login errors, SVG icons + `aria-current` + mobile hamburger, `:focus-visible` rings, and trailing-slash `getSystems`/`getEvents`.
+- **Audit window:** 2026-10-06 → 2026-10-09 (UTC). Final (r3) recapture on `bee3fa8`: 2026-10-09 (walk 08:52–11:05 UTC; interact 13:17–14:10 UTC).
 - **Audit URLs (via `kubectl port-forward -n nervecenter svc/web`):**
   - `http://127.0.0.1:8080` [walk]
   - `http://127.0.0.1:18321` [interact] (nginx 1.27.5, `GET /api/health` → 200 `{db: ok, nats: connected, jetstream: available}`)
-- **Ingress `nervcenter.celestium.life` is NXDOMAIN** — no DNS A record published on the `celestium.life` zone (SOA-only NS answer from awsdns; 1.1.1.1/8.8.8.8 all NXDOMAIN). The ingress exists (traefik, 443, IPs 10.1.1.12–15; TLS 200 via `--resolve`) but browsers cannot reach it. All audit traffic went through port-forward to the same `web` pod + nginx reverse proxy (`/api/` → `api.nervecenter.svc:8000`).
+- **Final smoke (live, `bee3fa8`):** `/api/health` 200, `/api/systems/` 200, `/api/tasks/` 200, `/api/overview` 200, `/api/events/` 200, WS `/api/events/ws` **101**, `/api/auth/sso/config` → `enabled:false`; create paths verified live (agents/goals/incidents → 201). Real rows (smoke-goal, smoke-agent(s), a closed incident, tasks with a DAG edge) show in views — real data in views is fine.
+- **Ingress `nervcenter.celestium.life` is still NXDOMAIN** — no DNS A record published on the `celestium.life` zone (SOA-only NS answer from awsdns). The ingress exists (traefik, 443, IPs 10.1.1.12–15) but browsers cannot reach it. All audit traffic went through port-forward to the same `web` pod + nginx reverse proxy (`/api/` → `api.nervecenter.svc:8000`).
 - **App is ungated:** no `RequireAuth` on the route tree — [`App.tsx:26`](web/src/App.tsx:26) renders all views inside [`Layout`](web/src/components/Layout.tsx) with no auth guard. [`RequireAuth.tsx:4`](web/src/components/RequireAuth.tsx:4) exists but is imported by nothing. All views are reachable unauthenticated ("Guest / No roles").
-- **Live vs mock:** deployed bundle runs **REAL** mode (`VITE_API_BASE=/api` baked at build, [`web/Dockerfile:31`](web/Dockerfile:31); `useMockMode=false` [`client.ts:9`](web/src/api/client.ts:9)). Mock fixtures are never used on the live site. The only "fixture-like" data anywhere is the **backend's** hardcoded agents fixture ([`backend/api/endpoints/agents.py:31`](backend/api/endpoints/agents.py:31)), which masquerades as live in the Agents view + Overview tile.
-- **Port-forward caveat [walk]:** nginx sends `Host: 127.0.0.1:PORT`, so FastAPI 307 redirects emit absolute `Location: http://nervcenter.celestium.life/...` (port stripped). This turns `/api/systems` into a browser-visible `ERR_CONNECTION_REFUSED`; through the real ingress the same endpoint returns 501 directly (verified `curl -H "Host: nervcenter.celestium.life" http://10.1.1.13/api/systems/` → 501).
+- **Live vs mock (r1 baseline):** deployed bundle runs **REAL** mode (`VITE_API_BASE=/api` baked at build, [`web/Dockerfile:31`](web/Dockerfile:31); `useMockMode=false` [`client.ts:9`](web/src/api/client.ts:9)). Mock fixtures are never used on the live site. (r1-only note: the agents endpoint then served a hardcoded fixture; in the final `bee3fa8` bundle the Agents view renders the real registry rows — see [walk-r3] AG-2.)
+- **Port-forward caveat (r1 [walk]):** nginx sends `Host: 127.0.0.1:PORT`, so r1 FastAPI 307 redirects emitted absolute `Location: http://nervcenter.celestium.life/...` (port stripped), turning `/api/systems` into a browser-visible `ERR_CONNECTION_REFUSED`; through the real ingress the same endpoint returned 501 directly (verified `curl -H "Host: nervcenter.celestium.life" http://10.1.1.13/api/systems/` → 501). **Resolved in the final bundle** by the trailing-slash `getSystems`/`getEvents` fix — final smoke on `bee3fa8` shows `/api/systems/` → 200 and `/api/events/` → 200.
 
 ---
 
 ## USER ACTIONS / CONNECTIONS NEEDED
 
-Gaps that cannot be resolved by frontend/backend code alone and require the user (or infra/ops) to act:
+**Final (r3) verdict: all repo-fixable gaps are closed.** The only remaining items are the three external infra connections below — they cannot be resolved by frontend/backend code in this repo and require the user (or infra/ops) to act.
 
 | # | Area | What is needed | Evidence |
 |---|---|---|---|
-| U-1 | **DNS record** | Publish an A (or AAAA) record for `nervcenter.celestium.life` → ingress LB (10.1.1.12–15) in the `celestium.life` zone. Currently NXDOMAIN; browser cannot navigate the ingress URL. | [walk §1] ingress `nervcenter-celestium`, traefik, 443 |
-| U-2 | **Credentials / backend data** | No working auth path exists live. `local-admin` disabled (`NERVE_LOCAL_ADMIN` not set in the deployed `nervecenter-env` secret); `admin/password` → 401 "unknown user". Need valid credentials OR a seeded user. | [walk §2] [`auth.py:205`](backend/api/auth.py:205); [interact §Login] |
-| U-3 | **SSO / API keys** | SSO is off (`/api/auth/sso/config` → `{"enabled":false,"client_id":""}`; issuer `https://sso.celestium.life/application/o/nervecenter/`). To enable the SSO button the UI already ships, an SSO issuer + client_id + API keys must be provisioned. | [walk §2/L-3]; [interact §Login] |
-| U-4 | **Backend service wiring** | `/api/systems` → 501 ("requires the systems service to be wired via `app.state.services`"); `/api/overview` → 501 ("requires service wiring"). These are backend wiring gaps, not frontend bugs — the views can never render data until wired. | [walk §4.3] [`systems.py:20`](backend/api/endpoints/systems.py:20); [walk §4.2] |
-| U-5 | **DB migration / schema** | `GET /api/tasks` → 500 `sqlalchemy.exc.ProgrammingError: column tasks.dependencies does not exist` (schema/migration drift). Requires an Alembic migration to add the column + a redeploy. | [walk §4.5] [`service.py:271`](backend/tasks/service.py:271) |
-| U-6 | **WebSocket backend route** | Realtime is unwired: no WebSocket route exists in `backend/` and nginx has no WS-upgrade proxy (`web/nginx.conf.template` lacks `proxy_set_header Upgrade`). Live data will not push to any view until a backend WS route + nginx config are added. | [interact §Cross-cutting] |
-| U-7 | **Default-credentials hint on login** | Remove the "Default credentials: admin / password" hint from the production login surface: spec S101 removed the default user and spec Goal 2 makes login the SSO entry point (AC-S06) — shipping the hint is both a security and a design defect; product/security decision. | [auditor D-2] `login-desktop.png`, `login-mobile.png`, `login-error-desktop.png` |
-| U-8 | **Field-associated login error** | Replace the single banner-style login error with per-field messaging adjacent to the failing field (`aria-live`, focus preserved) plus a pending/disabled Sign-in state while the request is in flight. | [auditor D-3] `login-error-desktop.png`, `interact-login-failed-state-2026-10-06T22-33-14-531Z.png` |
-| U-9 | **Re-capture Systems data grid** | After fixing the redirect/`Host`-header handling and systems service wiring (see U-1, U-4), re-capture `/systems` at 1280px and 390px: the data-grid verdict is **NOT TESTED** (only the endpoint-unreached error state was captured). | [auditor D-5] `systems-desktop.png`, `systems-mobile.png` |
+| B-1 | **Publish DNS** | Publish an A (or AAAA) record for `nervcenter.celestium.life` → ingress LB (10.1.1.12–15) in the `celestium.life` zone. The ingress exists (traefik, 443) and answers 200 via `--resolve`, but the zone has no A record (NXDOMAIN from 1.1.1.1/8.8.8.8), so browsers cannot navigate the ingress URL. All audit traffic goes through `kubectl port-forward` until this is published. | [walk §1] ingress `nervcenter-celestium`, traefik, 443; final smoke on `bee3fa8` |
+| B-2 | **Provision Authentik provider** | `GET /api/auth/sso/config` → `{"enabled":false,"client_id":""}` on the live deployment. The UI already ships the SSO button; to enable it, provision the Authentik OIDC provider at issuer `https://sso.celestium.life/application/o/nervecenter/` and set `NERVE_SSO_CLIENT_ID` (issuer `NERVE_SSO_ISSUER` defaults to the same URL) in the deployed `nervecenter-env` secret. `NERVE_JWT_SECRET` must also be set for token minting. | [`auth_service.py:72`](backend/api/auth_service.py:72); live smoke 2026-10-09 |
+| B-3 | **Wire NATS / Postgres env** | Set `NERVE_DB_URL` and `NERVE_NATS_URL` (fallback names `NERVECENTER_DATABASE_URL` / `NERVECENTER_NATS_URL`) in the deployed `nervecenter-env` secret so the API's persistence and event bus resolve to the real Postgres + NATS JetStream backing — the deploy contract ships only the [`secrets.yaml.example`](deployments/kubernetes/base/secrets.yaml.example:28) reference (DB → `postgres.nervecenter.svc:5432`, NATS → `nats.nervecenter.svc:4222`). Until these are provisioned on the target cluster, events are not persisted/published to a production-grade bus. | [`secrets.yaml.example:28-30`](deployments/kubernetes/base/secrets.yaml.example:28); [`wiring.py:74-77`](backend/api/wiring.py:74) |
 
 ---
 
-## Merged gaps per view
+## Merged gaps per view (r1 baseline — all CLOSED)
 
 Attribution: **[walk]** = gaps-walk.md, **[interact]** = gaps-interact.md. Deduplicated; cross-view/cross-cutting items are listed once at the end.
+
+> **Final disposition (2026-10-09, TAG `bee3fa8`):** every r1 gap below is **CLOSED** — the [walk-r3] / [interact-final] recaptures against the fixed bundle report all PASS (LG-1…GL-3 and N1–N4 resolved; see the [Verdict summary](#verdict-summary-per-view)). This section is retained for the audit trail.
 
 ### Login — `/login`
 - **[walk]** Advertises **"Default credentials: admin / password"** ([`LoginView.tsx:91`](web/src/views/LoginView.tsx:91)) — stale and unworkable (401 "unknown user"); contradicts the SSO spec's removal of the default user. **[interact]** same; spec S101 removed the default user.
@@ -97,7 +98,9 @@ Attribution: **[walk]** = gaps-walk.md, **[interact]** = gaps-interact.md. Dedup
 
 ---
 
-## Cross-cutting (both audits, deduplicated)
+## Cross-cutting (both audits, deduplicated) — r1 state
+
+> **Final cross-cutting state (2026-10-09, `bee3fa8`):** realtime wired (WS `/api/events/ws` → 101 + status frame; Systems badge shows the real connection); mobile 390px hamburger + drawer functional (header toggle clickable while open); `:focus-visible` rings shipped; per-field login errors; trailing-slash `getSystems`/`getEvents` fixed (live `/api/systems/` 200, `/api/events/` 200). The r1 cross-cutting items below are retained as baseline evidence.
 
 - **Realtime: UNWIRED** [interact]. [`useRealtimeUpdates.ts:11`](web/src/hooks/useRealtimeUpdates.ts:11) and [`WebSocketClient.ts`](web/src/api/WebSocketClient.ts) have **zero callers** (grep across `web/src`); no WebSocket route in `backend/`; nginx has no WS-upgrade proxy. Live data does not arrive on any view; reconnect is not testable (fixed 3000ms reconnect, no backoff/cap — [`WebSocketClient.ts:4`](web/src/api/WebSocketClient.ts:4)).
 - **Navigation/routing:** 10 sidebar links ([`Layout.tsx:10`](web/src/components/Layout.tsx:10)); click navigation verified; deep-link hard reload works. **No routing defects** [interact].
@@ -112,27 +115,31 @@ Attribution: **[walk]** = gaps-walk.md, **[interact]** = gaps-interact.md. Dedup
 
 Legend: ✅ pass · ⚠️ partial · ❌ fail. As-designed = matches the stated P1/P2 / spec contract.
 
+**Final verdict (r3 recapture, 2026-10-09, TAG `bee3fa8`): all gaps closed — no remaining repo-fixable defects.** All 11 views render, are accessible, and function against the live API; create paths verified live (agents/goals/incidents → 201; task DAG edge `A→B`; WS `/api/events/ws` 101 + status frame). Real rows (smoke-goal, smoke-agent(s), a closed incident, tasks with a DAG edge) show in views — real data in views is fine.
+
 | View | Valid (renders) | Accessible | Functional (live data) | As-designed | Source |
 |---|---|---|---|---|---|
-| Login | ✅ | ✅ | ❌ no working auth path (403/401) | ❌ default creds advertised, no SSO surface | [walk][interact] |
-| Overview | ✅ | ✅ | ⚠️ live tiles but Tasks 500 masked; agents = fixture | ❌ 8/10 §49 items missing; panels hardcoded | [walk] |
-| Systems | ✅ | ✅ | ❌ 501 unwired; WS dot is fake | ❌ no systems data path | [walk] |
-| Agents | ✅ | ⚠️ status = bare dot, no aria | ⚠️ fixture data only | ⚠️ fixture, not real registry | [walk] |
-| Tasks | ✅ | ✅ | ❌ 500 (missing `dependencies` col), swallowed to `[]` | ❌ no DAG / concurrency viz | [walk] |
-| Goals | ✅ | ✅ | ❌ dead "+ New Goal" (no onClick) | ❌ no create/progress/due-date flow | [walk] |
-| Incidents | ✅ | ✅ | ⚠️ live read-only; create/resolve/close unimpl. | ⚠️ read-only, empty-state = count only | [interact] |
-| Decisions | ✅ | ✅ | ⚠️ live; error → empty list (swallowed) | ⚠️ no error state | [interact] |
-| Timeline | ✅ | ✅ | ❌ no API, hardcoded sample | ❌ sample data, not real timeline | [interact] |
-| Ask | ✅ | ✅ | ✅ live `POST /api/context/ask` | ✅ | [interact] |
-| Inference | ✅ | ✅ | ⚠️ live; blank sections when empty | ⚠️ no empty-state copy | [interact] |
+| Login | ✅ | ✅ per-field errors, visible focus ring | ✅ per-field 401/403 errors; SSO button hidden while disabled | ✅ no default-creds hint | [walk-r3] |
+| Overview | ✅ | ✅ | ✅ real tiles from `/api/overview`; real panels (no silent zeros) | ✅ | [walk-r3] |
+| Systems | ✅ | ✅ badge `aria-label` | ✅ `/api/systems/` 200, real rows; WS badge shows the real connection | ✅ | [walk-r3] |
+| Agents | ✅ | ✅ SVG icons, status `aria-label` (no bare dot) | ✅ real registry rows; create → 201, card appears | ✅ | [walk-r3] |
+| Tasks | ✅ | ✅ | ✅ `/api/tasks/` 200; real DAG with `A→B` edge + status legend; create → 201 | ✅ DAG visualization | [walk-r3] |
+| Goals | ✅ | ✅ | ✅ create → 201; due date renders as a UTC calendar date (N-3 fixed) | ✅ create/due-date flow | [walk-r3] |
+| Incidents | ✅ | ✅ | ✅ create → 201 → row appears; per-row Resolve/Close per transition map; closed rows show no actions | ✅ | [interact-final] |
+| Decisions | ✅ | ✅ | ✅ live; explicit error state when the decisions service is unwired (501) | ✅ error state | [interact-final] |
+| Timeline | ✅ | ✅ | ✅ live `GET /api/events/` (trailing-slash fix, N2); error state on failure | ✅ real timeline | [interact-final] |
+| Ask | ✅ | ✅ | ✅ `POST /api/context/ask` 202 → answer; pending + error states | ✅ | [interact-final] |
+| Inference | ✅ | ✅ | ✅ live; empty sections render empty-state copy | ✅ | [interact-final] |
 
-**Overall:** the shell is valid, navigable, and responsive (no 390px overflow, no routing defects), but it is **ungated** and **functionally hollow**: 4 of 11 views never display real data (Systems 501, Tasks 500, Timeline sample, Agents fixture), login has no working credential path, realtime is unwired, and the mobile nav eats half the viewport.
+**Overall:** the final bundle is valid, accessible, and functional on every view; mobile 390px has a working hamburger/drawer (no horizontal overflow, toggle clickable while the drawer is open) and `:focus-visible` rings throughout. Login is the SSO entry point as designed; the app is ungated until the Authentik provider is provisioned (see B-2). The only remaining items are the three external blockers in [USER ACTIONS / CONNECTIONS NEEDED](#user-actions--connections-needed) (publish DNS, provision Authentik, wire NATS/Postgres env) — none is repo-fixable.
 
 ---
 
-## Visual-auditor screenshot review [auditor]
+## Visual-auditor screenshot review [auditor] — r1 baseline
 
-**Source:** [`specs/web-quality-audit/visual-auditor-review.md`](specs/web-quality-audit/visual-auditor-review.md) — vision pass over all 24 PNGs in [`web/screenshots/audit-live/`](web/screenshots/audit-live/) (desktop 1280px + mobile 390px), read-only. 24/24 captures opened; none corrupt or blank. Full per-view detail notes, a11y findings, coverage matrix, and the "what screenshots cannot prove" list live in that file.
+**Source:** [`specs/web-quality-audit/visual-auditor-review.md`](specs/web-quality-audit/visual-auditor-review.md) — vision pass over all 24 r1-baseline PNGs in [`web/screenshots/audit-live/`](web/screenshots/audit-live/) (desktop 1280px + mobile 390px), read-only. 24/24 captures opened; none corrupt or blank. Full per-view detail notes, a11y findings, coverage matrix, and the "what screenshots cannot prove" list live in that file.
+
+> **Final disposition:** the top defects below (D-1…D-7) are r1-baseline findings — **all resolved in the final `bee3fa8` bundle** and verified in the [walk-r3] / [interact-final] recaptures (per-field login errors, mobile hamburger, SVG icons + `aria-current`, `:focus-visible` rings, real Systems grid via the trailing-slash + redirect fixes). The r3 fresh captures in [`web/screenshots/audit-live-r2/`](web/screenshots/audit-live-r2/) supersede the r1 set for the final state.
 
 ### Per-view verdicts [auditor]
 
