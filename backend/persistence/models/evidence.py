@@ -49,7 +49,9 @@ class Evidence(Base):
     __tablename__ = "evidence"
 
     id: Mapped[UUIDv4]
-    created_at: Mapped[datetime]
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
     schema_version: Mapped[str] = mapped_column(String(16), default="v0")
     hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
