@@ -199,6 +199,73 @@ class TestOverviewEndpoint:
 
 
 # ===========================================================================
+# N-4: overview counts.agents must equal the /api/agents total
+#
+# The walk recapture found the Overview "Active Agents" tile (served by
+# ``/api/agents``) at a different number than ``/api/overview``
+# ``counts.agents``: overview counted only the in-memory 14-native registry
+# while the agents endpoint merges registry + persisted instances.
+# ``get_overview`` now reuses :func:`agents.list_agents`, so the two must
+# stay in lockstep — pinned here so a persisted agent instance can never
+# silently re-desync them.
+# ===========================================================================
+class _FakePersistedAgentService:
+    """Minimal stand-in for :class:`AgentService` with N persisted instances."""
+
+    def __init__(self, count: int):
+        self._count = count
+
+    async def list_persisted(self):
+        return [
+            {
+                "id": f"agent-{i}",
+                "name": f"Persisted {i}",
+                "type": "planner",
+                "status": "active",
+                "currentTask": None,
+            }
+            for i in range(self._count)
+        ]
+
+
+class TestOverviewAgentsCountMatchesAgentsEndpoint:
+    def _wire(self, app, persisted_count: int):
+        class _FakeGoals:
+            async def list_goals(self, *, limit=100, **kw):
+                return []
+
+        class _FakeTasks:
+            async def count_by_status(self):
+                return {}
+
+        app.state.services = {
+            "goals": _FakeGoals(),
+            "tasks": _FakeTasks(),
+            "agents": _FakePersistedAgentService(persisted_count),
+        }
+
+    def test_counts_equal_agents_endpoint_total_zero_persisted(self, client, app):
+        self._wire(app, persisted_count=0)
+        agent_list = client.get("/api/agents")
+        assert agent_list.status_code == 200
+        assert len(agent_list.json()["data"]) == 14
+        overview = client.get("/api/overview").json()
+        assert overview["counts"]["agents"] == 14
+        assert len(overview["runningAgents"]) == 14
+
+    def test_counts_equal_agents_endpoint_total_with_persisted(self, client, app):
+        # The walk-observed regression shape: 14 native + N persisted.
+        self._wire(app, persisted_count=4)
+        agent_list = client.get("/api/agents")
+        assert agent_list.status_code == 200
+        agent_total = len(agent_list.json()["data"])
+        assert agent_total == 18  # 14 native registry + 4 persisted instances
+        overview = client.get("/api/overview").json()
+        assert overview["counts"]["agents"] == agent_total
+        assert len(overview["runningAgents"]) == agent_total
+
+
+# ===========================================================================
 # U-6 / CC-1: /api/events/ws route exists + degrades honestly
 # ===========================================================================
 class _FakeSub:

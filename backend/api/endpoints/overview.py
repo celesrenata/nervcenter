@@ -8,9 +8,10 @@ backend data instead of hardcoded fixtures:
 - ``goals`` — real goal rows from
   :class:`~backend.goals.service.GoalService.list_goals` (plus the
   ``activeGoals`` subset).
-- ``agents`` — real agent types from the in-memory
-  :class:`~backend.agents.registry.AgentRegistry` (the only agent store that
-  exists today; there is no DB-backed agent registry — see agents.py).
+- ``agents`` — the *same* merged roster ``GET /api/agents`` returns: the 14
+  native agent types from the in-memory ``AgentRegistry`` first, then any
+  persisted agent instances (created via ``POST /api/agents``). ``counts.agents``
+  therefore always equals the ``/api/agents`` total (see :mod:`agents`).
 - ``incidents`` / ``pendingIncidents`` — empty (no persistence-backed incident
   service exists; reported as a blocker, never fabricated).
 
@@ -33,8 +34,8 @@ from typing import Any
 import structlog
 from fastapi import APIRouter, HTTPException, Request
 
-from backend.agents.registry import AgentRegistry
 from backend.api.docs import get_version_info
+from backend.api.endpoints.agents import list_agents as _list_agents
 
 log = structlog.get_logger(__name__)
 
@@ -43,10 +44,6 @@ router = APIRouter(prefix="/api/overview", tags=["overview"])
 # Process start ≈ when this module first loaded; used to report a real
 # ``uptime`` on the ``health`` field rather than a fabricated duration.
 _PROCESS_START = datetime.now(UTC)
-
-# Single shared registry (the native types are static); avoids rebuilding the
-# 14 manifests per request.
-_AGENT_REGISTRY = AgentRegistry()
 
 _UNWIRED_DETAIL = (
     "Overview endpoint requires service wiring (app.state.services). "
@@ -140,15 +137,21 @@ async def get_overview(request: Request):
         if (g.get("status") or "").lower() == "active"
     ]
 
-    # Real agent roster from the in-memory registry (no DB-backed registry yet).
+    # Real agent roster — the *same* merged list ``GET /api/agents`` returns
+    # (14 native registry types first, then persisted instances when an agent
+    # service is wired). ``counts.agents`` is therefore always equal to the
+    # ``/api/agents`` total; reusing :func:`_list_agents` keeps the two
+    # endpoints in lockstep (N-4) instead of drift when persisted instances
+    # exist (14 native + N instances).
+    agent_rows = (await _list_agents(request)).data
     agents = [
         {
-            "id": m.agent_type,
-            "name": m.name,
-            "status": "active",
-            "task": None,
+            "id": a.get("id"),
+            "name": a.get("name"),
+            "status": a.get("status"),
+            "task": a.get("currentTask") or a.get("task"),
         }
-        for m in _AGENT_REGISTRY.list_all()
+        for a in agent_rows
     ]
 
     version_info = get_version_info()
