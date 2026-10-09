@@ -419,7 +419,12 @@ const realApi = {
 
   // Events (Timeline)
   getEvents: async () => {
-    const res = await apiFetch('/events')
+    // Trailing slash is required: the backend route is registered on
+    // `/api/events/` and the slashless form answers with a 307 whose absolute
+    // Location drops the port/scheme, which fails the browser follow
+    // (SY fix; mirrors getSystems). Without it the live Timeline view shows a
+    // spurious "network error" alert alongside the empty state.
+    const res = await apiFetch('/events/')
     return { data: await listFromResponse(res), status: res.status }
   },
   getEvent: async (eventId: string) => {
@@ -429,7 +434,10 @@ const realApi = {
 
   // Systems health
   getSystems: async () => {
-    const res = await apiFetch('/systems')
+    // Trailing slash is required: the backend route is registered on
+    // `/api/systems/` and the slashless form answers with a 307 whose absolute
+    // Location drops the port/scheme, which fails the browser follow (SY fix).
+    const res = await apiFetch('/systems/')
     return { data: await listFromResponse(res), status: res.status }
   },
   getMetrics: async () => {

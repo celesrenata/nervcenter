@@ -47,13 +47,13 @@ log = structlog.get_logger(__name__)
 # ---------------------------------------------------------------------------
 
 
-def _iso(dt: datetime | None) -> str | None:
-    """Normalize a datetime to an ISO-8601 string (``None`` passthrough)."""
+def _utc(dt: datetime | None) -> datetime | None:
+    """Ensure a datetime is tz-aware UTC (``None`` passthrough)."""
     if dt is None:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=UTC)
-    return dt.isoformat()
+        return dt.replace(tzinfo=UTC)
+    return dt
 
 
 def _parse(value: str | datetime | None) -> datetime | None:
@@ -107,19 +107,22 @@ def _schema_to_orm(schema: RelationshipSchema) -> RelationshipORM:
         target_entity_id=schema.target_entity_id,
         relation_type=schema.relation_type,
         properties=dict(schema.properties or {}),
-        # ISO-8601 strings on purpose (see module docstring); quiet pyright.
-        valid_from=_iso(schema.valid.valid_from),  # type: ignore[assignment]
-        valid_to=_iso(schema.valid.valid_to),  # type: ignore[assignment]
-        asserted_at=_iso(schema.asserted_at),  # type: ignore[assignment]
+        valid_from=_utc(schema.valid.valid_from),
+        valid_to=_utc(schema.valid.valid_to),
+        asserted_at=_utc(schema.asserted_at),
         confidence=float(schema.confidence),
         evidence=list(schema.evidence or []),
     )
 
 
-def _active_clause(iso: str) -> Any:
-    """SQL clause: the window of the row covers instant ``iso``."""
-    lower = or_(RelationshipORM.valid_from.is_(None), RelationshipORM.valid_from <= iso)
-    upper = or_(RelationshipORM.valid_to.is_(None), RelationshipORM.valid_to > iso)
+def _active_clause(instant: datetime) -> Any:
+    """SQL clause: the window of the row covers instant ``instant``."""
+    lower = or_(
+        RelationshipORM.valid_from.is_(None), RelationshipORM.valid_from <= instant
+    )
+    upper = or_(
+        RelationshipORM.valid_to.is_(None), RelationshipORM.valid_to > instant
+    )
     return and_(lower, upper)
 
 
@@ -187,7 +190,7 @@ class RelationshipService:
         Raises :class:`UnknownEntityError` if either endpoint is missing and
         ``ValueError`` for an inverted window (``valid_from > valid_to``).
         """
-        wf, wt = _iso(valid_from), _iso(valid_to)
+        wf, wt = _utc(valid_from), _utc(valid_to)
         if wf is not None and wt is not None and wf > wt:
             raise ValueError("valid_from must not be after valid_to")
         schema = RelationshipSchema(
@@ -245,9 +248,10 @@ class RelationshipService:
             )
             orm.relation_type = merged.relation_type
             orm.properties = dict(merged.properties or {})
-            orm.valid_from = _iso(merged.valid.valid_from)  # type: ignore[assignment]
-            orm.valid_to = _iso(merged.valid.valid_to)  # type: ignore[assignment]
-            orm.asserted_at = _iso(merged.asserted_at)  # type: ignore[assignment]
+            orm.valid_from = _utc(merged.valid.valid_from)
+            orm.valid_to = _utc(merged.valid.valid_to)
+            # merged.asserted_at is required by the schema (non-None); quiet pyright.
+            orm.asserted_at = _utc(merged.asserted_at)  # type: ignore[assignment]
             orm.confidence = float(merged.confidence)
             orm.evidence = list(merged.evidence or [])
             orm.source_entity_id = merged.source_entity_id
@@ -286,22 +290,21 @@ class RelationshipService:
         Idempotent: closing a relationship whose window already ended at or
         after ``at`` is a no-op. Closing *before* ``valid_from`` is an error.
         """
-        when = at or datetime.now(UTC)
-        iso_at = _iso(when)
-        assert iso_at is not None
+        when = _utc(at or datetime.now(UTC))
+        assert when is not None
         async with self._factory()() as session:
             orm = await self._load(session, rel_id)
             cur = orm.valid_to
-            if cur is not None and str(cur) >= iso_at:
+            if cur is not None and cur >= when:
                 return _orm_to_schema(orm)
             wf_raw = orm.valid_from
-            if wf_raw is not None and str(wf_raw) > iso_at:
+            if wf_raw is not None and wf_raw > when:
                 await session.rollback()
                 raise ValueError("cannot close a relationship before it began")
-            orm.valid_to = iso_at  # type: ignore[assignment]
+            orm.valid_to = when
             await session.commit()
             await session.refresh(orm)
-            log.info("knowledge.relationship.closed", relationship_id=rel_id, at=iso_at)
+            log.info("knowledge.relationship.closed", relationship_id=rel_id, at=when)
             return _orm_to_schema(orm)
 
     async def repoint(
@@ -341,9 +344,9 @@ class RelationshipService:
         """
         if direction not in ("outgoing", "incoming", "both"):
             raise ValueError(f"unknown direction {direction!r}")
-        iso = _iso(at or datetime.now(UTC))
-        assert iso is not None
-        stmt = select(RelationshipORM).where(_active_clause(iso))
+        instant = _utc(at or datetime.now(UTC))
+        assert instant is not None
+        stmt = select(RelationshipORM).where(_active_clause(instant))
         if direction == "outgoing":
             stmt = stmt.where(RelationshipORM.source_entity_id == entity_id)
         elif direction == "incoming":
@@ -371,10 +374,10 @@ class RelationshipService:
         relation_type: str | None = None,
     ) -> list[RelationshipSchema]:
         """Relationships from ``source_id`` to ``target_id`` active at ``at``."""
-        iso = _iso(at or datetime.now(UTC))
-        assert iso is not None
+        instant = _utc(at or datetime.now(UTC))
+        assert instant is not None
         stmt = select(RelationshipORM).where(
-            _active_clause(iso),
+            _active_clause(instant),
             RelationshipORM.source_entity_id == source_id,
             RelationshipORM.target_entity_id == target_id,
         )
@@ -402,20 +405,20 @@ class RelationshipService:
         window bounds matches rows of any window (bounded by ``limit``).
         """
         conds: list[Any] = []
-        wt_iso = _iso(window_to)
-        wf_iso = _iso(window_from)
-        if wt_iso is not None:
+        wt = _utc(window_to)
+        wf = _utc(window_from)
+        if wt is not None:
             conds.append(
                 or_(
                     RelationshipORM.valid_from.is_(None),
-                    RelationshipORM.valid_from < wt_iso,
+                    RelationshipORM.valid_from < wt,
                 )
             )
-        if wf_iso is not None:
+        if wf is not None:
             conds.append(
                 or_(
                     RelationshipORM.valid_to.is_(None),
-                    RelationshipORM.valid_to > wf_iso,
+                    RelationshipORM.valid_to > wf,
                 )
             )
         stmt = select(RelationshipORM).where(*conds) if conds else select(RelationshipORM)
@@ -476,9 +479,9 @@ class RelationshipService:
         Used by time-travel and derivation to load a consistent view of the
         graph at one instant.
         """
-        iso = _iso(at or datetime.now(UTC))
-        assert iso is not None
-        stmt = select(RelationshipORM).where(_active_clause(iso))
+        instant = _utc(at or datetime.now(UTC))
+        assert instant is not None
+        stmt = select(RelationshipORM).where(_active_clause(instant))
         if relation_types is not None:
             stmt = stmt.where(RelationshipORM.relation_type.in_(list(relation_types)))
         stmt = stmt.order_by(RelationshipORM.asserted_at).limit(limit)

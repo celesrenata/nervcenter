@@ -55,13 +55,13 @@ __all__ = ["GoalService", "GoalNotFoundError"]
 # ---------------------------------------------------------------------------
 
 
-def _iso(dt: datetime | None) -> str | None:
-    """Normalize a datetime to an ISO-8601 string (``None`` passthrough)."""
+def _utc(dt: datetime | None) -> datetime | None:
+    """Ensure a datetime is tz-aware UTC (``None`` passthrough)."""
     if dt is None:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=UTC)
-    return dt.isoformat()
+        return dt.replace(tzinfo=UTC)
+    return dt
 
 
 def _orm_to_schema(orm: GoalORM) -> GoalSchema:
@@ -103,7 +103,7 @@ def _schema_to_orm(schema: GoalSchema) -> GoalORM:
         criteria=list(schema.criteria or []),
         subgoal_ids=list(schema.subgoal_ids or []),
         priority=int(schema.priority),
-        deadline=_iso(schema.deadline),  # type: ignore[assignment]
+        deadline=_utc(schema.deadline),
         related_entity_ids=list(schema.related_entity_ids or []),
     )
 
@@ -377,12 +377,12 @@ class GoalService:
         limit: int = 100,
     ) -> list[GoalSchema]:
         """Return active goals whose deadline is before ``when``."""
-        iso = _iso(when) or ""
+        bound = _utc(when)
         factory = self._factory()
         stmt = (
             select(GoalORM)
             .where(GoalORM.status == "active")
-            .where(or_(GoalORM.deadline.is_(None), GoalORM.deadline <= iso))
+            .where(or_(GoalORM.deadline.is_(None), GoalORM.deadline <= bound))
             .where(GoalORM.deadline.is_not(None))
             .order_by(GoalORM.deadline.asc())
             .limit(limit)

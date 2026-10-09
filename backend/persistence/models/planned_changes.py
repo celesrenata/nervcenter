@@ -38,7 +38,6 @@ from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import DateTime, ForeignKeyConstraint, Integer, String
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, Jsonb, UUIDv4
@@ -63,7 +62,7 @@ class PlannedChange(Base):
     risk_level: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     subject_ids: Mapped[list[str]] = mapped_column(Jsonb, default=list, nullable=False)
     source_decision_id: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
+        String, nullable=True, index=True
     )
     diff: Mapped[dict[str, Any]] = mapped_column(Jsonb, default=dict, nullable=False)
     rollback: Mapped[dict[str, Any]] = mapped_column(Jsonb, default=dict, nullable=False)
@@ -73,7 +72,7 @@ class PlannedChange(Base):
     expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    approval_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
+    approval_id: Mapped[str | None] = mapped_column(String, nullable=True)
 
     def __repr__(self) -> str:
         return (

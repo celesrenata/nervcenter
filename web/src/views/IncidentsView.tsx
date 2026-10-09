@@ -35,6 +35,12 @@ const IncidentsView = () => {
   const [formBusy, setFormBusy] = useState(false)
   const [formError, setFormError] = useState<{ status: number; detail: string } | null>(null)
   const [formSuccess, setFormSuccess] = useState(false)
+  // N3: per-row Resolve / Close transitions hit the real backend transition
+  // routes. `actionBusy` tracks the in-flight row + action; `actionError`
+  // surfaces a failed transition on exactly that row (parallel to
+  // `submitReport`'s form-busy/error/success pattern).
+  const [actionBusy, setActionBusy] = useState<{ id: string; action: 'resolve' | 'close' } | null>(null)
+  const [actionError, setActionError] = useState<{ id: string; status: number; detail: string } | null>(null)
 
   useEffect(() => {
     const fetchIncidents = async () => {
@@ -137,6 +143,45 @@ const IncidentsView = () => {
       }
     } finally {
       setFormBusy(false)
+    }
+  }
+
+  // N3: per-row Resolve / Close hit the real backend transition routes
+  // (`POST /api/incidents/{id}/resolve` and `/close`). `actionBusy` guards
+  // against double-clicks; `actionError` surfaces a failed transition on
+  // exactly the row that failed (parallel to `submitReport`'s pattern).
+  // The D-4 fix unblocked the resolve CLOSE UPDATE path, so these buttons
+  // hit the live PostgreSQL database instead of 500-ing.
+  const handleIncidentAction = async (
+    incidentId: string,
+    action: 'resolve' | 'close'
+  ) => {
+    setActionBusy({ id: incidentId, action })
+    setActionError(null)
+    try {
+      const res = await apiFetch(
+        `/incidents/${encodeURIComponent(incidentId)}/${action}`,
+        { method: 'POST' }
+      )
+      if (!res.ok) {
+        throw await apiErrorFromResponse(res)
+      }
+      // Refresh so the row's updated status renders.
+      const response = await incidentsApi.list()
+      setIncidents(response.data as Incident[])
+      setFetchError(null)
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setActionError({ id: incidentId, status: error.status, detail: error.detail })
+      } else {
+        setActionError({
+          id: incidentId,
+          status: 0,
+          detail: 'Request failed (network error)',
+        })
+      }
+    } finally {
+      setActionBusy(null)
     }
   }
 
@@ -327,13 +372,52 @@ const IncidentsView = () => {
                     </span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Created
+                <div className="text-right space-y-3">
+                  <div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      Created
+                    </div>
+                    <div className="text-sm text-gray-800 dark:text-white">
+                      {incident.createdAt}
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-800 dark:text-white">
-                    {incident.createdAt}
-                  </div>
+                  {/* N3: terminal-state incidents (closed) render no actions.
+                      Resolve is only reachable from a non-terminal status;
+                      Close is a terminal transition on all others. */}
+                  {incident.status !== 'closed' && (
+                    <div className="flex items-center justify-end gap-2">
+                      {(incident.status === 'active' ||
+                        incident.status === 'in-progress') && (
+                        <button
+                          onClick={() => handleIncidentAction(incident.id, 'resolve')}
+                          disabled={actionBusy !== null}
+                          className="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Resolve this incident (status → resolved)"
+                        >
+                          Resolve
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleIncidentAction(incident.id, 'close')}
+                        disabled={actionBusy !== null}
+                        className="px-3 py-1.5 text-xs font-medium rounded-md border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Close this incident (status → closed, terminal)"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  )}
+                  {/* N3: surface a failed transition on exactly this row
+                      (parallel to `submitReport`'s form-error pattern). */}
+                  {actionError !== null && actionError.id === incident.id && (
+                    <p
+                      role="alert"
+                      data-testid="incident-action-error"
+                      className="text-xs text-red-700 dark:text-red-300 mt-1 text-right"
+                    >
+                      {actionError.detail}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">

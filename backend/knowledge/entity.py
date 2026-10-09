@@ -44,13 +44,13 @@ log = structlog.get_logger(__name__)
 # ---------------------------------------------------------------------------
 
 
-def _iso(dt: datetime | None) -> str | None:
-    """Normalize a datetime to an ISO-8601 string (``None`` passthrough)."""
+def _utc(dt: datetime | None) -> datetime | None:
+    """Ensure a datetime is tz-aware UTC (``None`` passthrough)."""
     if dt is None:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=UTC)
-    return dt.isoformat()
+        return dt.replace(tzinfo=UTC)
+    return dt
 
 
 def _normalize_dt(value: str | datetime | None) -> datetime | None:
@@ -108,8 +108,8 @@ def _schema_to_orm(schema: EntitySchema) -> EntityORM:
         attributes=dict(schema.attributes or {}),
         aliases=list(schema.aliases or []),
         confidence=float(schema.confidence),
-        valid_from=_iso(schema.valid.valid_from),  # type: ignore[assignment]
-        valid_to=_iso(schema.valid.valid_to),  # type: ignore[assignment]
+        valid_from=_utc(schema.valid.valid_from),
+        valid_to=_utc(schema.valid.valid_to),
         source_evidence=list(schema.source_evidence or []),
     )
 
@@ -328,9 +328,9 @@ class EntityService:
         if entity_type is not None:
             stmt = stmt.where(EntityORM.entity_type == entity_type)
         if active_at is not None:
-            iso = _iso(active_at) or ""
-            lower_ok = or_(EntityORM.valid_from.is_(None), EntityORM.valid_from <= iso)
-            upper_ok = or_(EntityORM.valid_to.is_(None), EntityORM.valid_to > iso)
+            at = _utc(active_at)
+            lower_ok = or_(EntityORM.valid_from.is_(None), EntityORM.valid_from <= at)
+            upper_ok = or_(EntityORM.valid_to.is_(None), EntityORM.valid_to > at)
             stmt = stmt.where(lower_ok, upper_ok)
         stmt = stmt.order_by(EntityORM.created_at.desc()).limit(limit).offset(offset)
         async with factory() as session:

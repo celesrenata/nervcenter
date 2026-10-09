@@ -98,12 +98,13 @@ const SystemsView = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Live update channel: when the backend exposes a /ws route, systems
-  // snapshots stream in over the socket and this list refreshes live. When
-  // the route does not exist, the socket fails and the badge honestly shows
-  // "Reconnecting" instead of a fake green dot (SY-2). The state rendered
-  // here always comes from the real WebSocketClient state machine.
-  const realtime = useRealtimeUpdates<SystemStatus[]>('/ws/systems', systems)
+  // Live update channel: the badge reflects the REAL connection state of the
+  // backend's only live WebSocket (``GET /api/events/ws``). With the socket up
+  // it honestly shows "Connected"; if the event bus is down it shows
+  // "Reconnecting" instead of a fake green dot (SY-2). The socket streams
+  // *events*, not system snapshots, so it drives the badge only — the systems
+  // list is populated solely by the REST fetch above (shape-guarded below).
+  const realtime = useRealtimeUpdates<SystemStatus[]>('/api/events/ws', systems)
 
   useEffect(() => {
     const fetchSystems = async () => {
@@ -129,10 +130,15 @@ const SystemsView = () => {
     fetchSystems()
   }, [])
 
-  // When a realtime update arrives, fold it into the list (live refresh).
+  // The /api/events/ws socket streams *event objects* (not system snapshots),
+  // so it must never replace the REST-derived list. Only fold in a payload when
+  // it is a non-empty array whose first row looks like a system row (name +
+  // status) — anything else (a single event object) is ignored.
   useEffect(() => {
-    if (!realtime.data || realtime.data.length === 0) return
-    setSystems(realtime.data)
+    const rows = realtime.data
+    if (!Array.isArray(rows) || rows.length === 0) return
+    if (typeof rows[0]?.name !== 'string' || typeof rows[0]?.status !== 'string') return
+    setSystems(rows as SystemStatus[])
     if (realtime.lastUpdate) setError(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [realtime.data, realtime.lastUpdate])
@@ -191,7 +197,8 @@ const SystemsView = () => {
           <p className="font-semibold mb-1">System status unavailable</p>
           <p className="text-sm font-mono break-words">{error}</p>
           <p className="text-sm mt-2">
-            The /api/systems endpoint is not wired yet; check the backend service for details.
+            The /api/systems endpoint was reachable but returned an error. See the status
+            and detail above; the backend service is up — check its logs for the cause.
           </p>
         </div>
       ) : (
@@ -199,8 +206,8 @@ const SystemsView = () => {
           {systems.length === 0 && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                No systems reported. The /api/systems endpoint will populate this list once the
-                backend wiring is complete.
+                No systems reported. The /api/systems endpoint returned successfully but the
+                system registry is empty — no system has reported status yet.
               </p>
             </div>
           )}

@@ -33,8 +33,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Index, String
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import DateTime, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, Jsonb, UUIDv4
@@ -51,19 +50,21 @@ class Relationship(Base):
     hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     source_entity_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), nullable=False, index=True
+        String, nullable=False, index=True
     )
     target_entity_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), nullable=False, index=True
+        String, nullable=False, index=True
     )
     relation_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     properties: Mapped[dict[str, Any]] = mapped_column(Jsonb, default=dict)
     valid_from: Mapped[datetime | None] = mapped_column(
-        "valid_from", String, nullable=True
+        "valid_from", DateTime(timezone=True), nullable=True
     )
-    valid_to: Mapped[datetime | None] = mapped_column("valid_to", String, nullable=True)
+    valid_to: Mapped[datetime | None] = mapped_column(
+        "valid_to", DateTime(timezone=True), nullable=True
+    )
     asserted_at: Mapped[datetime] = mapped_column(
-        "asserted_at", String, nullable=False
+        "asserted_at", DateTime(timezone=True), nullable=False
     )
     confidence: Mapped[float] = mapped_column(default=1.0, nullable=False)
     evidence: Mapped[list[str]] = mapped_column(

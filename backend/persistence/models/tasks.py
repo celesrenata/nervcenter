@@ -51,8 +51,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import BigInteger, Index, String
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import BigInteger, DateTime, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, Jsonb, UUIDv4
@@ -73,19 +72,23 @@ class Task(Base):
     status: Mapped[str] = mapped_column(String(32), default="pending", nullable=False, index=True)
     priority: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
     goal_id: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
+        String, nullable=True, index=True
     )
     decision_id: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
+        String, nullable=True, index=True
     )
     assignee_agent_id: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
+        String, nullable=True, index=True
     )
-    due_at: Mapped[datetime | None] = mapped_column(String, nullable=True)
-    scheduled_at: Mapped[datetime | None] = mapped_column(String, nullable=True)
+    due_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    scheduled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     inputs: Mapped[dict[str, Any]] = mapped_column(Jsonb, default=dict)
     parent_task_id: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
+        String, nullable=True, index=True
     )
     dependencies: Mapped[list[str]] = mapped_column(
         Jsonb, default=list, nullable=False
@@ -126,18 +129,22 @@ class TaskRun(Base):
     hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     task_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), nullable=False, index=True
+        String, nullable=False, index=True
     )
     status: Mapped[str] = mapped_column(String(32), default="running", nullable=False)
     attempt: Mapped[int] = mapped_column(BigInteger, default=1, nullable=False)
-    started_at: Mapped[datetime | None] = mapped_column(String, nullable=True)
-    finished_at: Mapped[datetime | None] = mapped_column(String, nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     agent_id: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
+        String, nullable=True, index=True
     )
     model_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     result_ref: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
+        String, nullable=True, index=True
     )
     error: Mapped[str | None] = mapped_column(String, nullable=True)
     logs_ref: Mapped[str | None] = mapped_column(String, nullable=True)

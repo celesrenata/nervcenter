@@ -32,7 +32,6 @@ from sqlalchemy import (
     String,
     func,
 )
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, Jsonb
@@ -55,7 +54,7 @@ class AuthSession(Base):
     __tablename__ = "auth_sessions"
 
     id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False),
+        String,
         primary_key=True,
         default=_uuid4_str,
         index=True,
@@ -100,7 +99,7 @@ class AuthDevice(Base):
     __tablename__ = "auth_devices"
 
     id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), primary_key=True, default=_uuid4_str, index=True
+        String, primary_key=True, default=_uuid4_str, index=True
     )
     device_id: Mapped[str] = mapped_column(
         String(128), nullable=False, unique=True, index=True
@@ -137,7 +136,7 @@ class PairingChallenge(Base):
     __tablename__ = "pairing_challenges"
 
     id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), primary_key=True, default=_uuid4_str, index=True
+        String, primary_key=True, default=_uuid4_str, index=True
     )
     #: Opaque handle returned to the client (``challenge_id``).
     challenge_id: Mapped[str] = mapped_column(
@@ -178,10 +177,10 @@ class ApprovalRecord(Base):
     __tablename__ = "approvals"
 
     id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), primary_key=True, default=_uuid4_str, index=True
+        String, primary_key=True, default=_uuid4_str, index=True
     )
     planned_change_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False),
+        String,
         nullable=False,
         index=True,
     )

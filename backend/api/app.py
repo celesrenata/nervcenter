@@ -13,8 +13,13 @@ headers, preventing 307 redirects to http:// behind TLS-terminating ingresses.
 """
 from __future__ import annotations
 
+import structlog
+
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+log = structlog.get_logger(__name__)
 
 from backend.api.auth import approvals_router as auth_approvals_router
 from backend.api.auth import router as auth_router
@@ -157,6 +162,31 @@ def create_app() -> FastAPI:
         redoc_url=None,
         openapi_url="/openapi.json",
     )
+
+    # D-10: structured 500 for unhandled exceptions. Starlette dispatches
+    # ``HTTPException`` to its (more specific) ``StarletteHTTPException``
+    # handler first — see starlette ``_lookup_exception_handler`` which walks
+    # the exception's MRO — so only genuinely unhandled errors reach this
+    # handler. The response body is stable and machine-readable; the
+    # exception type name is included for triage, but no stack-trace text or
+    # secret data is ever exposed.
+    async def _unhandled_500(request: Request, exc: BaseException) -> JSONResponse:
+        log.exception(
+            "unhandled_exception",
+            path=request.url.path,
+            method=request.method,
+            error_type=type(exc).__name__,
+        )
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "Internal server error",
+                "error_type": type(exc).__name__,
+            },
+        )
+
+    target.add_exception_handler(Exception, _unhandled_500)
+
     _configure(target)
     install_dependency_wiring(target)
 

@@ -48,8 +48,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Index, String
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import DateTime, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, Jsonb, UUIDv4
@@ -67,7 +66,7 @@ class Claim(Base):
 
     statement: Mapped[str] = mapped_column(String, nullable=False)
     subject_entity_id: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
+        String, nullable=True, index=True
     )
     status: Mapped[str] = mapped_column(String(32), default="open", nullable=False, index=True)
     confidence: Mapped[float] = mapped_column(default=0.5, nullable=False)
@@ -81,7 +80,7 @@ class Claim(Base):
         Jsonb, default=list, nullable=False
     )
     supersedes_claim_id: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
+        String, nullable=True, index=True
     )
     attributes: Mapped[dict[str, Any]] = mapped_column(Jsonb, default=dict)
 
@@ -113,7 +112,7 @@ class Decision(Base):
     hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     claim_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), nullable=False, index=True
+        String, nullable=False, index=True
     )
     statement: Mapped[str] = mapped_column(String, nullable=False)
     mechanism: Mapped[str] = mapped_column(String(32), nullable=False)
@@ -123,12 +122,14 @@ class Decision(Base):
         Jsonb, default=list, nullable=False
     )
     planned_change_id: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
+        String, nullable=True, index=True
     )
     task_id: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
+        String, nullable=True, index=True
     )
-    decided_at: Mapped[datetime] = mapped_column(String, nullable=False)
+    decided_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
 
     __table_args__ = (
         Index(

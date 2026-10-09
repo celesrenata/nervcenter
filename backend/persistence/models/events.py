@@ -43,7 +43,6 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy import BigInteger, DateTime, Index, String, text
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, Jsonb, UUIDv4
@@ -66,20 +65,20 @@ class Event(Base):
     )
     source: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     subject: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
+        String, nullable=True, index=True
     )
     payload: Mapped[dict[str, Any]] = mapped_column(
         Jsonb, default=dict, nullable=False
     )
     severity: Mapped[str] = mapped_column(String(16), default="info")
     trace_id: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
+        String, nullable=True, index=True
     )
     correlation_id: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
+        String, nullable=True, index=True
     )
     parent_event_id: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
+        String, nullable=True, index=True
     )
     stream: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     sequence: Mapped[int | None] = mapped_column(BigInteger, nullable=True)

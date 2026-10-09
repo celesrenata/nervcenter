@@ -47,13 +47,13 @@ log = structlog.get_logger(__name__)
 __all__ = ["TaskService", "TaskNotFoundError"]
 
 
-def _iso(dt: datetime | None) -> str | None:
-    """Normalize a datetime to an ISO-8601 string (``None`` passthrough)."""
+def _utc(dt: datetime | None) -> datetime | None:
+    """Ensure a datetime is tz-aware UTC (``None`` passthrough)."""
     if dt is None:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=UTC)
-    return dt.isoformat()
+        return dt.replace(tzinfo=UTC)
+    return dt
 
 
 def _orm_to_schema(orm: TaskORM) -> TaskSchema:
@@ -104,8 +104,8 @@ def _schema_to_orm(schema: TaskSchema) -> TaskORM:
         goal_id=schema.goal_id,
         decision_id=schema.decision_id,
         assignee_agent_id=schema.assignee_agent_id,
-        due_at=_iso(schema.due_at),  # type: ignore[assignment]
-        scheduled_at=_iso(schema.scheduled_at),  # type: ignore[assignment]
+        due_at=_utc(schema.due_at),
+        scheduled_at=_utc(schema.scheduled_at),
         inputs=dict(schema.inputs or {}),
         parent_task_id=schema.parent_task_id,
         dependencies=list(schema.dependencies or []),

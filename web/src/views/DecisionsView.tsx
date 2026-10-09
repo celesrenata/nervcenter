@@ -82,7 +82,21 @@ const DecisionsView = () => {
 
       <div className="flex justify-between items-center">
         <div className="text-gray-500 dark:text-gray-400">
-          {decisions.length} total decisions
+          {loading ? (
+            "Loading decisions…"
+          ) : fetchError ? (
+            /* N4: no numeric count while the list fetch failed — "N total
+               decisions" next to an error banner implied a successful
+               fetch. Show the honest state instead. */
+            <span
+              data-testid="decisions-unavailable"
+              className="text-amber-700 dark:text-amber-300 font-medium"
+            >
+              Decisions currently unavailable — see the error banner above.
+            </span>
+          ) : (
+            `${decisions.length} total decisions`
+          )}
         </div>
         <button
           disabled

@@ -27,7 +27,7 @@ from uuid import uuid4
 
 from pydantic import ConfigDict
 from sqlalchemy import DateTime, Index, MetaData, String, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, registry
 from sqlalchemy.types import TypeDecorator
 
@@ -39,12 +39,17 @@ from sqlalchemy.types import TypeDecorator
 #: SchemaItem argument and broke model import.)
 Jsonb = JSONB
 
-#: PostgreSQL UUID type; we generate v4 IDs on the ORM side for consistency
-#: with the Pydantic Record contract.
+#: Record primary key. Every migration (001-004) and the live database declare
+#: ``id`` as ``character varying`` (``sa.String()``), so the ORM must match: a
+#: plain :class:`~sqlalchemy.String` column (``text`` on Postgres). The v4 UUID
+#: is still generated on the ORM side so values stay unique; only the *storage
+#: type* is a string. Using ``UUID(as_uuid=False)`` here would make the ORM emit
+#: ``uuid`` and — worse — emit ``::uuid`` casts on post-INSERT ``refresh``/PK
+#: lookups that the live ``varchar`` columns cannot satisfy (500 after commit).
 UUIDv4 = Annotated[
     str,
     mapped_column(
-        UUID(as_uuid=False),
+        String,
         primary_key=True,
         default=lambda: str(uuid4()),
         index=True,
@@ -199,7 +204,7 @@ class RootRecord:
 
     model_config = ConfigDict(extra="forbid")
 
-    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, index=True)
+    id: Mapped[str] = mapped_column(String, primary_key=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

@@ -32,7 +32,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Index, String
+from sqlalchemy import DateTime, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, Jsonb, UUIDv4
@@ -55,9 +55,11 @@ class Entity(Base):
     aliases: Mapped[list[str]] = mapped_column(Jsonb, default=list)
     confidence: Mapped[float] = mapped_column(default=1.0, nullable=False)
     valid_from: Mapped[datetime | None] = mapped_column(
-        "valid_from", String, nullable=True
+        "valid_from", DateTime(timezone=True), nullable=True
     )
-    valid_to: Mapped[datetime | None] = mapped_column("valid_to", String, nullable=True)
+    valid_to: Mapped[datetime | None] = mapped_column(
+        "valid_to", DateTime(timezone=True), nullable=True
+    )
     source_evidence: Mapped[list[str]] = mapped_column(
         Jsonb, default=list, nullable=False
     )
