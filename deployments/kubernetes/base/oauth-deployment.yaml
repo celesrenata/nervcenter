@@ -1,0 +1,104 @@
+# NerveCenter SSO gate — oauth2-proxy reverse proxy (cluster SSO convention).
+#
+# The cluster protects its public apps from Keycloak at
+# `https://sso.celestium.life/realms/celestium` with an **oauth2-proxy deployment
+# that fronts the app** (see comfyui: `comfy-oauth` -> `comfy-gateway`). There is
+# no traefik auth Middleware on this cluster (the only 3 middlewares are
+# prefix-strip / buffering), so SSO is enforced by pointing the Ingress at this
+# Service rather than by a router middleware.
+#
+#   Ingress -> nervecenter-oauth :4180 -> --upstream http://web:80
+#
+# oauth2-proxy serves its own /oauth2/* (login, callback, sign-out) and reverse
+# proxies every other path to the upstream (the web nginx, which itself fans
+# /api/ -> api and /mcp/ -> mcp). Unauthenticated visitors are 302-redirected to
+# the Keycloak authorization endpoint; only authenticated users reach the app.
+#
+# NOTE: this deployment is NOT wired into the Ingress until the Keycloak client
+# `nervecenter` exists and its client-secret is patched into the
+# `nervecenter-oauth` Secret. The activation runbook in `deployments/README.md`
+# ("SSO (Keycloak)" -> "Activation") flips the Ingress once both are ready.
+#
+# Mirrors `comfy-oauth` (comfyui-service) arg-for-arg, minus:
+#   - `--allowed-group` : no `nervecenter-users` group exists in the realm yet.
+#     Adding a non-existent group would lock every user out. Once the group is
+#     created, add `--allowed-group=nervecenter-users` and re-roll.
+#   - `--pass-access-token` : the NerveCenter API validates NerveCenter-minted
+#     HS256 tokens (see backend/api/auth_service.py `verify_token`); a raw
+#     Keycloak RS256 access token is not accepted as-is. Forwarding the identity
+#     token into the API is a separate, explicit follow-up.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nervecenter-oauth
+  namespace: nervecenter
+  labels:
+    app: nervcenter
+    app.kubernetes.io/name: nervecenter-oauth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nervecenter-oauth
+  template:
+    metadata:
+      labels:
+        app: nervecenter-oauth
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: oauth
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.4
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--http-address=0.0.0.0:4180"
+            - "--provider=keycloak-oidc"
+            - "--oidc-issuer-url=https://sso.celestium.life/realms/celestium"
+            - "--client-id=nervecenter"
+            - "--redirect-url=https://nervecenter.celestium.life/oauth2/callback"
+            - "--upstream=http://web:80"
+            - "--pass-host-header=true"
+            - "--reverse-proxy=true"
+            - "--code-challenge-method=S256"
+            - "--skip-provider-button"
+            - "--scope=openid profile email"
+            - "--email-domain=*"
+            - "--cookie-name=__Secure-nervecenter_session"
+            - "--cookie-domain=nervecenter.celestium.life"
+            - "--cookie-secure=true"
+            - "--cookie-httponly=true"
+            - "--cookie-samesite=lax"
+            - "--cookie-refresh=2m"
+            - "--cookie-expire=8h"
+            - "--proxy-websockets=true"
+          env:
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nervecenter-oauth
+                  key: client-secret
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nervecenter-oauth
+                  key: cookie-secret
+          ports:
+            - name: http
+              containerPort: 4180
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "1"
+              memory: "256Mi"

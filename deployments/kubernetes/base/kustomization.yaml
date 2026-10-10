@@ -29,4 +29,12 @@ resources:
   - mcp-service.yaml
   - web-deployment.yaml
   - web-service.yaml
+  # SSO (Keycloak) gate — mirrors the cluster's oauth2-proxy convention
+  # (comfyui's `comfy-oauth` fronts the app; there is no traefik auth middleware
+  # on this cluster). The `nervecenter-oauth` Secret is NOT listed here: its
+  # `client-secret` must be created out-of-band from the Keycloak client
+  # (see secrets.yaml.example and deployments/README.md "SSO (Keycloak)"),
+  # never committed. The deployment's env refs resolve at pod runtime.
+  - oauth-service.yaml
+  - oauth-deployment.yaml
   - ingress.yaml

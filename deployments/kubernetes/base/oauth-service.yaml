@@ -1,0 +1,20 @@
+# ClusterIP service for the SSO gate (oauth2-proxy) — exposes :4180 inside the
+# cluster only. The Ingress points at this Service (path /) so the whole public
+# site sits behind Keycloak; mirroring the comfyui `comfy-oauth` Service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: nervecenter-oauth
+  namespace: nervecenter
+  labels:
+    app: nervcenter
+    app.kubernetes.io/name: nervecenter-oauth
+spec:
+  type: ClusterIP
+  selector:
+    app: nervecenter-oauth
+  ports:
+    - name: http
+      port: 4180
+      targetPort: http
+      protocol: TCP
