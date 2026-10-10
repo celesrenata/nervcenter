@@ -1,26 +1,29 @@
 # Ingress for nervecenter.celestium.life (Traefik / cert-manager cluster-wide).
 #
-# STATUS: SSO (Keycloak) gate is STAGED BUT NOT YET FRONTING this ingress.
+# SSO active via oauth2-proxy gate (Keycloak realm celestium, client nervecenter).
+# Cluster convention: an **oauth2-proxy gate fronts the app** (see comfyui:
+# `comfy-oauth` -> `comfy-gateway`). This cluster has NO traefik auth
+# Middleware (its only 3 middlewares are prefix-strip / buffering), so SSO is
+# enforced by pointing the Ingress at the `nervecenter-oauth` Service.
 #
-#   The oauth2-proxy gate (`nervecenter-oauth`, see oauth-deployment.yaml /
-#   oauth-service.yaml) is deployed and healthy, but as of 2026-10-10 the
-#   Keycloak client `nervecenter` does not exist in realm `celestium` on
-#   sso.celestium.life — the auth endpoint returns 400 "Client not found"
-#   (realm discovery is live/200, so only the client record is missing).
-#   Pointing the ingress at the gate would therefore send every unauth
-#   visitor to a Keycloak error page, so the ingress is routed DIRECTLY to
-#   the app until the client is created.
+# Route map:
+#   /mcp/  -> mcp  (:8000)  DIRECT, OPEN  (programmatic MCP JSON-RPC API)
+#   /      -> nervecenter-oauth (:4180)  GATED  (covers the SPA at / and /api/)
 #
-#   TO RE-ENABLE SSO once the client exists: change the `/` backend below
-#   from `web:80` back to `nervecenter-oauth:4180` (and drop the `/api/`
-#   direct path, since the gate upstreams to web which already fans /api/
-#   out to the api service), then re-apply. See deployments/README.md
-#   "SSO (Keycloak)" for the full note and re-enable steps.
+# The gate reverse-proxies authenticated traffic to the web nginx (:80), which
+# in turn fans out in-cluster:
+#   /        -> SPA static
+#   /api/    -> api  (FastAPI service on :8000)
 #
-# Route map (current — direct, no SSO):
-#   /api/  -> api  (:8000)  OPEN
-#   /mcp/  -> mcp  (:8000)  OPEN  (programmatic MCP JSON-RPC API)
-#   /      -> web  (:80)    OPEN  (nginx SPA + static bundles)
+# Unauthenticated visitors are 302-redirected by the gate to the Keycloak
+# authorization endpoint (realm `celestium` at sso.celestium.life); only
+# authenticated users reach the app. See oauth-deployment.yaml /
+# oauth-service.yaml and deployments/README.md "SSO (Keycloak)".
+#
+# /mcp/ is intentionally left OPEN (direct) for now: the SPA never calls it, and
+# gating it end-to-end requires the web nginx to fan /mcp/ out to the mcp service
+# (currently it proxies /mcp/ -> api, which 404s), i.e. a web image rebuild. That
+# follow-up is documented in deployments/README.md.
 #
 # cert-manager picks up TLS automatically via the `cert-manager.io/cluster-issuer`
 # annotation (issuer `celestium-le-production` is the cluster-wide standard for
@@ -46,14 +49,7 @@ spec:
     - host: nervecenter.celestium.life
       http:
         paths:
-          - path: /api/
-            pathType: Prefix
-            backend:
-              service:
-                name: api
-                port:
-                  number: 8000
-          # OPEN: programmatic MCP JSON-RPC API, direct — see header note.
+          # OPEN: programmatic MCP JSON-RPC API, direct (no SSO) — see header note.
           - path: /mcp/
             pathType: Prefix
             backend:
@@ -61,11 +57,11 @@ spec:
                 name: mcp
                 port:
                   number: 8000
-          # Direct to the app for now — SSO gate pending Keycloak client.
+          # GATED: SSO gate -> web nginx -> (SPA | /api/). Everything else.
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: web
+                name: nervecenter-oauth
                 port:
-                  number: 80
+                  number: 4180
