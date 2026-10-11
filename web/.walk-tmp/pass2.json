@@ -1,0 +1,393 @@
+{
+  "shots": [
+    {
+      "name": "login-desktop",
+      "size": 21506,
+      "mtime": 1791540089710.1682
+    },
+    {
+      "name": "login-403-detail-desktop",
+      "size": 26219,
+      "mtime": 1791540091334.8955
+    },
+    {
+      "name": "overview-desktop",
+      "size": 47806,
+      "mtime": 1791540092981.8513
+    },
+    {
+      "name": "systems-desktop",
+      "size": 58767,
+      "mtime": 1791540093094.655
+    },
+    {
+      "name": "agents-desktop",
+      "size": 36942,
+      "mtime": 1791540094632.4504
+    },
+    {
+      "name": "tasks-dag-desktop",
+      "size": 42741,
+      "mtime": 1791540096664.3008
+    },
+    {
+      "name": "tasks-desktop",
+      "size": 42741,
+      "mtime": 1791540096674.0667
+    },
+    {
+      "name": "tasks-dag-edges-desktop",
+      "size": 42741,
+      "mtime": 1791540096690.5642
+    },
+    {
+      "name": "goals-create-open-desktop",
+      "size": 36766,
+      "mtime": 1791540098683.2078
+    },
+    {
+      "name": "goals-desktop",
+      "size": 47686,
+      "mtime": 1791540099152.9246
+    },
+    {
+      "name": "goals-after-create-desktop",
+      "size": 47686,
+      "mtime": 1791540099179.8823
+    },
+    {
+      "name": "overview-mobile-hamburger-closed",
+      "size": 153359,
+      "mtime": 1791540100961.383
+    },
+    {
+      "name": "overview-mobile-nav-open",
+      "size": 156340,
+      "mtime": 1791540101578.9756
+    },
+    {
+      "name": "overview-mobile",
+      "size": 153359,
+      "mtime": 1791540102065.3967
+    },
+    {
+      "name": "goals-mobile",
+      "size": 128863,
+      "mtime": 1791540103668.6758
+    },
+    {
+      "name": "goals-create-mobile",
+      "size": 149964,
+      "mtime": 1791540104255.9312
+    },
+    {
+      "name": "agents-mobile",
+      "size": 170529,
+      "mtime": 1791540105834.735
+    },
+    {
+      "name": "tasks-mobile",
+      "size": 91794,
+      "mtime": 1791540107716.8943
+    },
+    {
+      "name": "systems-badge-mobile",
+      "size": 194808,
+      "mtime": 1791540109410.5576
+    }
+  ],
+  "evidence": {
+    "log403": {
+      "live_text": "local-admin login is disabled (set NERVE_LOCAL_ADMIN)",
+      "field_error": null
+    },
+    "overview": {
+      "tiles": [
+        "Active Goals\n\n2\n🎯\n\nActive Agents\n\n18\n🤖\n\nPending Tasks\n\n2\n📋\n\nActive Incidents\n\n3"
+      ],
+      "goals_panel": true,
+      "agents_panel": true,
+      "pending_tasks_text": "2",
+      "raw_slice": "NerveCenter Personal Intelligence Core Overview Systems Timeline Goals Task DAG Agents Inference Incidents Decisions Ask Guest No roles Logout Overview Active Goals 2 🎯 Active Agents 18 🤖 Pending Tasks 2 📋 Active Incidents 3 ⚠️ Goals R3 walk goal Active 0% smoke-goal Active 0% Agents Planner Acti"
+    },
+    "ws_probe": {
+      "opened": true,
+      "first_frame": {
+        "type": "status",
+        "payload": {
+          "connected": true,
+          "subject": "nervcenter.>"
+        }
+      }
+    },
+    "systems_badge": {
+      "aria": "Real-time connection: Connected",
+      "text": "Real-time: Connected",
+      "rows": []
+    },
+    "agents_probe_card": {
+      "found": true,
+      "near": "audit-r3-probe repository_inspector active No live telemetry reported. Tasks completed —"
+    },
+    "tasks_real": {
+      "edges": [
+        "task-edge-6a92eb29-0957-4b88-b149-d07f882d4e8c-9375bd81-b498-4c3e-b210-4af446417f11"
+      ],
+      "nodes": [
+        "R3 walk task BPENDINGP1 · L1depends on A",
+        "R3 walk task APENDINGP1 · L0r3 audit"
+      ],
+      "svg_elements": 12,
+      "has_A": true,
+      "has_B": true,
+      "legend_or_status": true
+    },
+    "goal_form_open": true,
+    "goal_card": "R3 walk goalactiveFinal recapture audit goal (safe to delete).Progress0%DueNov 29, 2026PriorityP1",
+    "m_hscroll": {
+      "overview": {
+        "sw": 390,
+        "iw": 390,
+        "hscroll": false
+      },
+      "goals": {
+        "sw": 390,
+        "iw": 390,
+        "hscroll": false
+      },
+      "agents": {
+        "sw": 390,
+        "iw": 390,
+        "hscroll": false
+      },
+      "tasks": {
+        "sw": 390,
+        "iw": 390,
+        "hscroll": false
+      },
+      "systems": {
+        "sw": 390,
+        "iw": 390,
+        "hscroll": false
+      }
+    },
+    "m_hamburger_expanded": "Close navigation",
+    "m_hamburger_close": {
+      "closeVia": "drawer-close-button",
+      "closeOk": true
+    },
+    "m_goals_r3": true,
+    "m_goal_form_open": true,
+    "m_tasks_real": {
+      "has_A": true,
+      "edges": 1
+    },
+    "m_badge_2": "Real-time: Connected"
+  },
+  "contrast": {
+    "login": [],
+    "overview": [
+      {
+        "text": "Overview",
+        "sel": "H1.text-3xl font-bold text-gray-800 dark:text-white",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(243, 244, 246)"
+      },
+      {
+        "text": "Active Goals",
+        "sel": "P.text-sm text-gray-500 dark:text-gray-400",
+        "fg": "rgb(107, 114, 128)",
+        "bg": "rgb(255, 255, 255)"
+      },
+      {
+        "text": "2",
+        "sel": "SPAN.text-3xl font-bold text-blue-600 dark:text-blue-400",
+        "fg": "rgb(37, 99, 235)",
+        "bg": "rgb(255, 255, 255)"
+      },
+      {
+        "text": "Active Agents",
+        "sel": "P.text-sm text-gray-500 dark:text-gray-400",
+        "fg": "rgb(107, 114, 128)",
+        "bg": "rgb(255, 255, 255)"
+      },
+      {
+        "text": "18",
+        "sel": "SPAN.text-3xl font-bold text-green-600 dark:text-green-400",
+        "fg": "rgb(22, 163, 74)",
+        "bg": "rgb(255, 255, 255)"
+      },
+      {
+        "text": "Pending Tasks",
+        "sel": "P.text-sm text-gray-500 dark:text-gray-400",
+        "fg": "rgb(107, 114, 128)",
+        "bg": "rgb(255, 255, 255)"
+      },
+      {
+        "text": "2",
+        "sel": "SPAN.text-3xl font-bold text-yellow-600 dark:text-yellow-400",
+        "fg": "rgb(202, 138, 4)",
+        "bg": "rgb(255, 255, 255)"
+      },
+      {
+        "text": "Active Incidents",
+        "sel": "P.text-sm text-gray-500 dark:text-gray-400",
+        "fg": "rgb(107, 114, 128)",
+        "bg": "rgb(255, 255, 255)"
+      },
+      {
+        "text": "3",
+        "sel": "SPAN.text-3xl font-bold text-red-600 dark:text-red-400",
+        "fg": "rgb(220, 38, 38)",
+        "bg": "rgb(255, 255, 255)"
+      },
+      {
+        "text": "Goals",
+        "sel": "H3.text-xl font-semibold text-gray-800 dark:text-white mb-4",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(255, 255, 255)"
+      },
+      {
+        "text": "R3 walk goal",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "active",
+        "sel": "SPAN.text-gray-700 dark:text-gray-200 capitalize",
+        "fg": "rgb(55, 65, 81)",
+        "bg": "rgb(243, 244, 246)"
+      },
+      {
+        "text": "0%",
+        "sel": "SPAN.text-xs text-gray-500 dark:text-gray-400 tabular-nums",
+        "fg": "rgb(107, 114, 128)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "smoke-goal",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "Agents",
+        "sel": "H3.text-xl font-semibold text-gray-800 dark:text-white mb-4",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(255, 255, 255)"
+      },
+      {
+        "text": "Planner",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "Repository Inspector",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "Runtime Inspector",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "Log Investigator",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "Infrastructure Inspector",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "Architecture Analyst",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "Incident Correlator",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "Code Reviewer",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "Test Runner",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "Benchmark Agent",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "Research Agent",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "Verifier",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "Context Critic",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "Route Critic",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "audit-r3-probe",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "smoke-agent",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "audit-r2-probe",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      },
+      {
+        "text": "audit-r2 probe agent",
+        "sel": "P.font-medium text-gray-800 dark:text-white truncate",
+        "fg": "rgb(31, 41, 55)",
+        "bg": "rgb(249, 250, 251)"
+      }
+    ]
+  },
+  "reqFailed": [
+    "403 /api/auth/login"
+  ]
+}

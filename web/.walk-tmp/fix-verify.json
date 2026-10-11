@@ -1,0 +1,31 @@
+{
+  "shots": [
+    {
+      "name": "dev-fix-cc4b-hamburger-open",
+      "size": 154704
+    }
+  ],
+  "checks": {
+    "data_loaded": true,
+    "N1_guest": {
+      "hasLogout": false,
+      "footer_text": "GuestNo roles"
+    },
+    "cc4b_open": {
+      "aria": "Close navigation",
+      "drawer_top": 48
+    },
+    "cc4b_close": {
+      "ms": 313,
+      "ariaNow": null
+    },
+    "cc4b_drawer_close_still_works": true,
+    "cc4b_escape_still_works": true,
+    "hscroll": {
+      "sw": 390,
+      "iw": 390
+    },
+    "drawer_height": null
+  },
+  "consoleErrors": []
+}

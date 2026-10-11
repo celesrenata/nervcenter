@@ -1,0 +1,395 @@
+# Machine-readable implementation status for NerveCenter.
+# Required by NC-SPEC-2026-010 C0.
+#
+# NOTE ON PROVENANCE: this worker's snapshot (commit 9270242) does NOT contain
+# docs/architecture/ (gap-analysis.md, current-state.md, dependency-dag.md,
+# file-ownership-map.md), specs/nervecenter-aws-platform/{spec,plan,tasks}.md,
+# or tools/localstack/. Those docs are being created by concurrent workers in
+# the parent checkout. Capability names, statuses, D-items, U-items,
+# workstream ids, milestone ids, and the LocalStack probe results are therefore
+# transcribed from the parent's corrected-facts handoff (authoritative, dated
+# 2026-10-11). Every other citation below was verified in THIS snapshot
+# (path:line, checked by grep/read). Items that could not be verified here are
+# marked `verified: false` / `status: unknown` rather than asserted.
+
+spec_id: NC-SPEC-2026-010
+artifact: C0
+generated: "2026-10-11"
+generated_by: worker-C0-D3b (snapshot 9270242)
+
+source_docs:
+  in_snapshot:
+    - docs/implementation-status.yaml
+    - docs/dependency-graph.yaml
+    - docs/nervcenter-spec.md
+    - specs/web-quality-audit/visual-auditor-review.md
+    - specs/nervcenter-uplift/audit-handoff.md
+    - audit-gaps.md
+  referenced_not_in_snapshot:
+    - docs/architecture/gap-analysis.md
+    - docs/architecture/current-state.md
+    - docs/architecture/dependency-dag.md
+    - docs/architecture/file-ownership-map.md
+    - specs/nervecenter-aws-platform/spec.md
+    - specs/nervecenter-aws-platform/plan.md
+    - specs/nervecenter-aws-platform/tasks.md
+    - tools/localstack/probe.py
+    - tools/localstack/README.md
+    - tools/localstack/probe-results.jsonl
+
+capabilities:
+  # NC-CAP-001 registry: agent registry present; connector registry present.
+  - id: NC-CAP-001
+    name: registry
+    status: partial
+    change_type: new
+    workstream: NC-WS-001
+    evidence:
+      - "backend/agents/registry.py:167  # class AgentRegistry (verified in snapshot)"
+      - "backend/connectors/registry.py:110  # class ConnectorRegistry (verified in snapshot)"
+    notes: >
+      Registry scaffolding and native-type registration exist; per gap-analysis
+      (parent handoff) the capability is only partially complete.
+
+  # NC-CAP-002 connector SDK: connector layer + client SDKs present.
+  - id: NC-CAP-002
+    name: connector-sdk
+    status: partial
+    change_type: integration
+    workstream: NC-WS-002
+    evidence:
+      - "backend/connectors/base.py:524  # class Connector (ABC)"
+      - "backend/connectors/git.py:152  # class GitConnector"
+      - "backend/connectors/kubernetes.py:25  # class KubernetesConnector"
+      - "sdk/python/nervcenter_sdk/client.py:49  # class NerveClient"
+      - "sdk/typescript/src/client.ts:94  # export class NerveClient"
+    notes: >
+      Python + TypeScript SDK clients and backend connector registry exist;
+      gap-analysis rates the overall capability partial.
+
+  # NC-CAP-003 event fabric: NATS-backed pub/sub, storage, replay, WS.
+  - id: NC-CAP-003
+    name: event-fabric
+    status: implemented
+    change_type: new
+    workstream: NC-WS-003
+    evidence:
+      - "backend/events/nats_client.py:189  # class NatsClient"
+      - "backend/events/processor.py:49  # class EventStorageProcessor"
+      - "backend/events/processor.py:353  # class EventReplay"
+      - "backend/events/publisher.py:126  # async def publish"
+      - "backend/events/subscriber.py:1  # subscriber module"
+      - "backend/api/endpoints/events_ws.py:1  # WebSocket endpoint /api/events/ws"
+    notes: Verified in snapshot; status per gap-analysis.
+
+  # NC-CAP-004 rules: guardrails/permission enforcement; no rule engine.
+  - id: NC-CAP-004
+    name: rules
+    status: partial
+    change_type: new
+    workstream: NC-WS-004
+    evidence:
+      - "backend/policy/guardrails.py:57  # class InferenceGuardrails"
+      - "backend/policy/permissions.py:39  # class PermissionEnforcer"
+    notes: >
+      Only inference guardrails + a permissions enforcer exist; grep found no
+      rule engine (Rule/RuleEngine) in the snapshot.
+
+  # NC-CAP-005 durable workflows: incident investigation + task DAG, not durable.
+  - id: NC-CAP-005
+    name: durable-workflows
+    status: partial
+    change_type: new
+    workstream: NC-WS-005
+    evidence:
+      - "backend/orchestration/incident.py:98  # class IncidentInvestigation"
+      - "backend/orchestration/__init__.py:54  # class WhatChangedEngine"
+      - "backend/tasks/dag.py:63  # class TaskDAG"
+      - "backend/scheduler/scheduler.py:1  # scheduler module"
+    notes: >
+      Workflow/orchestration logic exists in-process; no durable (persisted,
+      resumable) workflow engine found in snapshot.
+
+  # NC-CAP-006 functions: no function-compute layer in snapshot.
+  - id: NC-CAP-006
+    name: functions
+    status: absent
+    change_type: new
+    workstream: NC-WS-006
+    evidence:
+      - "grep: no lambda/function-compute module in backend/ (verified in snapshot)"
+    notes: Status per gap-analysis; absence re-verified in snapshot.
+
+  # NC-CAP-007 IAM PDP: scaffold only (permissions enforcer, no IAM service).
+  - id: NC-CAP-007
+    name: iam-pdp
+    status: partial
+    change_type: new
+    workstream: NC-WS-007
+    evidence:
+      - "backend/policy/permissions.py:39  # class PermissionEnforcer (scaffold)"
+    notes: >
+      No IAM/PDP service exists in snapshot (grep: no 'iam'/'pdp' modules);
+      gap-analysis rates IAM PDP partial (scaffold).
+
+  # NC-CAP-008 secrets: template + SSO wiring; no AWS Secrets Manager.
+  - id: NC-CAP-008
+    name: secrets
+    status: partial
+    change_type: integration
+    workstream: NC-WS-007
+    evidence:
+      - "deployments/kubernetes/base/secrets.yaml.example:25  # Secret template (NERVE_*/NERVECENTER_*)"
+      - "backend/api/auth.py:1  # SSO endpoints module (S101)"
+      - "backend/api/auth_service.py:172  # class JwksProvider"
+    notes: >
+      Secret management is a k8s template + SSO/OIDC wiring; no cloud
+      secrets-manager integration in snapshot.
+
+  # NC-CAP-009 observability: metrics/traces endpoints + OTel module.
+  - id: NC-CAP-009
+    name: observability
+    status: partial
+    change_type: new
+    workstream: NC-WS-008
+    evidence:
+      - "backend/api/observability.py:20  # async def get_health"
+      - "backend/api/observability.py:55  # async def get_metrics"
+      - "backend/api/observability.py:89  # async def get_trace"
+      - "backend/observability/__init__.py:131  # class Observability"
+      - "backend/api/health.py:9  # health router"
+    notes: Endpoints and module exist; gap-analysis rates the capability partial.
+
+  # NC-CAP-010 localstack: absent-in-repo in snapshot; live probe recorded.
+  - id: NC-CAP-010
+    name: localstack
+    status: absent
+    change_type: new
+    workstream: NC-WS-009
+    verified_in_snapshot: false
+    evidence:
+      - "tools/localstack/ ABSENT in this snapshot (ls + find verified)"
+      - "Parent handoff: tools/localstack/{probe.py,README.md,probe-results.jsonl} exist in parent tree; live probe 2026-10-10 vs LocalStack pro:2026.3.0"
+    notes: >
+      Status per gap-analysis: absent-in-repo + live-probe-recorded. Probe
+      summary block below transcribes parent-reported results.
+
+  # NC-CAP-011 attention: no attention/alerting surface in snapshot.
+  - id: NC-CAP-011
+    name: attention
+    status: absent
+    change_type: new
+    workstream: NC-WS-010
+    evidence:
+      - "grep -ri 'attention' backend/ web/src/ schemas/ -> 0 hits (verified in snapshot)"
+    notes: Absence re-verified in snapshot.
+
+  # NC-CAP-012 ideas/goals: goal services + reconciliation; web views present.
+  - id: NC-CAP-012
+    name: ideas-goals
+    status: partial
+    change_type: new
+    workstream: NC-WS-011
+    evidence:
+      - "backend/goals/service.py:129  # class GoalService"
+      - "backend/goals/reconciliation.py:157  # class GoalReconciler"
+      - "web/src/views/GoalsView.tsx:1  # Goals view"
+    notes: Core goal services exist; gap-analysis rates the capability partial.
+
+  # NC-CAP-013 photos/health: no photo capture in snapshot; health endpoints exist.
+  - id: NC-CAP-013
+    name: photos-health
+    status: absent
+    change_type: new
+    workstream: NC-WS-011
+    evidence:
+      - "grep -ri 'photo' backend/ web/src/ schemas/ -> 0 hits (verified in snapshot)"
+      - "backend/api/health.py:12  # _database_check probe"
+      - "backend/api/health.py:28  # _nats_check probe"
+    notes: >
+      Health probes exist but the photos portion of this capability is absent;
+      per gap-analysis the combined capability is absent.
+
+  # NC-CAP-014 web console: React console with 12 views, audit-verified.
+  - id: NC-CAP-014
+    name: web-console
+    status: partial
+    change_type: integration
+    workstream: NC-WS-012
+    evidence:
+      - "web/src/App.tsx:23  # BrowserRouter/Routes"
+      - "web/src/views/OverviewView.tsx:1  # one of 12 views"
+      - "web/src/api/WebSocketClient.ts:14  # export class WebSocketClient"
+      - "specs/web-quality-audit/visual-auditor-review.md:15  # audit verdicts (r1 baseline)"
+      - "audit-gaps.md:16  # deployed TAG bee3fa8, all pods Ready"
+    notes: >
+      Console shipped (deployed TAG bee3fa8, 2026-10-09 audit all-PASS final
+      round); gap-analysis still rates the capability partial.
+
+  # NC-CAP-015 approvals/audit: verified read-only in snapshot.
+  - id: NC-CAP-015
+    name: approvals-audit
+    status: partial
+    change_type: new
+    workstream: NC-WS-012
+    verified_in_snapshot: true
+    evidence:
+      - "backend/api/endpoints/approvals.py:5  # make_read_router /api/approvals (list only)"
+      - "backend/api/models.py (Approval* request models in backend/api/auth.py:94-122)"
+      - "backend/api/auth.py:94  # class ApprovalBindRequest"
+      - "schemas/approvals.py:1  # approval schemas"
+      - "audit: only read-side approvals endpoint; no audit-trail table found (grep 'audit_trail|audit_log' in backend/persistence/models/ -> no dedicated table)"
+    notes: >
+      My own verification (parent asked): the approvals API surface is
+      read-only (list_approvals); biometric approval request models exist in
+      the API layer; no dedicated audit-trail persistence found in snapshot.
+      Status partial per gap-analysis.
+
+fix_first:
+  # D-items transcribed from parent's corrected-facts handoff; the defect
+  # descriptions themselves come from docs/architecture/gap-analysis.md, which
+  # is not present in this snapshot. Evidence below is what I could verify here.
+  - id: D1
+    description: "Fresh-DB `alembic upgrade` aborted: 001_initial originally created `decisions` before its FK target tables and omitted `planned_changes` (per migration docstring)."
+    path: backend/persistence/alembic/versions/001_initial.py
+    line: 31
+    workstream: NC-WS-005
+    verified_in_snapshot: true
+    verification: "001_initial.py:31-33 docstring states the failure; planned_changes now created in the same migration."
+  - id: D2
+    description: "Events idempotency key uniqueness enforced via UniqueConstraint (intended dedupe surface)."
+    path: backend/persistence/alembic/versions/001_initial.py
+    line: 73
+    workstream: NC-WS-003
+    verified_in_snapshot: true
+    verification: "Line 73 is `sa.UniqueConstraint(\"idempotency_key\")` — verified by read; matches parent's 'verify the :73 unique constraint' instruction."
+  - id: D3
+    description: "Env-var naming contract split: deployments emit NERVE_* while backend reads NERVECENTER_* (T104/T101 normalization pending)."
+    path: deployments/kubernetes/base/secrets.yaml.example
+    line: 11
+    workstream: NC-WS-009
+    verified_in_snapshot: true
+    verification: "secrets.yaml.example:11-15 documents the dual naming; both key families present in the Secret template."
+  - id: D4
+    description: "Login ships default-credential hint and non-field-associated error banner (audit defect, resolved in final deployed bundle per audit-gaps.md)."
+    path: web/src/views/LoginView.tsx
+    line: 101
+    workstream: NC-WS-012
+    verified_in_snapshot: true
+    verification: "LoginView.tsx:101 references 403 handling; visual-auditor-review.md:15 records the original 'Default credentials: admin / password' defect; audit-gaps.md marks it resolved at TAG bee3fa8."
+  - id: D5
+    description: "Approvals API is read-only (list only); approval decision/binding endpoints are API models without a full write router (gap per uplift handoff)."
+    path: backend/api/endpoints/approvals.py
+    line: 5
+    workstream: NC-WS-012
+    verified_in_snapshot: true
+    verification: "approvals.py is 10 lines, make_read_router with method_names (\"list_approvals\", \"list\"); Approval*Request models exist in backend/api/auth.py."
+  - id: D6
+    description: "S3 object-store code path exists but no localstack-based local S3 integration in repo; cloud storage untested in-repo."
+    path: backend/storage/s3.py
+    line: 95
+    workstream: NC-WS-009
+    verified_in_snapshot: true
+    verification: "s3.py:95 class S3ObjectStore; no tools/localstack in snapshot (ls + find verified); only in-repo localstack reference is in s3.py docstrings/tests context."
+
+unknowns:
+  - id: U1
+    item: "Sibling repos omniroute/zoo state"
+    state: unknown
+    note: "Per parent corrected facts: remain Unknown."
+  - id: U2
+    item: "Licensing (of the platform/siblings)"
+    state: unknown
+    note: "Per parent corrected facts: remains Unknown."
+  - id: U3
+    item: "LocalStack plan tier"
+    state: unknown
+    note: "Probe returned 404 on /_localstack/plan; tier Unknown (parent-reported probe result)."
+    verified_in_snapshot: false
+  - id: U4
+    item: "LocalStack availability of S3/Lambda/EventBridge/StepFunctions"
+    state: unknown
+    note: "boto3 missing during probe; services Unknown (parent-reported probe result)."
+    verified_in_snapshot: false
+  - id: U5
+    item: "ENFORCE_IAM denial behavior"
+    state: unknown
+    note: "Probe observed no-denial; ENFORCE_IAM behavior Unknown (parent-reported probe result)."
+    verified_in_snapshot: false
+  - id: U6
+    item: "LocalStack CLI presence"
+    state: unknown
+    note: "CLI absent per probe; not re-verified in snapshot (no tools/ in snapshot)."
+    verified_in_snapshot: false
+  - id: U7
+    item: "Spec pack NC-CAP/NC-REQ/NC-API/NC-MS/NC-WS numbering details"
+    state: unverified-in-snapshot
+    note: "specs/nervecenter-aws-platform/{spec,plan,tasks}.md absent in snapshot; ids transcribed from parent handoff (NC-CAP-001..015, NC-REQ-001..009, NC-API-001..018, NC-MS-000..008, NC-WS-000..017, T001-T030)."
+  - id: U8
+    item: "docs/architecture/* doc content (gap-analysis, current-state, DAG, ownership)"
+    state: unverified-in-snapshot
+    note: "Being created by concurrent worker; statuses here are per parent's corrected-facts handoff."
+
+milestones:
+  # blocked_by uses NC-WS workstream ids per parent handoff; the milestone
+  # descriptions themselves are not in this snapshot (spec pack absent).
+  - id: NC-MS-000
+    name: "Baseline (pre-work)"
+    blocked_by: []
+    note: "Per parent handoff; content unverified in snapshot."
+  - id: NC-MS-001
+    name: "Foundation contracts"
+    blocked_by: []
+    note: "Per parent handoff; content unverified in snapshot."
+  - id: NC-MS-002
+    name: "Core services"
+    blocked_by: [NC-WS-001, NC-WS-002]
+    note: "Per parent handoff; content unverified in snapshot."
+  - id: NC-MS-003
+    name: "Event fabric & persistence"
+    blocked_by: [NC-WS-003, NC-WS-005]
+    note: "Per parent handoff; content unverified in snapshot."
+  - id: NC-MS-004
+    name: "Integration layer"
+    blocked_by: [NC-WS-004, NC-WS-006, NC-WS-007]
+    note: "Per parent handoff; content unverified in snapshot."
+  - id: NC-MS-005
+    name: "LocalStack/infra validation"
+    blocked_by: [NC-WS-008, NC-WS-009]
+    note: "Per parent handoff; content unverified in snapshot."
+  - id: NC-MS-006
+    name: "Surfaces (web console, attention, approvals)"
+    blocked_by: [NC-WS-010, NC-WS-011, NC-WS-012]
+    note: "Per parent handoff; content unverified in snapshot."
+  - id: NC-MS-007
+    name: "Cross-workstream integration"
+    blocked_by: [NC-WS-013, NC-WS-014]
+    note: "Per parent handoff; content unverified in snapshot."
+  - id: NC-MS-008
+    name: "Release/readiness"
+    blocked_by: [NC-WS-015, NC-WS-016, NC-WS-017]
+    note: "Per parent handoff; content unverified in snapshot."
+
+localstack_probe:
+  source: "tools/localstack/probe-results.jsonl (ABSENT in this snapshot; results transcribed from parent's corrected-facts handoff)"
+  probe_date: "2026-10-10"
+  target: "LocalStack pro:2026.3.0 @ localhost:4566"
+  health: "ok"
+  service_matrix:
+    - {service: SQS, available: true}
+    - {service: DynamoDB, available: true}
+    - {service: IAM, available: true}
+    - {service: CloudFormation, available: true}
+    - {service: SNS, available: false, note: "disabled"}
+    - {service: S3, available: unknown, note: "boto3 missing during probe"}
+    - {service: Lambda, available: unknown, note: "boto3 missing during probe"}
+    - {service: EventBridge, available: unknown, note: "boto3 missing during probe"}
+    - {service: StepFunctions, available: unknown, note: "boto3 missing during probe"}
+  plan_endpoint:
+    path: "/_localstack/plan"
+    result: 404
+    tier: unknown
+  enforcements:
+    - {name: ENFORCE_IAM, result: "no-denial", state: unknown}
+  cli:
+    present: false

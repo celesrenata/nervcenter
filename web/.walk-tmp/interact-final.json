@@ -1,0 +1,316 @@
+{
+  "bundle": "assets/index-C-6TxAyS.js",
+  "perView": {},
+  "shots": [
+    {
+      "name": "interact-incidents-desktop",
+      "size": 51132,
+      "blank": false
+    },
+    {
+      "name": "interact-incidents-row-actions-desktop",
+      "size": 18683,
+      "blank": false
+    },
+    {
+      "name": "interact-incidents-409-desktop",
+      "size": 25119,
+      "blank": false
+    },
+    {
+      "name": "interact-decisions-error-desktop",
+      "size": 49426,
+      "blank": false
+    },
+    {
+      "name": "interact-timeline-desktop",
+      "size": 41418,
+      "blank": false
+    },
+    {
+      "name": "interact-ask-desktop",
+      "size": 46903,
+      "blank": false
+    },
+    {
+      "name": "interact-inference-desktop",
+      "size": 43506,
+      "blank": false
+    },
+    {
+      "name": "interact-focus-ring-desktop",
+      "size": 2313,
+      "blank": false
+    },
+    {
+      "name": "interact-incidents-mobile",
+      "size": 57074,
+      "blank": false
+    },
+    {
+      "name": "interact-incidents-mobile-nav-open",
+      "size": 43525,
+      "blank": false
+    },
+    {
+      "name": "interact-decisions-error-mobile",
+      "size": 25940,
+      "blank": false
+    },
+    {
+      "name": "interact-timeline-mobile",
+      "size": 31232,
+      "blank": false
+    },
+    {
+      "name": "interact-ask-mobile",
+      "size": 39569,
+      "blank": false
+    },
+    {
+      "name": "interact-inference-mobile",
+      "size": 51187,
+      "blank": false
+    }
+  ],
+  "checks": {
+    "incidentsRows": [
+      "Final r2 interact probe 14:03 (bee3fa8)",
+      "Final r2 interact probe - IN-1 recapture (bee3fa8)",
+      "smoke incident",
+      "r2 curl probe",
+      "Live r2 interact probe — D-4 regression check"
+    ],
+    "incidentsClosedNoActions": 0,
+    "in1CreatedRowAppears": true,
+    "in1FreshRowResolveVisible": true,
+    "in1FreshRowCloseVisible": true,
+    "in1Resolve200": true,
+    "in1_409Detail": "Incident 'e505ecdb-8135-4a3c-a616-95d76aafeacc' cannot transition from 'resolved' to 'resolved'",
+    "in1ClosedNoActions": 0,
+    "dc1AlertText": "Failed to load decisions: 501 — Decisions list endpoint requires the decisions service to be wired via app.state.services.",
+    "n4NoBareCountNextToError": true,
+    "dc1UnavailableBanner": true,
+    "tl1LiveEventRendered": true,
+    "tl1SeedMessage": "TL-1 audit seed event: real bus traffic for Timeline recapture (bee3fa8)",
+    "tl1NoErrorAlert": true,
+    "ask202PendingRendered": "Request accepted (execution: pending). No 'context' service is configured; mutation accepted but not executed.",
+    "inf1EmptyStates": [
+      true,
+      true,
+      true
+    ],
+    "inf1NoRedAlert": true,
+    "focusRing": {
+      "focused": "Systems",
+      "outline": "solid 2px rgb(37, 99, 235)",
+      "boxShadow": "none",
+      "rect": {
+        "x": 0,
+        "y": 141,
+        "w": 256,
+        "h": 40
+      }
+    },
+    "navSvgIcons": {
+      "linksWithSvg": 10,
+      "linksTotal": 10,
+      "ariaCurrent": [
+        "Overview"
+      ]
+    },
+    "mobileIncidentsNoHscroll": 0,
+    "mobileHamburgerOneTapOpens": true,
+    "mobileHamburgerClickableWhileOpen": true,
+    "mobileDrawerOpenNoHscroll": 0,
+    "mobileTimelineLiveEvent": true,
+    "mobileInferenceNoHscroll": 0,
+    "mobileContentRatio": {
+      "viewport": 390,
+      "contentWidth": 390,
+      "pct": 100
+    }
+  },
+  "apiStatus": {
+    "incidents": [
+      "200 GET /api/incidents",
+      "201 POST /api/incidents",
+      "200 GET /api/incidents",
+      "409 POST /api/incidents/e505ecdb-8135-4a3c-a616-95d76aafeacc/resolve",
+      "200 POST /api/incidents/e505ecdb-8135-4a3c-a616-95d76aafeacc/close",
+      "200 GET /api/incidents",
+      "501 GET /api/decisions",
+      "200 GET /api/events/",
+      "202 POST /api/context/ask",
+      "200 GET /api/compute",
+      "200 GET /api/routes",
+      "200 GET /api/models/history",
+      "200 GET /api/tasks",
+      "200 GET /api/agents",
+      "200 GET /api/goals",
+      "200 GET /api/incidents"
+    ],
+    "incidents-tab2": [
+      "200 GET /api/incidents",
+      "200 POST /api/incidents/e505ecdb-8135-4a3c-a616-95d76aafeacc/resolve",
+      "200 GET /api/incidents"
+    ],
+    "decisions": [
+      "501 GET /api/decisions",
+      "200 GET /api/events/",
+      "202 POST /api/context/ask",
+      "200 GET /api/compute",
+      "200 GET /api/routes",
+      "200 GET /api/models/history",
+      "200 GET /api/tasks",
+      "200 GET /api/agents",
+      "200 GET /api/goals",
+      "200 GET /api/incidents"
+    ],
+    "timeline": [
+      "200 GET /api/events/",
+      "202 POST /api/context/ask",
+      "200 GET /api/compute",
+      "200 GET /api/routes",
+      "200 GET /api/models/history",
+      "200 GET /api/tasks",
+      "200 GET /api/agents",
+      "200 GET /api/goals",
+      "200 GET /api/incidents"
+    ],
+    "ask": [
+      "202 POST /api/context/ask",
+      "200 GET /api/compute",
+      "200 GET /api/routes",
+      "200 GET /api/models/history",
+      "200 GET /api/tasks",
+      "200 GET /api/agents",
+      "200 GET /api/goals",
+      "200 GET /api/incidents"
+    ],
+    "inference": [
+      "200 GET /api/compute",
+      "200 GET /api/routes",
+      "200 GET /api/models/history",
+      "200 GET /api/tasks",
+      "200 GET /api/agents",
+      "200 GET /api/goals",
+      "200 GET /api/incidents"
+    ],
+    "overview": [
+      "200 GET /api/tasks",
+      "200 GET /api/agents",
+      "200 GET /api/goals",
+      "200 GET /api/incidents"
+    ],
+    "incidents-mobile": [
+      "200 GET /api/incidents",
+      "501 GET /api/decisions",
+      "200 GET /api/events/",
+      "202 POST /api/context/ask",
+      "200 GET /api/routes",
+      "200 GET /api/compute",
+      "200 GET /api/models/history",
+      "200 GET /api/agents",
+      "200 GET /api/tasks",
+      "200 GET /api/goals",
+      "200 GET /api/incidents"
+    ],
+    "decisions-mobile": [
+      "501 GET /api/decisions",
+      "200 GET /api/events/",
+      "202 POST /api/context/ask",
+      "200 GET /api/routes",
+      "200 GET /api/compute",
+      "200 GET /api/models/history",
+      "200 GET /api/agents",
+      "200 GET /api/tasks",
+      "200 GET /api/goals",
+      "200 GET /api/incidents"
+    ],
+    "timeline-mobile": [
+      "200 GET /api/events/",
+      "202 POST /api/context/ask",
+      "200 GET /api/routes",
+      "200 GET /api/compute",
+      "200 GET /api/models/history",
+      "200 GET /api/agents",
+      "200 GET /api/tasks",
+      "200 GET /api/goals",
+      "200 GET /api/incidents"
+    ],
+    "ask-mobile": [
+      "202 POST /api/context/ask",
+      "200 GET /api/routes",
+      "200 GET /api/compute",
+      "200 GET /api/models/history",
+      "200 GET /api/agents",
+      "200 GET /api/tasks",
+      "200 GET /api/goals",
+      "200 GET /api/incidents"
+    ],
+    "inference-mobile": [
+      "200 GET /api/routes",
+      "200 GET /api/compute",
+      "200 GET /api/models/history",
+      "200 GET /api/agents",
+      "200 GET /api/tasks",
+      "200 GET /api/goals",
+      "200 GET /api/incidents"
+    ],
+    "overview-mobile": [
+      "200 GET /api/agents",
+      "200 GET /api/tasks",
+      "200 GET /api/goals",
+      "200 GET /api/incidents"
+    ]
+  },
+  "consoleErrors": {
+    "incidents": [
+      "Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "Failed to load resource: the server responded with a status of 501 (Not Implemented)"
+    ],
+    "incidents-tab2": [],
+    "decisions": [
+      "Failed to load resource: the server responded with a status of 501 (Not Implemented)"
+    ],
+    "timeline": [],
+    "ask": [],
+    "inference": [],
+    "overview": [],
+    "incidents-mobile": [
+      "Failed to load resource: the server responded with a status of 501 (Not Implemented)"
+    ],
+    "decisions-mobile": [
+      "Failed to load resource: the server responded with a status of 501 (Not Implemented)"
+    ],
+    "timeline-mobile": [],
+    "ask-mobile": [],
+    "inference-mobile": [],
+    "overview-mobile": []
+  },
+  "reqFailed": {
+    "incidents": [
+      "409 POST /api/incidents/e505ecdb-8135-4a3c-a616-95d76aafeacc/resolve",
+      "501 GET /api/decisions"
+    ],
+    "incidents-tab2": [],
+    "decisions": [
+      "501 GET /api/decisions"
+    ],
+    "timeline": [],
+    "ask": [],
+    "inference": [],
+    "overview": [],
+    "incidents-mobile": [
+      "501 GET /api/decisions"
+    ],
+    "decisions-mobile": [
+      "501 GET /api/decisions"
+    ],
+    "timeline-mobile": [],
+    "ask-mobile": [],
+    "inference-mobile": [],
+    "overview-mobile": []
+  }
+}

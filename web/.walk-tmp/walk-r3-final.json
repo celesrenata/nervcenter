@@ -1,0 +1,340 @@
+{
+  "perView": {},
+  "shots": [
+    {
+      "name": "login-desktop",
+      "size": 21506,
+      "blank": false
+    },
+    {
+      "name": "login-error-desktop",
+      "size": 20649,
+      "blank": false
+    },
+    {
+      "name": "login-403-detail-desktop",
+      "size": 26219,
+      "blank": false
+    },
+    {
+      "name": "login-focus-desktop",
+      "size": 26488,
+      "blank": false
+    },
+    {
+      "name": "systems-desktop",
+      "size": 58767,
+      "blank": false
+    },
+    {
+      "name": "agents-desktop",
+      "size": 36928,
+      "blank": false
+    },
+    {
+      "name": "agents-add-open-desktop",
+      "size": 73296,
+      "blank": false
+    },
+    {
+      "name": "agents-add-form-desktop",
+      "size": 73296,
+      "blank": false
+    },
+    {
+      "name": "agents-add-result-desktop",
+      "size": 68218,
+      "blank": false
+    },
+    {
+      "name": "tasks-dag",
+      "size": 41171,
+      "blank": false
+    },
+    {
+      "name": "tasks-dag-desktop",
+      "size": 41171,
+      "blank": false
+    },
+    {
+      "name": "goals-create-open",
+      "size": 36766,
+      "blank": false
+    },
+    {
+      "name": "goals-after-create",
+      "size": 46646,
+      "blank": false
+    },
+    {
+      "name": "goals",
+      "size": 46646,
+      "blank": false
+    },
+    {
+      "name": "login-mobile",
+      "size": 67659,
+      "blank": false
+    },
+    {
+      "name": "login-focus-mobile",
+      "size": 67659,
+      "blank": false
+    },
+    {
+      "name": "overview",
+      "size": 153849,
+      "blank": false
+    },
+    {
+      "name": "overview-hamburger",
+      "size": 153849,
+      "blank": false
+    },
+    {
+      "name": "overview-nav-open",
+      "size": 156340,
+      "blank": false
+    },
+    {
+      "name": "overview",
+      "size": 156340,
+      "blank": false
+    },
+    {
+      "name": "systems-badge",
+      "size": 194808,
+      "blank": false
+    },
+    {
+      "name": "systems",
+      "size": 194808,
+      "blank": false
+    },
+    {
+      "name": "systems-connected",
+      "size": 194808,
+      "blank": false
+    },
+    {
+      "name": "agents",
+      "size": 170529,
+      "blank": false
+    },
+    {
+      "name": "tasks",
+      "size": 113865,
+      "blank": false
+    },
+    {
+      "name": "goals",
+      "size": 128863,
+      "blank": false
+    },
+    {
+      "name": "goals-create-open",
+      "size": 149964,
+      "blank": false
+    }
+  ],
+  "checks": {
+    "LG1_scan": {
+      "desktop_text": false,
+      "mobile_text": false
+    },
+    "LG4_ssoButton": {
+      "sso_visible": false,
+      "buttons": [
+        "Sign in"
+      ]
+    },
+    "D23_labels": {
+      "username_for": "Username",
+      "password_for": "Password",
+      "title_tag": "NerveCenter Web UI",
+      "has_h1": false
+    },
+    "LG3_401": {
+      "http": 401,
+      "alert": "Invalid credentials.",
+      "u": {
+        "descd": "login-credential-error",
+        "invalid": "true"
+      },
+      "p": {
+        "descd": "login-credential-error",
+        "invalid": "true"
+      }
+    },
+    "LG3_403": {
+      "alert": null,
+      "http": 403
+    },
+    "focus_ring": {
+      "id": "username",
+      "outline": "rgb(37, 99, 235) solid 2px",
+      "boxShadow": "rgb(255, 255, 255) 0px 0px 0px 0px, rgb(59, 130, 246) 0px 0px 0px 2px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+      "webkitTapHighlight": "rgba(0, 0, 0, 0)"
+    },
+    "SY2": {
+      "badge_aria": "Real-time connection: Connected",
+      "badge_text": "Real-time: Connected",
+      "rows": [],
+      "body_names": true,
+      "alert_banner": null
+    },
+    "AG2": {
+      "visible_text": "active",
+      "aria_label": "Agent Planner status: active",
+      "role_img": false,
+      "has_visible_status_word": true
+    },
+    "AG2_before_rowcount": 17,
+    "AG3_form_open": true,
+    "AG3_form_open_addBtn": true,
+    "AG3": {
+      "post_status": 201,
+      "success_banner": "Agent created.",
+      "error_banner": null,
+      "probe_visible": true,
+      "rows_after": 18
+    },
+    "TA": {
+      "edges": [],
+      "nodes": [],
+      "has_svg": true,
+      "body_has_A": false,
+      "body_has_B": false,
+      "status_badges": []
+    },
+    "GL_existing": {
+      "cards": [
+        "smoke-goalactivegap-closure redeploy smoke (tz fix)Progress0%DueNov 30, 2026PriorityP0"
+      ],
+      "has_smoke_goal": true
+    },
+    "GL1": {
+      "button_visible": true,
+      "form_open": true,
+      "post": {
+        "status": 201,
+        "body": {
+          "title": "R3 walk goal",
+          "priority": 1,
+          "description": "Final recapture audit goal (safe to delete).",
+          "deadline": "2026-11-30"
+        }
+      },
+      "card_visible": true,
+      "cards_after": [
+        "R3 walk goalactiveFinal recapture audit goal (safe to delete).Progress0%DueNov 29, 2026PriorityP1",
+        "smoke-goalactivegap-closure redeploy smoke (tz fix)Progress0%DueNov 30, 2026PriorityP0"
+      ]
+    },
+    "D4": {
+      "svg_icons": 10,
+      "emoji": false,
+      "aria_current": [
+        "Goals=page"
+      ],
+      "nav_text": "OverviewSystemsTimelineGoalsTask DAGAgentsInferenceIncidentsDecisionsAsk"
+    },
+    "m_login_metrics": {
+      "form_width": 326,
+      "vw": 390,
+      "hscroll": false
+    },
+    "focus_ring_mobile": {
+      "tag": "INPUT",
+      "outline": "rgb(37, 99, 235) solid 2px",
+      "boxShadow": "rgb(255, 255, 255) 0px 0px 0px 0px, rgb(59, 130, 246) 0px 0px 0px 2px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+      "webkitTapHighlight": "rgba(0, 0, 0, 0)"
+    },
+    "m_overview": {
+      "hscroll": false,
+      "scroll_w": 390,
+      "inner_w": 390,
+      "tiles": [
+        "Active Goals2🎯",
+        "Active Agents18🤖",
+        "Pending Tasks0📋",
+        "Active Incidents3⚠️",
+        "GoalsR3 walk goalactive0%smoke-goalactiv",
+        "AgentsPlanneractiveRepository Inspectora"
+      ],
+      "body": "NerveCenter Overview Active Goals 2 🎯 Active Agents 18 🤖 Pending Tasks 0 📋 Active Incidents 3 ⚠️ Goals R3 walk goal Active 0% smoke-goal Active 0% Agents Planner Active Repository Inspector Active Runtime Inspector Active Log Investigator Active Infrastruct"
+    },
+    "m_hamburger": {
+      "aria_before": "false",
+      "aria_after": "true",
+      "nav_visible": 400
+    },
+    "m_badge": {
+      "text": "Real-time: Connected",
+      "hscroll": false
+    },
+    "m_agents": {
+      "hscroll": false,
+      "has_probe": true
+    },
+    "m_tasks": {
+      "hscroll": false,
+      "has_A": false
+    },
+    "m_goals": {
+      "hscroll": false,
+      "has_r3": true
+    }
+  },
+  "api": {
+    "systems_network": [
+      "200 GET /api/agents",
+      "201 POST /api/agents",
+      "200 GET /api/agents",
+      "200 GET /api/tasks",
+      "200 GET /api/goals",
+      "201 POST /api/goals",
+      "200 GET /api/goals"
+    ],
+    "task_create": {
+      "a": 405,
+      "b": 405,
+      "aId": false
+    },
+    "task_list_status": 200,
+    "goals_list_status": 200
+  },
+  "contrast": null,
+  "consoleErrors": {
+    "login": [
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    ],
+    "systems-desktop": [],
+    "agents-desktop": [],
+    "tasks-desktop": [],
+    "goals-desktop": [],
+    "login-mobile": [],
+    "overview-mobile": [],
+    "systems-mobile": [],
+    "agents-mobile": [],
+    "tasks-mobile": [],
+    "goals-mobile": []
+  },
+  "reqFailed": {
+    "login": [
+      "401 POST /api/auth/login",
+      "403 POST /api/auth/login"
+    ],
+    "systems-desktop": [],
+    "agents-desktop": [],
+    "tasks-desktop": [],
+    "goals-desktop": [],
+    "login-mobile": [],
+    "overview-mobile": [],
+    "systems-mobile": [],
+    "agents-mobile": [],
+    "tasks-mobile": [],
+    "goals-mobile": []
+  }
+}
