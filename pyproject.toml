@@ -59,7 +59,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["backend*", "schemas*"]
+include = ["backend*", "schemas*", "mcp*"]
 
 [tool.ruff]
 line-length = 100

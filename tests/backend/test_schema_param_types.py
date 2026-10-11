@@ -111,6 +111,15 @@ TABLES_WITH_ID = frozenset(
         "relationships",
         "task_runs",
         "tasks",
+        # C1 canonical-platform tables (nc_*), Alembic 005.
+        "nc_resources",
+        "nc_connector_instances",
+        "nc_resource_aliases",
+        "nc_resource_relations",
+        "nc_resource_snapshots",
+        "nc_principals",
+        "nc_policies",
+        "nc_approvals",
     }
 )
 
@@ -175,9 +184,12 @@ def _col_type(table_name: str, col_name: str) -> str:
 class TestOrmColumnTypes:
     """Pin the ORM to the live PostgreSQL schema."""
 
-    def test_seventeen_tables_registered(self):
-        assert len(Base.metadata.tables) == 17
+    def test_all_registered_tables_present(self):
+        # The guard set is the source of truth: every table the ORM is
+        # expected to register must be present. (C1 canonical-platform
+        # tables from nc_platform.py are part of this set since 005.)
         assert TABLES_WITH_ID.issubset(set(Base.metadata.tables.keys()))
+        assert len(Base.metadata.tables) == len(TABLES_WITH_ID)
 
     def test_every_id_column_is_string(self):
         """N1/D-5: every ``id`` column is ``String`` (never UUID)."""
