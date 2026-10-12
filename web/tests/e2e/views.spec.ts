@@ -88,6 +88,7 @@ const VIEWS: Array<{ path: string; heading: string }> = [
   { path: '/calendar', heading: 'Calendar' },
   { path: '/messages', heading: 'Messages' },
   { path: '/email', heading: 'Email' },
+  { path: '/voicemail', heading: 'Voicemail' },
   { path: '/systems', heading: 'Systems' },
   { path: '/timeline', heading: 'Timeline' },
   { path: '/goals', heading: 'Goals' },
@@ -112,7 +113,8 @@ for (const view of VIEWS) {
       // to /login instead.
       await expect(page.locator('main h1')).toHaveText(view.heading)
 
-      // The layout is mounted (sidebar nav with all 11 items).
+      // The layout is mounted (sidebar nav with all items — Task DAG is a
+      // stable, non-first item to prove the whole nav rendered).
       await expect(page.getByRole('link', { name: 'Task DAG' })).toBeVisible()
 
       // Give any async fetches (real backend, mock-infer sample data) time

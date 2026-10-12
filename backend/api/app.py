@@ -30,6 +30,7 @@ from backend.attention import get_attention_service
 from backend.calendar import get_calendar_service
 from backend.email import get_email_service
 from backend.messages import get_messages_service
+from backend.voicemail import get_voicemail_service
 from backend.api.endpoints import (
     agents,
     attention,
@@ -46,6 +47,7 @@ from backend.api.endpoints import (
     events_ws,
     email,
     evidence,
+    voicemail,
     goals,
     incidents,
     knowledge,
@@ -71,6 +73,7 @@ ALL_ROUTERS = (
     attention.router,
     email.router,
     messages.router,
+    voicemail.router,
     calendar.router,
     goals.router,
     tasks.router,
@@ -232,6 +235,19 @@ def create_app() -> FastAPI:
     target.state.email_service = email_service
     if os.environ.get("NERVE_SEED_EMAILS", "").lower() in {"1", "true", "yes"}:
         email_service.seed_demo()
+
+    # Voicemail plane (prompt2 P2 — Personal Operations Plane): in-process store
+    # that receives normalized voicemail events from the Personal Relay (the
+    # transcript and provenance are already computed by the relay — §46/§47
+    # source-side deliverables, out of scope) and (re)creates AttentionItems
+    # through the shared P0 attention service. Callback-request voicemails
+    # surface a stronger, explainable factor. Dev mode
+    # (NERVE_SEED_VOICEMAILS=1) pre-populates a demo thread so the Voicemail
+    # screen has content before real relay traffic arrives.
+    voicemail_service = get_voicemail_service()
+    target.state.voicemail_service = voicemail_service
+    if os.environ.get("NERVE_SEED_VOICEMAILS", "").lower() in {"1", "true", "yes"}:
+        voicemail_service.seed_demo()
 
     # Calendar plane (prompt2 P2): in-process read-only copy of the user's
     # schedule, used for availability + conflict reasoning (§42/§43). NerveCenter

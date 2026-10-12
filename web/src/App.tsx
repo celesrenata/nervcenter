@@ -7,6 +7,7 @@ import { AuthProvider } from './auth/AuthContext'
 import { Layout } from './components/Layout'
 import { MessagesView } from './views/MessagesView'
 import { EmailView } from './views/EmailView'
+import { VoicemailView } from './views/VoicemailView'
 import { CalendarView } from './views/CalendarView'
 import { NowView } from './views/NowView'
 import { OverviewView } from './views/OverviewView'
@@ -43,6 +44,7 @@ function App() {
             <Route path="/calendar" element={<CalendarView />} />
             <Route path="/messages" element={<MessagesView />} />
             <Route path="/email" element={<EmailView />} />
+            <Route path="/voicemail" element={<VoicemailView />} />
             <Route path="/systems" element={<SystemsView />} />
             <Route path="/timeline" element={<TimelineView />} />
             <Route path="/goals" element={<GoalsView />} />

@@ -414,3 +414,77 @@ class EmailThread(BaseModel):
     attention_id: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
+
+
+# ---------------------------------------------------------------------------
+# Voicemail (prompt2 Phase P2 — Personal Operations Plane)
+# ---------------------------------------------------------------------------
+
+
+class VoicemailSource(StrEnum):
+    """Provenance of an ingested voicemail (prompt2 §49 — retention is per-source).
+
+    Which ingestion path produced the normalized event. The NerveCenter plane
+    only ever sees these normalized sources — the raw capture (iOS Share Sheet,
+    the carrier's voicemail email, or a manual import) is done by the Personal
+    Relay and is *out of scope for this deliverable* (§46/§47). Typing the
+    value as an enum makes an unknown source a Pydantic 422, not a stored error.
+    """
+
+    SHARE_SHEET = "share-sheet"
+    CARRIER_EMAIL = "carrier-email"
+    IMPORTED = "imported"
+
+
+class Voicemail(BaseModel):
+    """One ingested voicemail (prompt2 §77 — voicemail ingestion).
+
+    The macOS Personal Relay posts normalized voicemail events here with the
+    transcript and provenance *already computed* (Whisper transcription, audio
+    file storage, and carrier access are all source-side deliverables,
+    §46/§47 — out of scope for this deliverable). ``caller_phone`` is the raw
+    caller number in its display format; the thread key is derived by stripping
+    non-digits, so the display format is kept separately. ``caller_name`` is
+    the *resolved* display name, which may be ``None`` when the caller has not
+    been matched yet.
+    """
+
+    voicemail_id: str
+    thread_id: str
+    caller_phone: str
+    caller_name: str | None = None
+    transcript: str = ""
+    duration_seconds: int = 0
+    received_at: datetime
+    read: bool = False
+    needs_callback: bool = False
+    callback_reason: str | None = None
+    # Provenance: which ingestion source produced this voicemail (prompt2 §49 —
+    # retention is per-source).
+    source: VoicemailSource = VoicemailSource.SHARE_SHEET
+
+
+class VoicemailThread(BaseModel):
+    """A reconstructed voicemail thread (prompt2 §77 — thread reconstruction).
+
+    A thread is keyed by caller phone number (non-digits stripped for the key,
+    display format kept separately): one thread per caller, chronological.
+    ``unread`` counts received voicemails not yet acknowledged, which drives
+    the AttentionItem the thread can produce (§77 acceptance). ``needs_callback``
+    reflects the latest voicemail in the thread so a callback request surfaces
+    on the list and its AttentionItem.
+    """
+
+    thread_id: str
+    caller_phone: str
+    caller_name: str | None = None
+    voicemail_count: int = 0
+    unread: int = 0
+    last_transcript: str | None = None
+    last_duration_seconds: int = 0
+    last_received_at: datetime | None = None
+    needs_callback: bool = False
+    callback_reason: str | None = None
+    attention_id: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None

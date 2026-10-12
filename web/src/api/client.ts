@@ -152,6 +152,43 @@ const mockEmailThreads = [
   },
 ]
 
+// Demonstration data (mock transport only — never served by the real API):
+// two voicemail threads mirroring the thread the backend seeds via
+// `NERVE_SEED_VOICEMAILS=1` / `seed_demo()` — one carrying a callback-request
+// ask (§15/§77) and one ordinary message.
+const mockVoicemails = [
+  {
+    thread_id: 'vthr-14155550134',
+    caller_phone: '+1 415-555-0134',
+    caller_name: 'Dr. Smith',
+    voicemail_count: 1,
+    unread: 1,
+    last_transcript: 'Please call us regarding your appointment.',
+    last_duration_seconds: 12,
+    last_received_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+    needs_callback: true,
+    callback_reason: 'please call us',
+    attention_id: null,
+    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+  },
+  {
+    thread_id: 'vthr-12025550100',
+    caller_phone: '+1 202-555-0100',
+    caller_name: 'Alice Nguyen',
+    voicemail_count: 1,
+    unread: 1,
+    last_transcript: 'Hi — just confirming our meeting is still on for Thursday.',
+    last_duration_seconds: 18,
+    last_received_at: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
+    needs_callback: false,
+    callback_reason: null,
+    attention_id: null,
+    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
+  },
+]
+
 // One upcoming event + one overlapping event (mock transport only): lets
 // /calendar demonstrate availability + conflict reasoning (§42/§43) with no
 // real API. The 18:00–19:00 event overlaps the 18:30 request below.
@@ -725,6 +762,28 @@ const realApi = {
     return { data: await responseOrThrow(res), status: res.status }
   },
 
+  // Voicemail (prompt2 Phase P2 — Personal Operations Plane)
+  getVoicemailThreads: async () => {
+    const res = await apiFetch('/voicemail')
+    return { data: await listFromResponse(res), status: res.status }
+  },
+  getVoicemailThread: async (threadId: string) => {
+    const res = await apiFetch(`/voicemail/${threadId}`)
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+  ingestVoicemail: async (payload: Record<string, unknown>) => {
+    const res = await apiFetch('/voicemail/ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+  acknowledgeVoicemail: async (threadId: string) => {
+    const res = await apiFetch(`/voicemail/${threadId}/acknowledge`, { method: 'POST' })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+
   // Calendar (prompt2 Phase P2 — Calendar Integration + Conflict Reasoning)
   getCalendar: async (params?: { start?: string; end?: string; limit?: number }) => {
     const qs = new URLSearchParams()
@@ -1122,6 +1181,81 @@ const mockApi = {
     }
   },
 
+  // Voicemail (prompt2 Phase P2 — mock transport)
+  getVoicemailThreads: async () => {
+    await delay(60)
+    return { data: mockVoicemails, status: 200 }
+  },
+  getVoicemailThread: async (threadId: string) => {
+    await delay(40)
+    const thread = mockVoicemails.find((t) => t.thread_id === threadId)
+    if (!thread) return { data: undefined, status: 404 }
+    const voicemails = [
+      {
+        voicemail_id: `vm-${threadId}-1`,
+        thread_id: threadId,
+        caller_phone: thread.caller_phone,
+        caller_name: thread.caller_name,
+        transcript: thread.last_transcript ?? '',
+        duration_seconds: thread.last_duration_seconds ?? 0,
+        received_at: thread.last_received_at,
+        read: thread.unread === 0,
+        needs_callback: thread.needs_callback,
+        callback_reason: thread.callback_reason,
+        source: 'share-sheet',
+      },
+    ]
+    return { data: { thread, voicemails }, status: 200 }
+  },
+  ingestVoicemail: async (payload: Record<string, unknown>) => {
+    await delay(80)
+    const threadId = 'vthr-mock|voicemail'
+    return {
+      data: {
+        voicemail: {
+          voicemail_id: payload.voicemail_id ?? 'mock-vm',
+          thread_id: threadId,
+          caller_phone: payload.caller_phone ?? '+1 000-000-0000',
+          caller_name: payload.caller_name ?? null,
+          transcript: payload.transcript ?? '',
+          duration_seconds: payload.duration_seconds ?? 0,
+          received_at: payload.received_at ?? new Date().toISOString(),
+          read: false,
+          needs_callback: false,
+          callback_reason: null,
+          source: payload.source ?? 'share-sheet',
+        },
+        thread: {
+          thread_id: threadId,
+          caller_phone: payload.caller_phone ?? '+1 000-000-0000',
+          caller_name: payload.caller_name ?? null,
+          voicemail_count: 1,
+          unread: 1,
+          last_transcript: payload.transcript ?? '',
+          last_duration_seconds: payload.duration_seconds ?? 0,
+          last_received_at: payload.received_at ?? new Date().toISOString(),
+          needs_callback: false,
+          callback_reason: null,
+          attention_id: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        new_attention: null,
+        duplicate: false,
+      },
+      status: 201,
+    }
+  },
+  acknowledgeVoicemail: async (threadId: string) => {
+    await delay(40)
+    const thread = mockVoicemails.find((t) => t.thread_id === threadId)
+    if (!thread) return { data: undefined, status: 404 }
+    return {
+      data: { thread: { ...thread, unread: 0 }, attention_id: thread.attention_id, resolved: true },
+      status: 200,
+    }
+  },
+
   // Calendar (prompt2 Phase P2 — mock transport)
   getCalendar: async (_params?: { start?: string; end?: string; limit?: number }) => {
     await delay(60)
@@ -1299,6 +1433,13 @@ export const emailApi = {
   ingest: (payload: Record<string, unknown>) => api.ingestEmail(payload),
   acknowledge: (threadId: string) => api.acknowledgeEmail(threadId),
   draft: (threadId: string) => api.draftEmailReply(threadId),
+}
+
+export const voicemailApi = {
+  list: () => api.getVoicemailThreads(),
+  thread: (threadId: string) => api.getVoicemailThread(threadId),
+  ingest: (payload: Record<string, unknown>) => api.ingestVoicemail(payload),
+  acknowledge: (threadId: string) => api.acknowledgeVoicemail(threadId),
 }
 
 export const calendarApi = {

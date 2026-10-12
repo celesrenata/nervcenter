@@ -18,6 +18,7 @@ import {
   SystemsIcon,
   TasksIcon,
   TimelineIcon,
+  VoicemailIcon,
   type IconProps,
 } from './icons'
 
@@ -33,6 +34,7 @@ const navItems: NavItem[] = [
   { path: '/calendar', label: 'Calendar', Icon: CalendarIcon },
   { path: '/messages', label: 'Messages', Icon: MessagesIcon },
   { path: '/email', label: 'Email', Icon: EmailIcon },
+  { path: '/voicemail', label: 'Voicemail', Icon: VoicemailIcon },
   { path: '/systems', label: 'Systems', Icon: SystemsIcon },
   { path: '/timeline', label: 'Timeline', Icon: TimelineIcon },
   { path: '/goals', label: 'Goals', Icon: GoalsIcon },
