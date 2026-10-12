@@ -88,6 +88,16 @@ export function MessagesIcon({ size = 18, ...rest }: IconProps) {
   )
 }
 
+/** Email — an envelope. */
+export function EmailIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <polyline points="3 7 12 13 21 7" />
+    </svg>
+  )
+}
+
 /** Systems — stacked server nodes. */
 export function SystemsIcon({ size = 18, ...rest }: IconProps) {
   return (

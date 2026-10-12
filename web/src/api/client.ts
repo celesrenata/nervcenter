@@ -131,6 +131,27 @@ const mockMessages = [
   },
 ]
 
+// Demonstration data (mock transport only — never served by the real API):
+// one email thread with an unread inbound email, mirroring the thread the
+// backend seeds via `NERVE_SEED_EMAILS=1` / `seed_demo()`.
+const mockEmailThreads = [
+  {
+    thread_id: 'thr-alice.n@example.com|q4 planning — heads up',
+    from_address: 'alice.n@example.com',
+    to_address: 'me@example.com',
+    sender_name: 'Alice Nguyen',
+    subject: 'Q4 planning — heads up',
+    message_count: 2,
+    unread: 2,
+    last_body: 'No rush — Monday works too if Friday is gone.',
+    last_direction: 'RECEIVED',
+    last_timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    attention_id: null,
+    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+  },
+]
+
 // One upcoming event + one overlapping event (mock transport only): lets
 // /calendar demonstrate availability + conflict reasoning (§42/§43) with no
 // real API. The 18:00–19:00 event overlaps the 18:30 request below.
@@ -678,6 +699,32 @@ const realApi = {
     return { data: await responseOrThrow(res), status: res.status }
   },
 
+  // Email (prompt2 Phase P0 — Personal Operations Plane)
+  getEmailThreads: async () => {
+    const res = await apiFetch('/email')
+    return { data: await listFromResponse(res), status: res.status }
+  },
+  getEmailThread: async (threadId: string) => {
+    const res = await apiFetch(`/email/${threadId}`)
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+  ingestEmail: async (payload: Record<string, unknown>) => {
+    const res = await apiFetch('/email/ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+  acknowledgeEmail: async (threadId: string) => {
+    const res = await apiFetch(`/email/${threadId}/acknowledge`, { method: 'POST' })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+  draftEmailReply: async (threadId: string) => {
+    const res = await apiFetch(`/email/${threadId}/draft`, { method: 'POST' })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+
   // Calendar (prompt2 Phase P2 — Calendar Integration + Conflict Reasoning)
   getCalendar: async (params?: { start?: string; end?: string; limit?: number }) => {
     const qs = new URLSearchParams()
@@ -980,6 +1027,101 @@ const mockApi = {
     }
   },
 
+  // Email (prompt2 Phase P0 — mock transport)
+  getEmailThreads: async () => {
+    await delay(60)
+    return { data: mockEmailThreads, status: 200 }
+  },
+  getEmailThread: async (threadId: string) => {
+    await delay(40)
+    const thread = mockEmailThreads.find((t) => t.thread_id === threadId)
+    if (!thread) return { data: undefined, status: 404 }
+    const messages = [
+      {
+        message_id: 'email-1',
+        thread_id: threadId,
+        direction: 'RECEIVED',
+        from_address: thread.from_address,
+        to_address: thread.to_address,
+        subject: thread.subject,
+        body: 'Are you still free to review the deck Friday?',
+        timestamp: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+        source: 'personal-relay',
+      },
+      {
+        message_id: 'email-2',
+        thread_id: threadId,
+        direction: 'RECEIVED',
+        from_address: thread.from_address,
+        to_address: thread.to_address,
+        subject: thread.subject,
+        body: thread.last_body ?? 'No rush — Monday works too if Friday is gone.',
+        timestamp: thread.last_timestamp,
+        source: 'personal-relay',
+      },
+    ]
+    return { data: { thread, messages }, status: 200 }
+  },
+  ingestEmail: async (payload: Record<string, unknown>) => {
+    await delay(80)
+    return {
+      data: {
+        message: {
+          message_id: payload.message_id ?? 'mock-email',
+          thread_id: 'thr-mock|subject',
+          direction: payload.direction ?? 'RECEIVED',
+          from_address: payload.from_address ?? 'a@example.com',
+          to_address: payload.to_address ?? 'me@example.com',
+          subject: payload.subject ?? 'Subject',
+          body: payload.body ?? '',
+          timestamp: payload.timestamp ?? new Date().toISOString(),
+          source: 'personal-relay',
+        },
+        thread: {
+          thread_id: 'thr-mock|subject',
+          from_address: payload.from_address ?? 'a@example.com',
+          to_address: payload.to_address ?? 'me@example.com',
+          sender_name: payload.sender_name ?? null,
+          subject: payload.subject ?? 'Subject',
+          message_count: 1,
+          unread: 1,
+          last_body: payload.body ?? '',
+          last_direction: payload.direction ?? 'RECEIVED',
+          last_timestamp: payload.timestamp ?? new Date().toISOString(),
+          attention_id: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        new_attention: null,
+        duplicate: false,
+      },
+      status: 201,
+    }
+  },
+  acknowledgeEmail: async (threadId: string) => {
+    await delay(40)
+    const thread = mockEmailThreads.find((t) => t.thread_id === threadId)
+    if (!thread) return { data: undefined, status: 404 }
+    return {
+      data: { thread: { ...thread, unread: 0 }, attention_id: thread.attention_id, resolved: true },
+      status: 200,
+    }
+  },
+  draftEmailReply: async (threadId: string) => {
+    await delay(50)
+    const thread = mockEmailThreads.find((t) => t.thread_id === threadId)
+    if (!thread) return { data: undefined, status: 404 }
+    return {
+      data: {
+        thread_id: threadId,
+        to: thread.sender_name ?? thread.from_address,
+        draft: 'Sure — let me check and get back to you.',
+        basis: 'mock draft (NERVE_USE_MOCK=true)',
+      },
+      status: 200,
+    }
+  },
+
   // Calendar (prompt2 Phase P2 — mock transport)
   getCalendar: async (_params?: { start?: string; end?: string; limit?: number }) => {
     await delay(60)
@@ -1149,6 +1291,14 @@ export const messagesApi = {
   ingest: (payload: Record<string, unknown>) => api.ingestMessage(payload),
   acknowledge: (conversationId: string) => api.acknowledgeMessage(conversationId),
   draft: (conversationId: string) => api.draftReply(conversationId),
+}
+
+export const emailApi = {
+  list: () => api.getEmailThreads(),
+  thread: (threadId: string) => api.getEmailThread(threadId),
+  ingest: (payload: Record<string, unknown>) => api.ingestEmail(payload),
+  acknowledge: (threadId: string) => api.acknowledgeEmail(threadId),
+  draft: (threadId: string) => api.draftEmailReply(threadId),
 }
 
 export const calendarApi = {

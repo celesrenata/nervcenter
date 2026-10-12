@@ -87,6 +87,7 @@ const VIEWS: Array<{ path: string; heading: string }> = [
   { path: '/now', heading: 'Now' },
   { path: '/calendar', heading: 'Calendar' },
   { path: '/messages', heading: 'Messages' },
+  { path: '/email', heading: 'Email' },
   { path: '/systems', heading: 'Systems' },
   { path: '/timeline', heading: 'Timeline' },
   { path: '/goals', heading: 'Goals' },

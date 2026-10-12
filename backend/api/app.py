@@ -28,6 +28,7 @@ from backend.api.auth import router as auth_router
 from backend.api.docs import custom_openapi, get_version_info
 from backend.attention import get_attention_service
 from backend.calendar import get_calendar_service
+from backend.email import get_email_service
 from backend.messages import get_messages_service
 from backend.api.endpoints import (
     agents,
@@ -43,6 +44,7 @@ from backend.api.endpoints import (
     entities,
     events,
     events_ws,
+    email,
     evidence,
     goals,
     incidents,
@@ -67,6 +69,7 @@ from backend.api.wiring import install_dependency_wiring
 ALL_ROUTERS = (
     agents.router,
     attention.router,
+    email.router,
     messages.router,
     calendar.router,
     goals.router,
@@ -219,6 +222,16 @@ def create_app() -> FastAPI:
     target.state.messages_service = messages_service
     if os.environ.get("NERVE_SEED_MESSAGES", "").lower() in {"1", "true", "yes"}:
         messages_service.seed_demo()
+
+    # Email plane (prompt2 P0 — Personal Operations Plane): in-process store
+    # that receives normalized email events from the Personal Relay and
+    # (re)creates AttentionItems through the shared P0 attention service.
+    # Dev mode (NERVE_SEED_EMAILS=1) pre-populates a demo thread so the Email
+    # screen has content before real relay traffic arrives.
+    email_service = get_email_service()
+    target.state.email_service = email_service
+    if os.environ.get("NERVE_SEED_EMAILS", "").lower() in {"1", "true", "yes"}:
+        email_service.seed_demo()
 
     # Calendar plane (prompt2 P2): in-process read-only copy of the user's
     # schedule, used for availability + conflict reasoning (§42/§43). NerveCenter

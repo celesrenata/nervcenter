@@ -356,3 +356,61 @@ class CalendarEvent(BaseModel):
     sync_id: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
+
+
+# ---------------------------------------------------------------------------
+# Email (prompt2 Phase P0 — Email + Attention)
+# ---------------------------------------------------------------------------
+
+
+class EmailDirection(StrEnum):
+    """Which side of the thread the email came from (prompt2 §75)."""
+
+    RECEIVED = "RECEIVED"
+    SENT = "SENT"
+
+
+class EmailMessage(BaseModel):
+    """One ingested email (prompt2 §75 — email ingestion).
+
+    The macOS Personal Relay (``nerve-personal-relay``) posts normalized email
+    events here; NerveCenter never touches a mailbox (EWS/IMAP) directly
+    (prompt2 §47). ``from_address`` is the raw sender address; ``sender_name``
+    is the resolved display name, which may be ``None`` when the sender has
+    not been matched yet.
+    """
+
+    message_id: str
+    thread_id: str
+    direction: EmailDirection
+    from_address: str
+    to_address: str
+    subject: str
+    body: str = ""
+    timestamp: datetime
+    # Provenance: which ingestion source produced this message
+    # (prompt2 §49 — retention is per-source).
+    source: str = "personal-relay"
+
+
+class EmailThread(BaseModel):
+    """A reconstructed email thread (prompt2 §75 — thread reconstruction).
+
+    A thread is keyed by (sender, subject): one thread per sender per
+    subject line. ``unread`` counts RECEIVED messages not yet acknowledged,
+    which drives the AttentionItem the thread can produce (§75 acceptance).
+    """
+
+    thread_id: str
+    from_address: str
+    to_address: str
+    sender_name: str | None = None
+    subject: str
+    message_count: int = 0
+    unread: int = 0
+    last_body: str | None = None
+    last_direction: EmailDirection | None = None
+    last_timestamp: datetime | None = None
+    attention_id: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None

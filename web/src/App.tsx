@@ -6,6 +6,7 @@ import {
 import { AuthProvider } from './auth/AuthContext'
 import { Layout } from './components/Layout'
 import { MessagesView } from './views/MessagesView'
+import { EmailView } from './views/EmailView'
 import { CalendarView } from './views/CalendarView'
 import { NowView } from './views/NowView'
 import { OverviewView } from './views/OverviewView'
@@ -41,6 +42,7 @@ function App() {
             <Route path="/now" element={<NowView />} />
             <Route path="/calendar" element={<CalendarView />} />
             <Route path="/messages" element={<MessagesView />} />
+            <Route path="/email" element={<EmailView />} />
             <Route path="/systems" element={<SystemsView />} />
             <Route path="/timeline" element={<TimelineView />} />
             <Route path="/goals" element={<GoalsView />} />
