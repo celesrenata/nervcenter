@@ -5,6 +5,9 @@ import {
 } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
 import { Layout } from './components/Layout'
+import { MessagesView } from './views/MessagesView'
+import { CalendarView } from './views/CalendarView'
+import { NowView } from './views/NowView'
 import { OverviewView } from './views/OverviewView'
 import { SystemsView } from './views/SystemsView'
 import { TimelineView } from './views/TimelineView'
@@ -35,6 +38,9 @@ function App() {
             }
           >
             <Route path="/" element={<OverviewView />} />
+            <Route path="/now" element={<NowView />} />
+            <Route path="/calendar" element={<CalendarView />} />
+            <Route path="/messages" element={<MessagesView />} />
             <Route path="/systems" element={<SystemsView />} />
             <Route path="/timeline" element={<TimelineView />} />
             <Route path="/goals" element={<GoalsView />} />

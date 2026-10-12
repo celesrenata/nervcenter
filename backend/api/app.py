@@ -13,6 +13,8 @@ headers, preventing 307 redirects to http:// behind TLS-terminating ingresses.
 """
 from __future__ import annotations
 
+import os
+
 import structlog
 
 from fastapi import APIRouter, FastAPI, Request
@@ -24,9 +26,14 @@ log = structlog.get_logger(__name__)
 from backend.api.auth import approvals_router as auth_approvals_router
 from backend.api.auth import router as auth_router
 from backend.api.docs import custom_openapi, get_version_info
+from backend.attention import get_attention_service
+from backend.calendar import get_calendar_service
+from backend.messages import get_messages_service
 from backend.api.endpoints import (
     agents,
+    attention,
     approvals,
+    calendar,
     changes,
     claims,
     clients,
@@ -40,6 +47,7 @@ from backend.api.endpoints import (
     goals,
     incidents,
     knowledge,
+    messages,
     metrics,
     models,
     models_history,
@@ -58,6 +66,9 @@ from backend.api.wiring import install_dependency_wiring
 
 ALL_ROUTERS = (
     agents.router,
+    attention.router,
+    messages.router,
+    calendar.router,
     goals.router,
     tasks.router,
     evidence.router,
@@ -189,6 +200,34 @@ def create_app() -> FastAPI:
 
     _configure(target)
     install_dependency_wiring(target)
+
+    # Attention engine (prompt2 P0): an in-process, engine-independent
+    # store that is always available, so bind the singleton explicitly.
+    # Dev mode (NERVE_SEED_ATTENTION=1) pre-populates a demo queue so the
+    # Now screen has ranked content before email ingestion lands.
+    attention_service = get_attention_service()
+    if os.environ.get("NERVE_SEED_ATTENTION", "").lower() in {"1", "true", "yes"}:
+        attention_service.seed_demo()
+    target.state.attention_service = attention_service
+
+    # Messages plane (prompt2 P1): in-process store that receives normalized
+    # messages from the Personal Relay and (re)creates AttentionItems through
+    # the shared P0 attention service. Dev mode (NERVE_SEED_MESSAGES=1)
+    # pre-populates a demo thread so the Messages screen has content before
+    # real relay traffic arrives.
+    messages_service = get_messages_service()
+    target.state.messages_service = messages_service
+    if os.environ.get("NERVE_SEED_MESSAGES", "").lower() in {"1", "true", "yes"}:
+        messages_service.seed_demo()
+
+    # Calendar plane (prompt2 P2): in-process read-only copy of the user's
+    # schedule, used for availability + conflict reasoning (§42/§43). NerveCenter
+    # never mutates the real calendar. Dev mode (NERVE_SEED_CALENDAR=1)
+    # pre-populates a demo schedule so the Calendar screen has content.
+    calendar_service = get_calendar_service()
+    target.state.calendar_service = calendar_service
+    if os.environ.get("NERVE_SEED_CALENDAR", "").lower() in {"1", "true", "yes"}:
+        calendar_service.seed_demo()
 
     return target
 

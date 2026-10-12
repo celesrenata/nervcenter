@@ -37,6 +37,7 @@ function baseProps(size: number, extra: IconProps): SVGProps<SVGSVGElement> {
 /* ─── Navigation icons (Layout sidebar) ───────────────────────────────────── */
 
 /** Overview — dashboard tiles. */
+
 export function OverviewIcon({ size = 18, ...rest }: IconProps) {
   return (
     <svg {...baseProps(size, rest)}>
@@ -44,6 +45,45 @@ export function OverviewIcon({ size = 18, ...rest }: IconProps) {
       <rect x="14" y="3" width="7" height="5" rx="1" />
       <rect x="14" y="12" width="7" height="9" rx="1" />
       <rect x="3" y="16" width="7" height="5" rx="1" />
+    </svg>
+  )
+}
+
+/** Calendar — availability grid (prompt2 P2). */
+export function CalendarIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <rect x="3" y="4" width="18" height="17" rx="2" />
+      <line x1="3" y1="9" x2="21" y2="9" />
+      <line x1="3" y1="14" x2="21" y2="14" />
+      <line x1="8" y1="2" x2="8" y2="5" />
+      <line x1="16" y1="2" x2="16" y2="5" />
+      <line x1="8" y1="14" x2="8" y2="21" />
+      <line x1="16" y1="14" x2="16" y2="21" />
+    </svg>
+  )
+}
+
+/** Now — crosshair focus reticle. */
+export function NowIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <circle cx="12" cy="12" r="8" />
+      <line x1="12" y1="2" x2="12" y2="5" />
+      <line x1="12" y1="19" x2="12" y2="22" />
+      <line x1="2" y1="12" x2="5" y2="12" />
+      <line x1="19" y1="12" x2="22" y2="12" />
+      <circle cx="12" cy="12" r="1.5" />
+    </svg>
+  )
+}
+
+/** Messages — chat bubbles (a thread). */
+export function MessagesIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <path d="M4 5h13a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H8l-4 3v-3H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
+      <line x1="7" y1="9" x2="14" y2="9" />
     </svg>
   )
 }

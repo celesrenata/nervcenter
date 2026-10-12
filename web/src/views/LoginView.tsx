@@ -32,10 +32,18 @@ function base64Url(bytes: Uint8Array): string {
  * RFC 7636 §4.2 PKCE S256 verifier + challenge for the authorization URL.
  */
 async function pkceChallenge(): Promise<{ verifier: string; challenge: string }> {
+  // RFC 7636: challenge is BASE64URL(SHA256(ASCII(code_verifier))), i.e. the
+  // digest of the verifier STRING's bytes, not the raw random bytes. (Hashing
+  // random directly produced a challenge that never matched the verifier sent
+  // at token exchange, and Keycloak rejected it: PKCE code mismatch.)
   const random = crypto.getRandomValues(new Uint8Array(32))
-  const digest = await crypto.subtle.digest('SHA-256', random)
+  const verifier = base64Url(random)
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(verifier),
+  )
   return {
-    verifier: base64Url(random),
+    verifier,
     challenge: base64Url(new Uint8Array(digest)),
   }
 }

@@ -228,3 +228,131 @@ class ClaimsCreateRequest(BaseModel):
     confidence: float = 1.0
     entity_id: str | None = None
 
+
+class AttentionState(StrEnum):
+    """Attention lifecycle states (prompt2 section 25).
+
+    ``NOW`` is the highest-visibility bucket (the Now screen); ``RESOLVED``
+    items are archived out of the live queue; ``SUPPRESSED`` hides an item the
+    user explicitly muted.
+    """
+
+    NOW = "NOW"
+    TODAY = "TODAY"
+    SOON = "SOON"
+    WAITING_ON = "WAITING_ON"
+    FYI = "FYI"
+    SUPPRESSED = "SUPPRESSED"
+    RESOLVED = "RESOLVED"
+
+
+class AttentionItem(BaseModel):
+    """An AttentionItem (prompt2 section 20).
+
+    The principal output of the Personal Operations Plane: one ranked,
+    explainable thing that needs the user's attention right now. Scoring is
+    deterministic and explainable (prompt2 section 21) -- no opaque ML -- so
+    ``reason`` and ``why`` answer "why are you showing me this?" (section 22).
+    """
+
+    attention_id: str
+    reason: str
+    priority: float = Field(default=0.0, ge=0.0, le=1.0)
+    urgency: float = Field(default=0.0, ge=0.0, le=1.0)
+    importance: float = Field(default=0.0, ge=0.0, le=1.0)
+    due: datetime | None = None
+    entities: list[str] = []
+    sources: list[str] = []
+    suggested_action: str | None = None
+    status: AttentionState = AttentionState.NOW
+    # Explainability (section 22): the human-readable reasons behind ranking.
+    why: list[str] = []
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+# ---------------------------------------------------------------------------
+# Messages (prompt2 Phase P1)
+# ---------------------------------------------------------------------------
+
+
+class MessageDirection(StrEnum):
+    """Which side of the conversation the message came from (prompt2 §76)."""
+
+    INBOUND = "INBOUND"
+    OUTBOUND = "OUTBOUND"
+
+
+class Message(BaseModel):
+    """One ingested message (prompt2 §76 — message ingestion).
+
+    The macOS Personal Relay (``nerve-personal-relay``) posts normalized
+    messages here; NerveCenter never touches source message storage directly
+    (prompt2 §47). ``peer_identifier`` is the raw contact id (phone number,
+    iMessage handle, ...); ``peer_name`` is the *resolved* display name after
+    cross-channel person resolution, which may be ``None`` when no person has
+    been matched yet.
+    """
+
+    message_id: str
+    conversation_id: str
+    direction: MessageDirection
+    peer_identifier: str
+    peer_name: str | None = None
+    body: str
+    channel: str = "imessage"
+    timestamp: datetime
+    # Provenance: which ingestion source produced this message
+    # (prompt2 §49 — retention is per-source).
+    source: str = "personal-relay"
+
+
+class Conversation(BaseModel):
+    """A reconstructed message thread (prompt2 §76 — thread reconstruction).
+
+    A conversation is keyed by (peer, channel): one thread per contact per
+    channel. ``unread`` counts INBOUND messages not yet acknowledged, which
+    drives the AttentionItem the thread can produce (§76 acceptance).
+    """
+
+    conversation_id: str
+    peer_identifier: str
+    peer_name: str | None = None
+    channel: str = "imessage"
+    message_count: int = 0
+    unread: int = 0
+    last_body: str | None = None
+    last_direction: MessageDirection | None = None
+    last_timestamp: datetime | None = None
+    attention_id: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class CalendarEvent(BaseModel):
+    """A normalized calendar event (prompt2 §42 Calendar Integration).
+
+    NerveCenter never owns the calendar — the events are synced/read-only
+    copies from the user's provider (Apple/Google/Microsoft/CalDAV, §42) or
+    ingested as normalized entries. The calendar exists to answer
+    *availability* questions: availability, appointments, deadlines,
+    travel time, meeting prep, follow-up timing (§42), and conflict
+    reasoning such as "Dinner tomorrow?" → "I can do after 7:30" (§43).
+
+    ``start``/``end`` are ``None`` for all-day events (``all_day=True``);
+    those block the entire calendar day.
+    """
+
+    event_id: str
+    title: str
+    description: str | None = None
+    start: datetime | None = None
+    end: datetime | None = None
+    all_day: bool = False
+    location: str | None = None
+    participants: list[str] = Field(default_factory=list)
+    reminder_at: datetime | None = None
+    source: str = "calendar-sync"
+    sync_id: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None

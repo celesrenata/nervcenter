@@ -17,6 +17,158 @@ export interface ApiResponse<T> {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+/**
+ * Payload for creating an AttentionItem (prompt2 Phase P0). Mirrors the
+ * backend `AttentionItem` model minus the server-generated fields
+ * (attention_id, priority, created_at, updated_at, why).
+ */
+export interface AttentionCreatePayload {
+  reason: string
+  urgency?: number
+  importance?: number
+  due?: string | null
+  entities?: string[]
+  sources?: string[]
+  suggested_action?: string | null
+  status?: string
+  why?: string[]
+}
+
+/**
+ * Mock AttentionItems (prompt2 Phase P0). Mirrors the demo queue the backend
+ * seeds via `seed_demo()`, so the Now screen renders the same ranked items in
+ * both mock mode (no `VITE_API_BASE`) and real mode.
+ */
+const mockAttention = [
+  {
+    attention_id: 'att-mock-pharmacy',
+    reason: 'Call the pharmacy before their 5 PM cutoff',
+    priority: 1.0,
+    urgency: 0.95,
+    importance: 0.9,
+    due: null,
+    entities: ['Pharmacy'],
+    sources: ['calendar'],
+    suggested_action: 'Call the pharmacy',
+    status: 'NOW',
+    why: [
+      'base 0.2025 from importance 0.90 + 0.2375 from urgency 0.95',
+      'deadline proximity: due within a few hours',
+      'direct request: a concrete action is expected',
+    ],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    attention_id: 'att-mock-alice',
+    reason: "Reply to Alice about tomorrow's plan",
+    priority: 1.0,
+    urgency: 0.95,
+    importance: 0.9,
+    due: null,
+    entities: ['Alice'],
+    sources: ['email'],
+    suggested_action: "Reply to Alice",
+    status: 'NOW',
+    why: [
+      'base 0.2025 from importance 0.90 + 0.2375 from urgency 0.95',
+      'direct request: a concrete action is expected',
+    ],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    attention_id: 'att-mock-deploy',
+    reason: 'Approve the HelloDJ deployment',
+    priority: 0.92,
+    urgency: 0.9,
+    importance: 0.8,
+    due: null,
+    entities: ['HelloDJ'],
+    sources: ['deploy-pipeline'],
+    suggested_action: 'Approve the deployment',
+    status: 'NOW',
+    why: [
+      'base 0.18 from importance 0.80 + 0.225 from urgency 0.90',
+      'direct request: a concrete action is expected',
+    ],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    attention_id: 'att-mock-flight',
+    reason: 'Flight rebooking confirmation pending',
+    priority: 0.59,
+    urgency: 0.55,
+    importance: 0.5,
+    due: null,
+    entities: ['Flight'],
+    sources: ['email'],
+    suggested_action: 'Confirm the rebooking',
+    status: 'NOW',
+    why: ['base 0.125 from importance 0.50 + 0.1375 from urgency 0.55'],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+]
+
+// Demonstration data (mock transport only — never served by the real API):
+// one iMessage thread with an unread inbound message.
+const mockMessages = [
+  {
+    conversation_id: 'conv-+14155550134|imessage',
+    peer_identifier: '+14155550134',
+    peer_name: 'Alice Nguyen',
+    channel: 'imessage',
+    message_count: 2,
+    unread: 1,
+    last_body: 'Are you still free to review the deck Friday?',
+    last_direction: 'INBOUND',
+    last_timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    attention_id: null,
+    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+  },
+]
+
+// One upcoming event + one overlapping event (mock transport only): lets
+// /calendar demonstrate availability + conflict reasoning (§42/§43) with no
+// real API. The 18:00–19:00 event overlaps the 18:30 request below.
+const _today = new Date()
+const _calDay = `${_today.toISOString().slice(0, 10)}`
+const mockCalendar = [
+  {
+    event_id: 'ev-mock-design-review',
+    title: 'Design review',
+    description: null,
+    start: `${_calDay}T16:00:00.000Z`,
+    end: `${_calDay}T17:00:00.000Z`,
+    all_day: false,
+    location: 'Room 4',
+    participants: ['alice@example.com'],
+    reminder_at: null,
+    source: 'calendar-sync',
+    sync_id: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    event_id: 'ev-mock-dinner',
+    title: 'Dinner with family',
+    description: null,
+    start: `${_calDay}T18:00:00.000Z`,
+    end: `${_calDay}T19:00:00.000Z`,
+    all_day: false,
+    location: 'Home',
+    participants: [],
+    reminder_at: null,
+    source: 'calendar-sync',
+    sync_id: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+]
+
 // ─── Error type (gates OV-1 / TA-1 / DC-1) ───────────────────────────────────
 //
 // Every real-API call that receives a non-2xx response rejects with this
@@ -468,6 +620,108 @@ const realApi = {
     return { data: await responseOrThrow(res), status: res.status }
   },
 
+  // Attention (prompt2 Phase P0 — Personal Operations Plane)
+  getAttention: async (status?: string) => {
+    const qs = status ? `?status=${encodeURIComponent(status)}` : ''
+    const res = await apiFetch(`/attention${qs}`)
+    return { data: await listFromResponse(res), status: res.status }
+  },
+  getAttentionNow: async () => {
+    const res = await apiFetch('/attention/now')
+    return { data: await listFromResponse(res), status: res.status }
+  },
+  createAttention: async (payload: AttentionCreatePayload) => {
+    const res = await apiFetch('/attention', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+  attentionAction: async (
+    attentionId: string,
+    action: 'resolve' | 'suppress' | 'acknowledge' | 'snooze',
+  ) => {
+    const body = action === 'snooze' ? JSON.stringify({}) : undefined
+    const res = await apiFetch(`/attention/${attentionId}/${action}`, {
+      method: 'POST',
+      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      body,
+    })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+
+  // Messages (prompt2 Phase P1 — Personal Operations Plane)
+  getMessages: async (channel?: string) => {
+    const qs = channel ? `?channel=${encodeURIComponent(channel)}` : ''
+    const res = await apiFetch(`/messages${qs}`)
+    return { data: await listFromResponse(res), status: res.status }
+  },
+  getMessageThread: async (conversationId: string) => {
+    const res = await apiFetch(`/messages/${conversationId}`)
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+  ingestMessage: async (payload: Record<string, unknown>) => {
+    const res = await apiFetch('/messages/ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+  acknowledgeMessage: async (conversationId: string) => {
+    const res = await apiFetch(`/messages/${conversationId}/acknowledge`, { method: 'POST' })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+  draftReply: async (conversationId: string) => {
+    const res = await apiFetch(`/messages/${conversationId}/draft`, { method: 'POST' })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+
+  // Calendar (prompt2 Phase P2 — Calendar Integration + Conflict Reasoning)
+  getCalendar: async (params?: { start?: string; end?: string; limit?: number }) => {
+    const qs = new URLSearchParams()
+    if (params?.start) qs.set('start', params.start)
+    if (params?.end) qs.set('end', params.end)
+    if (params?.limit) qs.set('limit', String(params.limit))
+    const q = qs.toString()
+    const res = await apiFetch(`/calendar${q ? `?${q}` : ''}`)
+    return { data: await listFromResponse(res), status: res.status }
+  },
+  ingestCalendarEvent: async (payload: Record<string, unknown>) => {
+    const res = await apiFetch('/calendar/ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+  calendarAvailability: async (start: string, end: string) => {
+    const res = await apiFetch('/calendar/availability', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ start, end }),
+    })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+  calendarFreeTime: async (start: string, durationMinutes: number, horizonMinutes?: number) => {
+    const res = await apiFetch('/calendar/free-time', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ start, duration_minutes: durationMinutes, horizon_minutes: horizonMinutes ?? null }),
+    })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+  calendarSuggest: async (start: string, durationMinutes: number) => {
+    const res = await apiFetch('/calendar/suggest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ start, duration_minutes: durationMinutes }),
+    })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+
+  // Models
   // Models
   getModels: async () => {
     const res = await apiFetch('/models')
@@ -620,6 +874,163 @@ const mockApi = {
     return { data: goal, status: goal ? 200 : 404 }
   },
 
+  // Attention (prompt2 Phase P0 — Personal Operations Plane). Mock returns the
+  // same 4 demo items the backend seeds, so the Now screen renders identically
+  // in mock and real mode.
+  getAttention: async (_status?: string) => {
+    await delay(120)
+    return { data: mockAttention, status: 200 }
+  },
+  getAttentionNow: async () => {
+    await delay(120)
+    return { data: mockAttention, status: 200 }
+  },
+  createAttention: async (payload: AttentionCreatePayload) => {
+    await delay(120)
+    const id = `att-mock-${Math.random().toString(16).slice(2, 10)}`
+    return {
+      data: {
+        attention_id: id,
+        reason: payload.reason,
+        priority: 0.5,
+        urgency: 0.5,
+        importance: 0.5,
+        due: null,
+        entities: payload.entities ?? [],
+        sources: payload.sources ?? ['mock'],
+        suggested_action: payload.suggested_action ?? null,
+        status: 'NOW',
+        why: ['base 0.25 from importance 0.50 + 0.25 from urgency 0.50'],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      status: 201,
+    }
+  },
+  attentionAction: async (attentionId: string, action: string) => {
+    await delay(60)
+    const found = mockAttention.find((a) => a.attention_id === attentionId)
+    if (!found) return { data: undefined, status: 404 }
+    const statusMap: Record<string, string> = {
+      resolve: 'RESOLVED',
+      suppress: 'SUPPRESSED',
+      acknowledge: 'RESOLVED',
+      snooze: 'TODAY',
+    }
+    return { data: { ...found, status: statusMap[action] ?? found.status }, status: 200 }
+  },
+
+  // Messages (prompt2 Phase P1 — Personal Operations Plane)
+  getMessages: async (_channel?: string) => {
+    await delay(60)
+    return { data: mockMessages, status: 200 }
+  },
+  getMessageThread: async (conversationId: string) => {
+    await delay(40)
+    const conv = mockMessages.find((c) => c.conversation_id === conversationId)
+    if (!conv) return { data: undefined, status: 404 }
+    const messages = [
+      {
+        message_id: 'msg-1',
+        conversation_id: conversationId,
+        direction: 'INBOUND',
+        peer_identifier: conv.peer_identifier,
+        peer_name: conv.peer_name,
+        body: 'Are you still free to review the deck Friday?',
+        channel: conv.channel,
+        timestamp: conv.last_timestamp,
+        source: 'personal-relay',
+      },
+    ]
+    return { data: { conversation: conv, messages }, status: 200 }
+  },
+  ingestMessage: async (payload: Record<string, unknown>) => {
+    await delay(80)
+    return {
+      data: {
+        message: { message_id: payload.message_id ?? 'mock-msg', conversation_id: 'conv-mock|imessage', direction: payload.direction ?? 'INBOUND', peer_identifier: payload.peer_identifier ?? '+1', peer_name: payload.peer_name ?? null, body: payload.body ?? '', channel: payload.channel ?? 'imessage', timestamp: payload.timestamp ?? new Date().toISOString(), source: 'personal-relay' },
+        conversation: { conversation_id: 'conv-mock|imessage', peer_identifier: payload.peer_identifier ?? '+1', peer_name: payload.peer_name ?? null, channel: payload.channel ?? 'imessage', message_count: 1, unread: 1, last_body: payload.body ?? '', last_direction: payload.direction ?? 'INBOUND', last_timestamp: payload.timestamp ?? new Date().toISOString(), attention_id: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+        new_attention: null,
+        duplicate: false,
+      },
+      status: 201,
+    }
+  },
+  acknowledgeMessage: async (conversationId: string) => {
+    await delay(40)
+    const conv = mockMessages.find((c) => c.conversation_id === conversationId)
+    if (!conv) return { data: undefined, status: 404 }
+    return {
+      data: { conversation: { ...conv, unread: 0 }, attention_id: conv.attention_id, resolved: true },
+      status: 200,
+    }
+  },
+  draftReply: async (conversationId: string) => {
+    await delay(50)
+    const conv = mockMessages.find((c) => c.conversation_id === conversationId)
+    if (!conv) return { data: undefined, status: 404 }
+    return {
+      data: {
+        conversation_id: conversationId,
+        to: conv.peer_name ?? conv.peer_identifier,
+        draft: 'Sure — let me check and get back to you.',
+        basis: 'mock draft (NERVE_USE_MOCK=true)',
+      },
+      status: 200,
+    }
+  },
+
+  // Calendar (prompt2 Phase P2 — mock transport)
+  getCalendar: async (_params?: { start?: string; end?: string; limit?: number }) => {
+    await delay(60)
+    return { data: mockCalendar, status: 200 }
+  },
+  ingestCalendarEvent: async (payload: Record<string, unknown>) => {
+    await delay(80)
+    return { data: { ...(payload as object), source: payload.source ?? 'calendar-sync' }, status: 201 }
+  },
+  calendarAvailability: async (start: string, end: string) => {
+    await delay(40)
+    const clashes = mockCalendar.filter((ev) => {
+      const s = new Date(ev.start ?? 0).getTime()
+      const e = new Date(ev.end ?? 0).getTime()
+      const ws = new Date(start).getTime()
+      const we = new Date(end).getTime()
+      return s < we && e > ws
+    })
+    if (clashes.length === 0) {
+      return { data: { available: true, start, end, conflicts: [], earliest_free_after: start }, status: 200 }
+    }
+    const earliest = new Date(Math.max(...clashes.map((c) => new Date(c.end as string).getTime())))
+    return { data: { available: false, start, end, conflicts: clashes, earliest_free_after: earliest.toISOString() }, status: 200 }
+  },
+  calendarFreeTime: async (start: string, durationMinutes: number) => {
+    await delay(40)
+    const ws = new Date(start).getTime()
+    const dur = durationMinutes * 60_000
+    for (let t = ws; t < ws + 7 * 86_400_000; t += 30 * 60_000) {
+      const blocked = mockCalendar.some((ev) => {
+        const s = new Date(ev.start ?? 0).getTime()
+        const e = new Date(ev.end ?? 0).getTime()
+        return s < t + dur && e > t
+      })
+      if (!blocked) return { data: { start, duration_minutes: durationMinutes, free_at: new Date(t).toISOString(), found: true }, status: 200 }
+    }
+    return { data: { start, duration_minutes: durationMinutes, free_at: null, found: false }, status: 200 }
+  },
+  calendarSuggest: async (start: string, durationMinutes: number) => {
+    await delay(40)
+    const end = new Date(new Date(start).getTime() + durationMinutes * 60_000)
+    const r = await mockApi.calendarAvailability(start, end.toISOString())
+    const d = (r.data as Record<string, unknown>)
+    if (d.available) {
+      return { data: { ...d, suggested_at: start, suggestion: `Yes — ${start} works.` }, status: 200 }
+    }
+    const earliest = d.earliest_free_after as string
+    return { data: { ...d, suggested_at: earliest, suggestion: `I can do after ${new Date(earliest).toTimeString().slice(0, 5)}.` }, status: 200 }
+  },
+
+  // Models
   // Models
   getModels: async () => {
     await delay(80)
@@ -721,6 +1132,33 @@ export const modelsApi = {
   get: (modelId: string) => api.getModel(modelId),
 }
 
+export const attentionApi = {
+  list: (status?: string) => api.getAttention(status),
+  now: () => api.getAttentionNow(),
+  create: (payload: Parameters<typeof api.createAttention>[0]) =>
+    api.createAttention(payload),
+  action: (
+    attentionId: string,
+    action: 'resolve' | 'suppress' | 'acknowledge' | 'snooze',
+  ) => api.attentionAction(attentionId, action),
+}
+
+export const messagesApi = {
+  list: (channel?: string) => api.getMessages(channel),
+  thread: (conversationId: string) => api.getMessageThread(conversationId),
+  ingest: (payload: Record<string, unknown>) => api.ingestMessage(payload),
+  acknowledge: (conversationId: string) => api.acknowledgeMessage(conversationId),
+  draft: (conversationId: string) => api.draftReply(conversationId),
+}
+
+export const calendarApi = {
+  list: (params?: { start?: string; end?: string; limit?: number }) => api.getCalendar(params),
+  ingest: (payload: Record<string, unknown>) => api.ingestCalendarEvent(payload),
+  availability: (start: string, end: string) => api.calendarAvailability(start, end),
+  freeTime: (start: string, durationMinutes: number, horizonMinutes?: number) =>
+    api.calendarFreeTime(start, durationMinutes, horizonMinutes),
+  suggest: (start: string, durationMinutes: number) => api.calendarSuggest(start, durationMinutes),
+}
 export const authApi = {
   login: (username: string, password: string) => api.login(username, password),
   logout: () => api.logout(),

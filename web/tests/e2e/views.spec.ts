@@ -84,6 +84,9 @@ async function visitAuthenticated(page: import('@playwright/test').Page, path: s
 
 const VIEWS: Array<{ path: string; heading: string }> = [
   { path: '/', heading: 'Overview' },
+  { path: '/now', heading: 'Now' },
+  { path: '/calendar', heading: 'Calendar' },
+  { path: '/messages', heading: 'Messages' },
   { path: '/systems', heading: 'Systems' },
   { path: '/timeline', heading: 'Timeline' },
   { path: '/goals', heading: 'Goals' },
@@ -108,7 +111,7 @@ for (const view of VIEWS) {
       // to /login instead.
       await expect(page.locator('main h1')).toHaveText(view.heading)
 
-      // The layout is mounted (sidebar nav with all 10 items).
+      // The layout is mounted (sidebar nav with all 11 items).
       await expect(page.getByRole('link', { name: 'Task DAG' })).toBeVisible()
 
       // Give any async fetches (real backend, mock-infer sample data) time

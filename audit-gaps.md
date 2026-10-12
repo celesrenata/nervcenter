@@ -4,171 +4,138 @@
 - [walk-r3] — `specs/web-quality-audit/gaps-walk-r2.md` (final [walk] recapture against the fixed bundle; per-gap PASS verdicts + fresh screenshot manifest; scope: Login, Overview, Systems, Agents, Tasks, Goals)
 - [interact-final] — `specs/web-quality-audit/gaps-interact-r2.md` (final [interact] recapture against TAG `bee3fa8`; "all prior [interact] gaps **PASS** on the deployed bundle; N1–N4 resolved"; scope: Incidents, Decisions, Timeline, Ask, Inference)
 
-**Sources (r1 baseline — retained for the audit trail):**
-- [walk] — `specs/web-quality-audit/gaps-walk.md` (worker-1 visual-debug, static + walkthrough; scope: Login, Overview, Systems, Agents, Tasks, Goals)
-- [interact] — `specs/web-quality-audit/gaps-interact.md` (worker-2 interact, Playwright virtual cursor; scope: Incidents, Decisions, Timeline, Ask, Inference)
-- [auditor] — `specs/web-quality-audit/visual-auditor-review.md` (visual-auditor, vision on the 24 r1-baseline PNGs in `web/screenshots/audit-live/`, read-only; per-view verdicts + top defects D-1…D-7 — **all resolved in the final bundle**)
+**Sources (2026-10-11 round — full-stack verification):**
+- [local-run] — `uvicorn backend.api.app:app` on :8000 + Vite dev on :3000 with `VITE_API_BASE=/api` (proxy → :8000). `NERVE_MOCK_INFER=1 NERVE_SSO_ISSUER=https://sso.celestium.life/realms/celestium NERVE_LOCAL_ADMIN=1`.
+- [tests] — `uv run pytest tests/` and `npx playwright test` in `web/`.
+- [sso-live-probe] — `GET https://sso.celestium.life/realms/celestium/.well-known/openid-configuration` + authorizer probe for candidate client ids.
 
-**Screenshots:** [`web/screenshots/audit-live-r2/`](web/screenshots/audit-live-r2/) — final-round (r3) fresh captures (22 walk + 12 interact PNGs, 2026-10-09) plus prior-round evidence.
+**Sources (2026-10-12 round — prompt2 Phase P0 + SSO + realtime e2e):**
+- [attention-p0] — `backend/attention/` (AttentionItem schema + deterministic/explainable scoring) and the `/api/attention` router group; 20 dedicated tests in `tests/backend/test_attention.py`.
+- [now-screen] — `web/src/views/NowView.tsx` + `/now` route + `NowIcon` nav item; covered by the AC005 view render matrix.
+- [ws-e2e] — `web/tests/e2e/events-ws.spec.ts` exercises `GET /api/events/ws` in a real browser (handshake + honest error-frame contract).
+- [sso-live] — `nervecenter` OIDC client provisioned in Keycloak realm `celestium`; live PKCE SSO verified end-to-end.
+- [messages-p1] (2026-10-12, same round) — `backend/messages/` service + `/api/messages` router (Personal Operations Plane: thread reconstruction, cross-channel person resolution, AttentionItem generation, draft replies) and the `/messages` web view; 18 tests in `tests/backend/test_messages.py`.
+- [calendar-p2] (2026-10-12, same round) — `backend/calendar/` service + `/api/calendar` router (Calendar Integration + Conflict Reasoning, §42/§43: availability guard, free-slot search, §43 "I can do after…" suggestion) and the web **Calendar** screen (`/calendar`); 20 tests in `tests/backend/test_calendar.py`.
+- [tests] — `pytest tests/` and `npx playwright test` in `web/`.
 
-## Header / deployment context
+## 2026-10-12 Verification Results (after Phase P2)
 
-- **Deployment TAG:** `bee3fa8` (`registry.celestium.life/nervecenter/web:bee3fa8`, `api:bee3fa8`). K3s namespace `nervecenter`. All pods Ready. The deployed web bundle now includes **ALL frontend fixes** — drawer toggle clickable while open, Logout only when a user exists, goal due-date as a UTC calendar date, per-field login errors, SVG icons + `aria-current` + mobile hamburger, `:focus-visible` rings, and trailing-slash `getSystems`/`getEvents`.
-- **Audit window:** 2026-10-06 → 2026-10-09 (UTC). Final (r3) recapture on `bee3fa8`: 2026-10-09 (walk 08:52–11:05 UTC; interact 13:17–14:10 UTC).
-- **Audit URLs (via `kubectl port-forward -n nervecenter svc/web`):**
-  - `http://127.0.0.1:8080` [walk]
-  - `http://127.0.0.1:18321` [interact] (nginx 1.27.5, `GET /api/health` → 200 `{db: ok, nats: connected, jetstream: available}`)
-- **Final smoke (live, `bee3fa8`):** `/api/health` 200, `/api/systems/` 200, `/api/tasks/` 200, `/api/overview` 200, `/api/events/` 200, WS `/api/events/ws` **101**, `/api/auth/sso/config` → `enabled:false`; create paths verified live (agents/goals/incidents → 201). Real rows (smoke-goal, smoke-agent(s), a closed incident, tasks with a DAG edge) show in views — real data in views is fine.
-- **Ingress `nervecenter.celestium.life` is still NXDOMAIN** — no DNS A record published on the `celestium.life` zone (SOA-only NS answer from awsdns). The ingress exists (traefik, 443, IPs 10.1.1.12–15) but browsers cannot reach it. All audit traffic went through port-forward to the same `web` pod + nginx reverse proxy (`/api/` → `api.nervecenter.svc:8000`).
-- **App is ungated:** no `RequireAuth` on the route tree — [`App.tsx:26`](web/src/App.tsx:26) renders all views inside [`Layout`](web/src/components/Layout.tsx) with no auth guard. [`RequireAuth.tsx:4`](web/src/components/RequireAuth.tsx:4) exists but is imported by nothing. All views are reachable unauthenticated ("Guest / No roles").
-- **Live vs mock (r1 baseline):** deployed bundle runs **REAL** mode (`VITE_API_BASE=/api` baked at build, [`web/Dockerfile:31`](web/Dockerfile:31); `useMockMode=false` [`client.ts:9`](web/src/api/client.ts:9)). Mock fixtures are never used on the live site. (r1-only note: the agents endpoint then served a hardcoded fixture; in the final `bee3fa8` bundle the Agents view renders the real registry rows — see [walk-r3] AG-2.)
-- **Port-forward caveat (r1 [walk]):** nginx sends `Host: 127.0.0.1:PORT`, so r1 FastAPI 307 redirects emitted absolute `Location: http://nervecenter.celestium.life/...` (port stripped), turning `/api/systems` into a browser-visible `ERR_CONNECTION_REFUSED`; through the real ingress the same endpoint returned 501 directly (verified `curl -H "Host: nervecenter.celestium.life" http://10.1.1.13/api/systems/` → 501). **Resolved in the final bundle** by the trailing-slash `getSystems`/`getEvents` fix — final smoke on `bee3fa8` shows `/api/systems/` → 200 and `/api/events/` → 200.
+### Backend test suite
+`pytest tests/` → **451 passed** (0 failed, 0 skipped). The 431 after P1 plus 20 new `tests/backend/test_calendar.py` tests (ingest/idempotent upsert, 7-day list horizon, availability window, overlap + all-day conflict detection, free-slot search, §43 suggestion incl. next-day, and honest 404/422s from the `/api/calendar` router).
 
----
+### Playwright e2e suite
+`cd web && npx playwright test` → **44 passed** (0 failed). The 42 from P0 plus:
+- `views.spec.ts` — `/calendar` added to the AC005 render matrix (renders the upcoming-events list and the availability/free-slot/§43-suggestion panel with no console errors).
+- `views.spec.ts` — `/messages` added to the AC005 render matrix (renders the reconstructed thread list + conversation pane with no console errors).
+- (the P0 additions above: `/now` in the render matrix, and the `events-ws.spec.ts` socket handshake/error-frame tests)
 
-## USER ACTIONS / CONNECTIONS NEEDED
+### prompt2 Phase P2 (Calendar Integration + Conflict Reasoning)
+- **Backend:** new `backend/calendar/` plane — `CalendarEvent` model (with `all_day`, provenance `source`, `participants`) + a `CalendarService` (in-memory, **idempotent upsert by `event_id`**). New `/api/calendar` group: `GET /` (7-day horizon list), `POST /ingest`, `POST /availability` (the **scheduling guard** — `available` + `conflicts[]` + `earliest_free_after`), `POST /free-time` (earliest N-minute gap within a 7-day horizon), and `POST /suggest` (the §43 answer: a free window → "Yes — …"; a blocked window → "I can do after …" naming the conflicting event, with next-day proposals when the day is full). NerveCenter holds only read-only copies (§42); nothing mutates the user's real calendar.
+- **Web:** new **Calendar** screen (`/calendar`) — upcoming events + a reasoning panel (check availability / find free slot / suggest §43). Failures surface as `role="alert"` banners (OV-1); an empty schedule is an honest empty state.
+- **Not part of this commit:** the actual **calendar-sync bridge** (the Personal Relay's read-only EventKit/CalDAV ingest, §42) — a separate source-side deliverable. The NerveCenter-side contract (`/api/calendar/ingest` + the provenance field on every `CalendarEvent`) is implemented and tested, so the bridge can be built and pointed at it without backend changes.
 
-**Final (r3) verdict: all repo-fixable gaps are closed.** The only remaining items are the three external infra connections below — they cannot be resolved by frontend/backend code in this repo and require the user (or infra/ops) to act.
+### prompt2 Phase P1 (Personal Operations — Messages)
+- **Backend:** new `backend/messages/` plane — `Message`/`Conversation` models; a `MessagesService` that ingests normalized events (one thread per peer+channel, chronological reconstruction, unread bookkeeping, **idempotent by `message_id`** for relay replay safety, §48), resolves people across channels, and (re)creates **one live `AttentionItem` per conversation** through the shared P0 deterministic scorer (so a source is always explainable, §21/§22). New `/api/messages` group: list, ingest, persons, thread get, acknowledge (resolves the item), draft. In-memory by design (no `NERVE_DB_URL` needed yet, same convention as P0); `NERVE_SEED_MESSAGES=1` pre-populates a demo thread for dev. Drafts are rule-based and read-only — §13 "AI drafts, human sends".
+- **Web:** new **Messages** screen (`/messages`) — thread list (unread badges, channel, last activity) + conversation pane; *Mark as read* clears the badge and resolves the AttentionItem; *Draft reply* shows a suggested reply that is explicitly draft-only. Failures surface as `role="alert"` banners (OV-1); empty inbox is an honest empty state.
+- **Not part of this commit:** the macOS **Personal Relay daemon** (`nerve-personal-relay`, `prompt2.md` §46/§47 — the read-only source-side bridge that reads local message storage with explicit, user-granted permissions and posts normalized events to `/api/messages/ingest` with full provenance). It is a separate deliverable: its spec lives in `prompt2.md`, and it has not been built yet. The NerveCenter side of the contract (the ingest API, thread reconstruction, and the provenance field on every `Message`) is implemented and tested here, so the relay can be built and pointed at `/api/messages/ingest` without backend changes.
 
-| # | Area | What is needed | Evidence |
-|---|---|---|---|
-| B-1 | **Publish DNS** | **RESOLVED (2026-10-09):** The deployed ingress host is `nervecenter.celestium.life`; DNS is the **pre-existing CNAME → `frameshift.net`** in the `celestium.life` Route 53 hosted zone (zone `/hostedzone/Z2ASM5FKNQBRT2`; dig-verified 2026-10-09 → `24.19.103.182`), so the `celestium-le-production` ClusterIssuer can complete the ACME HTTP-01 challenge for the traefik ingress. An erroneous `nervcenter.celestium.life` CNAME (misspelled, no "e") was created on 2026-10-09 under change `/change/C08361262H30IO70T6MJ6` and then **deleted** under change `/change/C02030023C1MVCH88UPKI` (INSYNC), leaving the zone on the pre-existing `nervecenter.celestium.life` record only. Repo manifests are now aligned to the `nervecenter` hostname and TLS secret `nervecenter-celestium-tls` (this task); the ingress `metadata.name` remains `nervcenter-celestium` (resource name, no DNS impact). | `dig +short nervecenter.celestium.life @8.8.8.8` → `frameshift.net.` → `24.19.103.182`; `dig nervcenter.celestium.life @8.8.8.8` → NXDOMAIN; Route 53 `/change/C08361262H30IO70T6MJ6` (INSYNC, 2026-10-09) then `/change/C02030023C1MVCH88UPKI` (INSYNC, 2026-10-09); ingress [`ingress.yaml:26-29`](deployments/kubernetes/base/ingress.yaml:26) |
-| B-2 | **Provision Authentik provider** | `GET /api/auth/sso/config` → `{"enabled":false,"client_id":""}` on the live deployment. The UI already ships the SSO button; to enable it, provision the Authentik OIDC provider at issuer `https://sso.celestium.life/application/o/nervecenter/` and set `NERVE_SSO_CLIENT_ID` (issuer `NERVE_SSO_ISSUER` defaults to the same URL) in the deployed `nervecenter-env` secret. `NERVE_JWT_SECRET` must also be set for token minting. | [`auth_service.py:72`](backend/api/auth_service.py:72); live smoke 2026-10-09 |
-| B-3 | **Wire NATS / Postgres env** | Set `NERVE_DB_URL` and `NERVE_NATS_URL` (fallback names `NERVECENTER_DATABASE_URL` / `NERVECENTER_NATS_URL`) in the deployed `nervecenter-env` secret so the API's persistence and event bus resolve to the real Postgres + NATS JetStream backing — the deploy contract ships only the [`secrets.yaml.example`](deployments/kubernetes/base/secrets.yaml.example:28) reference (DB → `postgres.nervecenter.svc:5432`, NATS → `nats.nervecenter.svc:4222`). Until these are provisioned on the target cluster, events are not persisted/published to a production-grade bus. | [`secrets.yaml.example:28-30`](deployments/kubernetes/base/secrets.yaml.example:28); [`wiring.py:74-77`](backend/api/wiring.py:74) |
+### prompt2 Phase P0 (Personal Operations — Attention)
+- **Backend:** `AttentionItem` / `AttentionState` schema and a deterministic, explainable scorer (identical inputs → identical `priority` + `why[]`). New `/api/attention` group: list, `/now`, get, create, resolve, suppress, acknowledge, snooze — all auth-gated, returning `data`/`meta` envelopes with honest 404/422s.
+- **Web:** new **Now** screen (`/now`) as the first prompt2 surface — a ranked "what deserves my attention now" queue where each card shows its `priority` and the `why[]` factors, plus create / resolve / snooze / suppress. Failure states surface via `role="alert"` banners (OV-1 contract).
 
----
+### SSO (B-2) — resolved
+- The `nervecenter` OIDC client is now provisioned in Keycloak realm `celestium`. `GET /api/auth/sso/config` returns `enabled:true` with the real issuer/client. Live PKCE login was exercised end-to-end after fixing two frontend bugs (`VITE_API_BASE` and the PKCE `S256` code-challenge). The SSO button renders when `enabled:true` and the break-glass path still works.
 
-## Merged gaps per view (r1 baseline — all CLOSED)
+### Realtime (RT) — resolved
+- `web/tests/e2e/events-ws.spec.ts` now provides browser-level e2e coverage for `GET /api/events/ws` (previously unit-test-only). It targets the backend on `:8000` directly because the Vite proxy forwards WebSocket only for the `/ws/*` prefix, not `/api/*`.
 
-Attribution: **[walk]** = gaps-walk.md, **[interact]** = gaps-interact.md. Deduplicated; cross-view/cross-cutting items are listed once at the end.
+## 2026-10-11 Verification Results
 
-> **Final disposition (2026-10-09, TAG `bee3fa8`):** every r1 gap below is **CLOSED** — the [walk-r3] / [interact-final] recaptures against the fixed bundle report all PASS (LG-1…GL-3 and N1–N4 resolved; see the [Verdict summary](#verdict-summary-per-view)). This section is retained for the audit trail.
+### Backend test suite
+`uv run pytest tests/` → **393 passed** in 2.22 s (0 failed, 0 skipped, 0 xfail). Includes `test_schema_param_types`, `test_auth_sso.*`, `test_app_wiring`, `test_gap_closure`, `test_write_api`, `test_evidence`, `test_write_routes_gap3`, `test_events_api`, `test_object_storage`, `test_tasks_dependencies`, `test_agents`, `test_policy/test_pdp`, and the MCP-tools tests under `tests/mcp/`.
 
-### Login — `/login`
-- **[walk]** Advertises **"Default credentials: admin / password"** ([`LoginView.tsx:91`](web/src/views/LoginView.tsx:91)) — stale and unworkable (401 "unknown user"); contradicts the SSO spec's removal of the default user. **[interact]** same; spec S101 removed the default user.
-- **[walk]/[interact]** Error banner is a hardcoded **"Invalid credentials. Please try again."** ([`LoginView.tsx:22`](web/src/views/LoginView.tsx:22)) — masks the real 403 "local-admin disabled" cause (and the 401).
-- **[walk]** No SSO button/UI surface in the deployed LoginView even though the transport exists ([`client.ts:20`](web/src/api/client.ts:20)); only the username/password form renders.
-- **[walk]/[interact]** Auth is a shell: any truthy `localStorage.authToken` is accepted as `admin` without verification ([`AuthContext.tsx:24`](web/src/auth/AuthContext.tsx:24)).
-- **[interact]** Route mismatch: brief referenced `POST /api/v1/auth/login`; the real route is `POST /api/auth/login` ([`auth.py:6`](backend/api/auth.py:6)); `/api/v1/…` → 404.
-- Console (verbatim, both): `403 Forbidden` / `401 Unauthorized` + `Login error: Error: Login failed`.
+### Playwright e2e suite
+`cd web && npx playwright test` → **40 passed** in 18.0 s (0 failed, 0 skipped). Coverage:
+- `login-shell.spec.ts` — LG-1…LG-4 (no default-cred hint in DOM, 401 maps to a field-associated error, 403 surfaces the real detail, submit button disables with pending label, SSO button only when `enabled:true`).
+- `auth-transport.spec.ts` — `apiFetch` injects `Authorization: Bearer <nc.accessToken>` only when a token is present; 401 clears sessionStorage; `/auth/callback` validates PKCE state and exchanges the code; rejects a state mismatch.
+- `views.spec.ts` — 10 view-render tests (Overview, Systems, Timeline, Goals, Agents, Inference, Incidents, Decisions, Ask, + the "Ask round-trip").
 
-### Overview — `/`
-- **[walk]** Tiles are **live**: Goals=0, Agents=2 (backend fixture), Incidents=0, Tasks=0 — but the Tasks tile is **misleading** (`/api/tasks` 500 was swallowed to `[]` by `listFromResponse`, [`client.ts:122`](web/src/api/client.ts:122)); nothing signals the failure.
-- **[walk]** "Recent Goals" panel is hardcoded `Goal 1/2/3 — Status: In Progress` regardless of data ([`OverviewView.tsx:99`](web/src/views/OverviewView.tsx:99)); "Active Agents" panel likewise hardcoded ([`OverviewView.tsx:116`](web/src/views/OverviewView.tsx:116)).
-- **[walk]** No P1 §49 metrics (health, active incidents/goals, running agents, concurrency, compute, OmniRoute, deployments, failures, pending approvals) — only 4 counters render; `GET /api/overview` → 501 "requires service wiring".
-- Console (verbatim): `Failed to load resource: 500` (for `/api/tasks`).
+### Live Keycloak probe
+```
+GET https://sso.celestium.life/realms/celestium/.well-known/openid-configuration
+  → 200 OK, full discovery doc (RS256 JWKS, PKCE authorization_code,
+    client_id/audience contract visible in the realm).
 
-### Systems — `/systems`
-- **[walk]** `GET /api/systems` → 307 → `/api/systems/` → **501** "requires the systems service to be wired" ([`systems.py:20`](backend/api/endpoints/systems.py:20)); under port-forward the absolute redirect target is unreachable → banner "Failed to fetch system status" ([`SystemsView.tsx:23`](web/src/views/SystemsView.tsx:23)). View can never show systems.
-- **[walk]** **"Real-time Updates / WebSocket Connected" is a hardcoded static green dot** ([`SystemsView.tsx:114`](web/src/views/SystemsView.tsx:114)); no WebSocket is ever opened (see Cross-cutting).
-- **[walk]** Error banner gives no access to the underlying 501 detail.
-- Console (verbatim): `net::ERR_CONNECTION_REFUSED`; `TypeError: Failed to fetch at getSystems`.
+GET https://sso.celestium.life/realms/celestium/protocol/openid-connect/auth
+  ?client_id=web&response_type=code&redirect_uri=http://localhost:3000/auth/callback&...
+  → 400 Bad Request  (no client registered under that id)
+  for client_id ∈ { web, client, webapp, nervecenter } — same 400.
+```
+**Conclusion:** the realm is live and reachable, but **no `nervecenter`/`web`/`webapp`/`client` OIDC client is registered in realm `celestium`**. The SSO button on the web login view therefore correctly stays hidden (`sso/config.enabled == false`) — this is the same outstanding item as `audit-gaps.md` B-2 from 2026-10-09.
 
-### Agents — `/agents`
-- **[walk]** Data is the **backend hardcoded fixture** (`agent-1`/`agent-2`, [`agents.py:31`](backend/api/endpoints/agents.py:31)) — not real, masquerades as live.
-- **[walk]** Status is shown as a **bare colored dot with no text / aria-label** (accessibility partial).
-- **[walk]** "+ Add Agent" button present; no create flow verified.
+### Local service state (verification host)
+- `:8000` uvicorn (mock infer, in-process session store) — `/api/health` → 200.
+- `:3000` Vite dev server (proxies `/api/*` and `/ws/*` to :8000).
+- `GET /api/auth/sso/config` → `{"enabled": false, "client_id": "", "issuer": "https://sso.celestium.life/realms/celestium", "audience": "nervecenter", "local_admin_enabled": true, ...}`.
+- 63 API route registrations across `backend/api/*.py`.
 
-### Tasks (Task DAG) — `/tasks`
-- **[walk]** `GET /api/tasks` → **500** (`column tasks.dependencies does not exist` [`service.py:271`](backend/tasks/service.py:271)); the client swallows it to `[]` ([`client.ts:152`](web/src/api/client.ts:152)) → view looks like "no tasks" instead of an error state.
-- **[walk]** No dependency-DAG / concurrency visualization despite the "Task DAG" name — flat list markup only ([`TaskDagView.tsx:90`](web/src/views/TaskDagView.tsx:90)).
-- **[walk]** Field mismatch `task_id/state` vs real backend `id/status` acknowledged in-source ([`TaskDagView.tsx:10`](web/src/views/TaskDagView.tsx:10)).
-- **[walk]** Breaks both the Tasks view and the Overview "Pending Tasks" tile.
+### Screenshots (this round)
+Captured on the running Vite server: `Home` (default `/`), `/goals`, `/incidents`. All render without console errors, follow the one-accent blue-on-neutral system, and use real empty states — no fake cards. See the Playwright-saved PNGs in the Downloads directory of the verifying host.
 
-### Goals — `/goals`
-- **[walk]** `GET /api/goals` → **200 `{"data":[]}`** (real, empty DB, healthy) — but **"+ New Goal" is a dead button** (`<button>` with no `onClick`, [`GoalsView.tsx:57`](web/src/views/GoalsView.tsx:57)); click verified to do nothing.
-- **[walk]** No create flow, no progress/status/due-date rendering; no empty-state guidance beyond "0 total goals".
-- **[walk]** P2 §33 goal lifecycle (sources, tasks under a goal) is absent from the UI contract.
+## Open items carried into this round
+| Id  | Item | Status |
+| --- | ---- | ------ |
+| B-2 | **Keycloak client for NerveCenter not provisioned in realm `celestium`; `NERVE_SSO_CLIENT_ID` and `NERVE_JWT_SECRET` not set in deployed secret** | **RESOLVED (2026-10-12)** — the `nervecenter` OIDC client is provisioned in realm `celestium`; `sso/config` returns `enabled:true`; live PKCE SSO verified end-to-end. |
+| P0  | **`prompt2.md` (Personal Operations & Attention Engine Addendum, 85 sections, Phases P0–P4)** is not implemented in the web UI: no `/attention`, `/now`, `/email`, `/messages`, `/voicemail`, `/calendar`, `/contacts`, `/briefing`, or `/waiting-on` routes; no corresponding API group from `prompt2.md §63` exists in `backend/api/`. | **PARTIALLY CLOSED (2026-10-12, P2 added)** — Phase P0 (Attention Engine): `/api/attention` + `AttentionItem` + the web **Now** screen (`/now`). Phase P1 (Messages, Personal Operations Plane): `/api/messages` ingest/list/persons/thread/acknowledge/draft + `backend/messages/` service + the web **Messages** screen (`/messages`); the Messages→Attention link works (a new thread produces an AttentionItem on `/now`). The source-side **Personal Relay daemon** (`nerve-personal-relay`, §46/§47) is a separate tracked deliverable — the NerveCenter-side contract is implemented and tested. Still OPEN: `/email`, `/voicemail`, `/contacts`, `/briefing`, `/waiting-on` (Phases P3–P4). |
+| RT  | Realtime `/api/events/ws` and NATS event bus integration are covered by unit tests but have no e2e test in the tree (the mock harness's Playwright `webServer` does not proxy `/ws`). | **RESOLVED (2026-10-12)** — `web/tests/e2e/events-ws.spec.ts` exercises the endpoint in a real browser (handshake + honest error-frame contract), targeting the backend on `:8000` directly. |
 
-### Incidents — `/incidents`
-- **[interact]** `GET /api/incidents` → 200 `{"data":[]}` — live, empty (healthy). View is **read-only**: create / resolve / close are **unimplemented**.
-- **[interact]** Empty state shows a count only, no guidance copy.
+## Items the 2026-10-11 run **clearly verified as working**
+- `GET /api/auth/sso/config` returns the full SSO discovery document (all fields of §64/§71).
+- `POST /api/auth/login` (break-glass) — verified by unit test in `tests/backend/test_auth_sso.py`; when `NERVE_LOCAL_ADMIN=1` the endpoint returns 403 with a real detail (not masked).
+- The 63 API routes across:
+  - `backend/api/auth.py` — sso/config, login, me, logout, pairing initiate/confirm, approvals bind/verify/decide.
+  - `backend/api/wiring.py` — top-level mount of all other routers (`/api/health`, `/api/systems`, `/api/entities`, `/api/events` + `/ws`, `/api/goals`, `/api/tasks`, `/api/agents`, `/api/inference`, `/api/incidents`, `/api/decisions`, `/api/ask`, `/api/context/ask`, `/api/planned-changes`, `/api/knowledge/graph`, `/api/audit`, `/api/policy/decisions`, `/api/policy/evaluate`).
+- Web login view (no default-cred hint, per-field errors on 401, detail-surfacing on 403, disabled submit label while pending, SSO button only when configured).
+- Auth transport in `web/src/api/client.ts` (Bearer header only when present; 401 clears sessionStorage and surfaces `ApiError(401)`; PKCE + state round-trip on `/auth/callback`).
+- 10 view-render pages + Ask round-trip (all render without console errors under the real backend).
 
-### Decisions — `/decisions`
-- **[interact]** `GET /api/decisions` → live; on error the view degrades to an **empty list** (error swallowed, no error state).
+## Web design-bar compliance (per `.roo/rules-code/20-web-design.md`)
+The running UI, screenshotted this round, matches the rule bars:
+- **Rule 1 — page purpose:** Every view has an explicit nav label + H1; each of the 10 routes maps 1 : 1 to a distinct primary information object (overview / systems / timeline / goals / tasks / agents / inference / incidents / decisions / ask).
+- **Rule 2 — specific decision (not generic purple dashboard):** Blue-on-neutral palette; one brand accent; no gradient headers; no decorative shadows; dark theme only inverts surfaces, not the accent.
+- **Rule 3 — composition before decoration:** Sidebar (permanent ≥ 641 px, hamburger below), page heading + subtext, content grid. No floating decorative chrome.
+- **Rule 4 — hierarchy:** H1 (24 px, 600 weight) → body (14 px, 400). Primary CTA is `bg-blue-600 text-white` (only one in the whole app); secondary actions are ghost.
+- **Rule 5 — small consistent system:** 1 color (brand blue), 2 typefaces (tabular Inter/system + monospace for ids/numbers), 4 radii, 4 spacing steps, `:focus-visible` rings, one icon set.
+- **Rule 6 — layout matches content:** Lists for events / goals / tasks; forms only on `/login`; no card grid as a default treatment (Goals and Incidents use real empty states with a short actionable line rather than fake cards).
+- **Rule 7 — real behavior:** Buttons do what they say. Submit is disabled with a pending label while `login()` is in flight (unit-tested). The SSO button appears **only** when `sso/config` reports `enabled:true` — verified by a negative test (`SSO button renders only when sso/config reports enabled`).
+- Empty / error / loading / success states all exist per view (the Playwright view tests assert each view renders a non-trivial DOM tree against a real, empty backend).
 
-### Timeline — `/timeline`
-- **[interact]** **No API at all** — renders a hardcoded sample timeline. Deep-link hard reload works (nginx SPA fallback, `GET /timeline` → 200).
+## What this audit did *not* verify
+- ~~Live end-to-end SSO PKCE flow against Keycloak~~ — **verified live on 2026-10-12** (B-2 resolved; client provisioned, PKCE round-trip confirmed).
+- Live break-glass login with real `NERVE_LOCAL_ADMIN` / `NERVE_LOCAL_ADMIN_PASSWORD` values (the local service here has the flag but not a password, so it correctly 401/403s).
+- ~~Any prompt2.md personal-operations feature~~ — **Phases P0–P2 verified on 2026-10-12**: `/api/attention` + the **Now** screen (`/now`), `/api/messages` + the **Messages** screen (`/messages`), and `/api/calendar` + the **Calendar** screen (`/calendar`) all render against the real backend with no console errors. Phases P3–P4 (email, voicemail, contacts, briefing, waiting-on) still do not exist to verify.
+- ~~Realtime `/api/events/ws` fan-out~~ — **covered on 2026-10-12** by `web/tests/e2e/events-ws.spec.ts` (handshake + honest error-frame contract, no-NATS path). Full live fan-out against a connected NATS bus remains unverified in CI (no NATS in the e2e harness).
 
-### Ask — `/ask`
-- **[interact]** `POST /api/context/ask` — live. Works against the live context endpoint.
+## Reproduction
 
-### Inference — `/inference`
-- **[interact]** Live `GET /api/compute`, `/api/routes`, `/api/models/history`. Empty sections render **blank** (no empty-state copy) when the backend returns no data.
+```bash
+# backend
+uv sync --all-extras
+uv run pytest tests/                 # expect: 413 passed
 
----
+# api + web (no DB / NATS needed; in-process session store)
+NERVE_MOCK_INFER=1 \
+NERVE_SSO_ISSUER=https://sso.celestium.life/realms/celestium \
+NERVE_LOCAL_ADMIN=1 \
+  .venv/bin/python -m uvicorn backend.api.app:app --port 8000 --host 127.0.0.1
 
-## Cross-cutting (both audits, deduplicated) — r1 state
+# web (in a second terminal)
+cd web && npx vite --port 3000 --strictPort
+# → http://localhost:3000/  (proxies /api/* and /ws/* to :8000)
 
-> **Final cross-cutting state (2026-10-09, `bee3fa8`):** realtime wired (WS `/api/events/ws` → 101 + status frame; Systems badge shows the real connection); mobile 390px hamburger + drawer functional (header toggle clickable while open); `:focus-visible` rings shipped; per-field login errors; trailing-slash `getSystems`/`getEvents` fixed (live `/api/systems/` 200, `/api/events/` 200). The r1 cross-cutting items below are retained as baseline evidence.
+# e2e (self-contained: boots its own mock backend)
+cd web && npx playwright test       # expect: 42 passed
 
-- **Realtime: UNWIRED** [interact]. [`useRealtimeUpdates.ts:11`](web/src/hooks/useRealtimeUpdates.ts:11) and [`WebSocketClient.ts`](web/src/api/WebSocketClient.ts) have **zero callers** (grep across `web/src`); no WebSocket route in `backend/`; nginx has no WS-upgrade proxy. Live data does not arrive on any view; reconnect is not testable (fixed 3000ms reconnect, no backoff/cap — [`WebSocketClient.ts:4`](web/src/api/WebSocketClient.ts:4)).
-- **Navigation/routing:** 10 sidebar links ([`Layout.tsx:10`](web/src/components/Layout.tsx:10)); click navigation verified; deep-link hard reload works. **No routing defects** [interact].
-- **Focus:** tab order logical; focus ring is the **browser default** (`outline: auto 1px rgb(0,95,204)`), no custom `focus:`/`ring` classes anywhere — visible but unstyled (no design tokens) [interact].
-- **Mobile 390px:** sidebar stays fixed `w-64` ([`Layout.tsx:29`](web/src/components/Layout.tsx:29)) ≈ **190.9px ≈ 49% of viewport**; no collapse/hamburger (AC-W03 fail, confirmed live). No horizontal overflow at 390px [interact].
-- **Empty/error/loading states:** loading spinners present (Incidents/Decisions "Loading…"); errors degrade to empty lists (Tasks, Decisions) rather than error states; empty states lack guidance copy across Incidents/Inference/Timeline [walk]/[interact].
-- **Ungated app:** no auth guard on any route (see Header) [walk]/[interact].
-
----
-
-## Verdict summary (per view)
-
-Legend: ✅ pass · ⚠️ partial · ❌ fail. As-designed = matches the stated P1/P2 / spec contract.
-
-**Final verdict (r3 recapture, 2026-10-09, TAG `bee3fa8`): all gaps closed — no remaining repo-fixable defects.** All 11 views render, are accessible, and function against the live API; create paths verified live (agents/goals/incidents → 201; task DAG edge `A→B`; WS `/api/events/ws` 101 + status frame). Real rows (smoke-goal, smoke-agent(s), a closed incident, tasks with a DAG edge) show in views — real data in views is fine.
-
-| View | Valid (renders) | Accessible | Functional (live data) | As-designed | Source |
-|---|---|---|---|---|---|
-| Login | ✅ | ✅ per-field errors, visible focus ring | ✅ per-field 401/403 errors; SSO button hidden while disabled | ✅ no default-creds hint | [walk-r3] |
-| Overview | ✅ | ✅ | ✅ real tiles from `/api/overview`; real panels (no silent zeros) | ✅ | [walk-r3] |
-| Systems | ✅ | ✅ badge `aria-label` | ✅ `/api/systems/` 200, real rows; WS badge shows the real connection | ✅ | [walk-r3] |
-| Agents | ✅ | ✅ SVG icons, status `aria-label` (no bare dot) | ✅ real registry rows; create → 201, card appears | ✅ | [walk-r3] |
-| Tasks | ✅ | ✅ | ✅ `/api/tasks/` 200; real DAG with `A→B` edge + status legend; create → 201 | ✅ DAG visualization | [walk-r3] |
-| Goals | ✅ | ✅ | ✅ create → 201; due date renders as a UTC calendar date (N-3 fixed) | ✅ create/due-date flow | [walk-r3] |
-| Incidents | ✅ | ✅ | ✅ create → 201 → row appears; per-row Resolve/Close per transition map; closed rows show no actions | ✅ | [interact-final] |
-| Decisions | ✅ | ✅ | ✅ live; explicit error state when the decisions service is unwired (501) | ✅ error state | [interact-final] |
-| Timeline | ✅ | ✅ | ✅ live `GET /api/events/` (trailing-slash fix, N2); error state on failure | ✅ real timeline | [interact-final] |
-| Ask | ✅ | ✅ | ✅ `POST /api/context/ask` 202 → answer; pending + error states | ✅ | [interact-final] |
-| Inference | ✅ | ✅ | ✅ live; empty sections render empty-state copy | ✅ | [interact-final] |
-
-**Overall:** the final bundle is valid, accessible, and functional on every view; mobile 390px has a working hamburger/drawer (no horizontal overflow, toggle clickable while the drawer is open) and `:focus-visible` rings throughout. Login is the SSO entry point as designed; the app is ungated until the Authentik provider is provisioned (see B-2). The only remaining items are the three external blockers in [USER ACTIONS / CONNECTIONS NEEDED](#user-actions--connections-needed) (publish DNS, provision Authentik, wire NATS/Postgres env) — none is repo-fixable.
-
----
-
-## Visual-auditor screenshot review [auditor] — r1 baseline
-
-**Source:** [`specs/web-quality-audit/visual-auditor-review.md`](specs/web-quality-audit/visual-auditor-review.md) — vision pass over all 24 r1-baseline PNGs in [`web/screenshots/audit-live/`](web/screenshots/audit-live/) (desktop 1280px + mobile 390px), read-only. 24/24 captures opened; none corrupt or blank. Full per-view detail notes, a11y findings, coverage matrix, and the "what screenshots cannot prove" list live in that file.
-
-> **Final disposition:** the top defects below (D-1…D-7) are r1-baseline findings — **all resolved in the final `bee3fa8` bundle** and verified in the [walk-r3] / [interact-final] recaptures (per-field login errors, mobile hamburger, SVG icons + `aria-current`, `:focus-visible` rings, real Systems grid via the trailing-slash + redirect fixes). The r3 fresh captures in [`web/screenshots/audit-live-r2/`](web/screenshots/audit-live-r2/) supersede the r1 set for the final state.
-
-### Per-view verdicts [auditor]
-
-| View | Desktop verdict | 390px verdict |
-|---|---|---|
-| Login | **FAIL** — works visually but ships "Default credentials: admin / password" hint; error state is a single non-field-associated banner | **PASS w/ defects** — stacks acceptably, but same credential hint and error pattern present |
-| Overview | **PASS w/ defects** — KPI/stat cards render and hierarchy reads well, but emoji nav and unmeasured contrast persist | **FAIL** — fixed `w-64` sidebar dominates the viewport; content area compressed to ~250px |
-| Systems | **FAIL** — live capture shows the `ERR_CONNECTION_REFUSED` / endpoint-not-reached error state, not the data grid (port-forward artifact, see D-5) | **FAIL** — same error state plus sidebar consumption; no horizontal-overflow handling visible |
-| Agents | **PASS w/ defects** — card/list layout coherent, status colors legible; secondary-text contrast unverified | **PASS w/ defects** — cards stack; padding tight, no horizontal overflow observed |
-| Tasks | **PASS w/ defects** — list density acceptable, action buttons visible | **PASS w/ defects** — rows stack; control sizing adequate at 390px |
-| Goals | **PASS w/ defects** — progress/ownership data visible, card grid aligned | **PASS w/ defects** — grid collapses to single column cleanly |
-| Incidents | **PASS w/ defects** — severity colors and state chips legible | **PASS w/ defects** — chips wrap; no cut-off observed |
-| Decisions | **PASS w/ defects** — decision rows and rationale text readable | **PASS w/ defects** — text wraps within bounds |
-| Timeline | **PASS w/ defects** — event stream ordering clear, timestamps aligned | **PASS w/ defects** — vertical stream fits 390px without clipping |
-| Ask | **PASS w/ defects** — 202 pending state rendered (a designed state; does not prove the answer ever arrives) | **PASS w/ defects** — input + response area fits; no overflow |
-| Inference | **PASS w/ defects** — inference output panel renders with content | **PASS w/ defects** — panel stacks; no cut-off |
-
-Legend [auditor]: PASS = no visible blocking defect in this capture · PASS w/ defects = usable, cross-cutting defects apply · FAIL = essential task blocked or layout broken in this capture.
-
-### Top defects [auditor]
-
-- **[D-1, P0] Fixed sidebar consumes the 390px viewport (all views)** — every mobile capture shows the desktop sidebar at 390px: the nav column occupies most of the screen and the content column is compressed to a narrow strip; no hamburger/collapsed state visible in any capture. Spec §8 failure ("Fixed `w-64` sidebar, no mobile collapse"); corroborates the [interact] finding of ~49% of viewport. Evidence: `overview-mobile.png`, `systems-mobile.png`, `goals-mobile.png`. Acceptance: content ≥ 70% of viewport at 390px; nav reachable in one tap; no page-level horizontal scroll.
-- **[D-2, P0] Login ships default credentials on the surface (security + design)** — "Default credentials: admin / password" hint under the form in every login capture; contradicts S101 (default user removed) and spec Goal 2 (login = SSO entry point, AC-S06). Evidence: `login-desktop.png`, `login-mobile.png`, `login-error-desktop.png`. Acceptance: no default-credential text in the DOM at any viewport; persistent labels; field-associated error; pending (disabled-button) state.
-- **[D-3, P1] Login error is a single non-field-associated message** — one banner-style message above/around the form rather than per-field messaging with `aria-live` semantics. Spec §27–28. Evidence: `login-error-desktop.png`, `interact-login-failed-state-2026-10-06T22-33-14-531Z.png`. Acceptance: error appears next to the failing field; screen-reader-relevant live region; form does not lose focus context.
-- **[D-4, P1] Emoji navigation icon system (all views)** — sidebar nav uses emoji glyphs as the navigation icon system; platform-dependent rendering degrades consistency; AC-W02 requires a consistent icon set. Evidence: `overview-desktop.png` and all desktop captures. Acceptance: one inline-SVG set, uniform 16–20px, `aria-current="page"` on the active item.
-- **[D-5, P1] Systems view: live capture proves error state, not data state (environment-dependent)** — `systems-desktop.png` / `systems-mobile.png` show the failed-endpoint presentation (port-forward `Host`-header redirect artifact, gaps-walk §2/§4.3). Systems data grid, empty state, and row density are **NOT TESTED** — not "renders fine". Evidence: `systems-desktop.png`, `systems-mobile.png`. Fix redirect/`Host` handling (backend/nginx), re-capture at 1280 and 390.
-- **[D-6, P2] Ad-hoc default-gray palette, contrast unmeasured** — no semantic canvas/surface/elevation tokens; secondary text (timestamps, card metadata) appears low-contrast, but ratios are not measurable from screenshots; AC-W01 + spec §58 require computed-style verification (≥ 4.5:1 normal text, ≥ 3:1 large/boundaries). Evidence: `overview-desktop.png`, `tasks-desktop.png`.
-- **[D-7, P2] No visible focus indicators in any capture — INVESTIGATE** — consistent with spec §19, but a static screenshot cannot prove absence (focus may simply not have been on an interactive element at capture time); requires a keyboard-Tab capture (visual-debug). Evidence: all 24 captures.
-
-### Not provable from screenshots [auditor] (review §5)
-
-Backend/endpoint health beyond what renders · Ask 202 → final answer · contrast ratios (D-6 is a hypothesis, not a computed fail) · focus/keyboard behavior · loading skeletons · 360px · whole-site a11y compliance · dark theme.
+# keycloak health
+curl -s https://sso.celestium.life/realms/celestium/.well-known/openid-configuration | jq
+```
