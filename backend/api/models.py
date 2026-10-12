@@ -535,3 +535,76 @@ class Contact(BaseModel):
     source: ContactSource = ContactSource.RELAY
     created_at: datetime | None = None
     last_updated_at: datetime | None = None
+
+
+# ---------------------------------------------------------------------------
+# Waiting-On (prompt2 §19 — Waiting-On Detection / §31 "What am I waiting for?")
+# ---------------------------------------------------------------------------
+
+
+class WaitingOnSource(StrEnum):
+    """Provenance of an outstanding request (prompt2 §19 — Waiting-On Detection).
+
+    Which channel carried the *outgoing* request that received no response.
+    The relay/personal-ops layers detect the outgoing request and post a
+    normalized record to this plane; NerveCenter only tracks it, so the raw
+    channel access (mailbox, message store, carrier) stays source-side and is
+    *out of scope for this deliverable* (§46/§47). Typing the value as an
+    enum makes an unknown source a Pydantic 422 at the boundary, not a
+    stored error.
+    """
+
+    MESSAGES = "messages"
+    EMAIL = "email"
+    VOICEMAIL = "voicemail"
+    MANUAL = "manual"
+
+
+class WaitingOnStatus(StrEnum):
+    """Lifecycle of an outstanding request (prompt2 §19).
+
+    ``OPEN`` requests are live and each carry exactly one live
+    AttentionItem on the Now screen; ``RESOLVED`` when the counterpart
+    answered (or the matter closed); ``CANCELLED`` when the request no
+    longer matters.
+    """
+
+    OPEN = "open"
+    RESOLVED = "resolved"
+    CANCELLED = "cancelled"
+
+
+class WaitingOnItem(BaseModel):
+    """One outgoing request that received no response (prompt2 §19).
+
+    The §19 example: you asked Sam for the deployment credentials; 3 days,
+    no response → "WAITING ON / Sam / Deployment credentials / 3 days /
+    [Follow up]". ``request_id`` is the stable key the relay posts for
+    idempotent ingest (re-posting a known id is a no-op — §48 replay
+    safety). ``person_display_name`` is the human to follow up with
+    (required); ``person_id`` optionally links that human to the contacts
+    plane's resolved person (§79). ``attention_id`` carries the one live
+    AttentionItem an OPEN request produces on the Now screen (§21/§22);
+    resolving the request resolves the item.
+    """
+
+    request_id: str
+    person_display_name: str
+    # Optional link to the contacts plane's resolved person (§79).
+    person_id: str | None = None
+    # What was requested, e.g. "deployment credentials" (§19).
+    description: str
+    requested_at: datetime
+    # Provenance: which channel carried the outgoing request (prompt2 §49 —
+    # per-source provenance convention).
+    source: WaitingOnSource = WaitingOnSource.MESSAGES
+    # The thread/conversation the outgoing request lives in, if known.
+    source_thread_id: str | None = None
+    status: WaitingOnStatus = WaitingOnStatus.OPEN
+    resolved_at: datetime | None = None
+    note: str | None = None
+    # Follow-up bookkeeping (§19 [Follow up] action; §13 drafts, not sends).
+    follow_up_count: int = 0
+    last_follow_up_at: datetime | None = None
+    # The one live AttentionItem this OPEN request produces on /now.
+    attention_id: str | None = None

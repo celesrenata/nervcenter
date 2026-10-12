@@ -190,6 +190,82 @@ const mockVoicemails = [
 ]
 
 // Demonstration data (mock transport only — never served by the real API):
+// three waiting-on requests mirroring the requests the backend seeds via
+// `NERVE_SEED_WAITING_ON=1` / `seed_demo()` — two OPEN (one that has been
+// waiting 3 days, one 1 day) and one already RESOLVED, so the Waiting-On
+// screen renders both card states in mock mode (prompt2 §19/§31).
+interface MockWaitingOnRecord {
+  request_id: string
+  person_display_name: string
+  person_id: string | null
+  description: string
+  requested_at: string
+  source: string
+  source_thread_id: string | null
+  status: string
+  attention_id: string | null
+  follow_up_count: number
+  last_follow_up_at: string | null
+  resolved_at: string | null
+  note: string | null
+  created_at: string
+  updated_at: string
+}
+const mockWaitingOn: MockWaitingOnRecord[] = [
+  {
+    request_id: 'wo-seed-sam-creds',
+    person_display_name: 'Sam',
+    person_id: null,
+    description: 'deployment credentials',
+    requested_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    source: 'messages',
+    source_thread_id: 'thread-sam',
+    status: 'open',
+    attention_id: null,
+    follow_up_count: 0,
+    last_follow_up_at: null,
+    resolved_at: null,
+    note: null,
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    request_id: 'wo-seed-insurance-claim',
+    person_display_name: 'Insurance',
+    person_id: null,
+    description: 'claim response',
+    requested_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    source: 'email',
+    source_thread_id: null,
+    status: 'open',
+    attention_id: null,
+    follow_up_count: 0,
+    last_follow_up_at: null,
+    resolved_at: null,
+    note: null,
+    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    request_id: 'wo-seed-alice-review',
+    person_display_name: 'Alice Nguyen',
+    person_id: null,
+    description: 'deck review',
+    requested_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    source: 'email',
+    source_thread_id: null,
+    status: 'resolved',
+    attention_id: null,
+    follow_up_count: 0,
+    last_follow_up_at: null,
+    resolved_at: new Date(Date.now() - 0.5 * 24 * 60 * 60 * 1000).toISOString(),
+    note: 'Alice reviewed the deck',
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 0.5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+]
+
+// Demonstration data (mock transport only — never served by the real API):
 // three resolved people mirroring the people the backend seeds via
 // `NERVE_SEED_CONTACTS=1` / `seed_demo()` — one of them a VIP (§12).
 const mockContacts = [
@@ -892,6 +968,37 @@ const realApi = {
     return { data: await responseOrThrow(res), status: res.status }
   },
 
+  // Waiting-On (prompt2 §19 — Waiting-On Detection / §31)
+  getWaitingOn: async (status?: string) => {
+    const qs = status ? new URLSearchParams({ status }).toString() : ''
+    const res = await apiFetch(`/waiting-on${qs ? `?${qs}` : ''}`)
+    return { data: await listFromResponse(res), status: res.status }
+  },
+  getWaitingOnItem: async (requestId: string) => {
+    const res = await apiFetch(`/waiting-on/${requestId}`)
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+  ingestWaitingOn: async (payload: Record<string, unknown>) => {
+    const res = await apiFetch('/waiting-on/ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+  resolveWaitingOn: async (requestId: string, note?: string | null) => {
+    const res = await apiFetch(`/waiting-on/${requestId}/resolve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note: note ?? null }),
+    })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+  followUpWaitingOn: async (requestId: string) => {
+    const res = await apiFetch(`/waiting-on/${requestId}/follow-up`, { method: 'POST' })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+
   // Models
   // Models
   getModels: async () => {
@@ -1417,6 +1524,91 @@ const mockApi = {
     return { data: { contact: { ...contact, is_vip: vip, last_updated_at: new Date().toISOString() } }, status: 200 }
   },
 
+  // Waiting-On (prompt2 §19 — mock transport)
+  getWaitingOn: async (status?: string) => {
+    await delay(60)
+    const items =
+      status && status !== 'all'
+        ? mockWaitingOn.filter((w) => w.status === status)
+        : mockWaitingOn
+    // Longest-waiting first (requested_at ascending), matching the backend.
+    return {
+      data: [...items].sort((a, b) => a.requested_at.localeCompare(b.requested_at)),
+      status: 200,
+    }
+  },
+  getWaitingOnItem: async (requestId: string) => {
+    await delay(40)
+    const item = mockWaitingOn.find((w) => w.request_id === requestId)
+    if (!item) return { data: undefined, status: 404 }
+    return { data: item, status: 200 }
+  },
+  ingestWaitingOn: async (payload: Record<string, unknown>) => {
+    await delay(80)
+    const requestId = (payload.request_id as string) ?? `wo-mock-${Math.random().toString(16).slice(2, 10)}`
+    const existing = mockWaitingOn.find((w) => w.request_id === requestId)
+    if (existing) return { data: { item: existing, new_attention: null, duplicate: true }, status: 200 }
+    const now = new Date().toISOString()
+    const item = {
+      request_id: requestId,
+      person_display_name: (payload.person_display_name as string) ?? 'Someone',
+      person_id: (payload.person_id as string | null) ?? null,
+      description: (payload.description as string) ?? '',
+      requested_at: (payload.requested_at as string) ?? now,
+      source: (payload.source as string) ?? 'messages',
+      source_thread_id: (payload.source_thread_id as string | null) ?? null,
+      status: 'open',
+      attention_id: null,
+      follow_up_count: 0,
+      last_follow_up_at: null,
+      resolved_at: null,
+      note: null,
+      created_at: now,
+      updated_at: now,
+    }
+    mockWaitingOn.unshift(item)
+    return { data: { item, new_attention: null, duplicate: false }, status: 201 }
+  },
+  resolveWaitingOn: async (requestId: string, note?: string | null) => {
+    await delay(40)
+    const item = mockWaitingOn.find((w) => w.request_id === requestId)
+    if (!item) return { data: undefined, status: 404 }
+    const now = new Date().toISOString()
+    item.status = 'resolved'
+    item.resolved_at = now
+    item.note = note ?? item.note
+    item.updated_at = now
+    return { data: { item, attention_id: item.attention_id, resolved: true }, status: 200 }
+  },
+  followUpWaitingOn: async (requestId: string) => {
+    await delay(50)
+    const item = mockWaitingOn.find((w) => w.request_id === requestId)
+    if (!item) return { data: undefined, status: 404 }
+    const now = new Date().toISOString()
+    item.follow_up_count += 1
+    item.last_follow_up_at = now
+    item.updated_at = now
+    const days = Math.floor(
+      (Date.now() - new Date(item.requested_at).getTime()) / (24 * 60 * 60 * 1000),
+    )
+    const first = item.person_display_name.split(' ')[0]
+    const timing = days <= 0 ? '' : ` (${days} day${days === 1 ? '' : 's'}, no reply yet)`
+    const draft = `Hi ${first} — following up on ${item.description}${timing}. Any update?`
+    return {
+      data: {
+        request_id: item.request_id,
+        draft,
+        follow_up_count: item.follow_up_count,
+        last_follow_up_at: item.last_follow_up_at,
+        status: item.status,
+        draft_only: true,
+        basis: 'rule-based follow-up draft (never sent; §13)',
+        new_attention: null,
+      },
+      status: 200,
+    }
+  },
+
   // Models
   // Models
   getModels: async () => {
@@ -1567,6 +1759,14 @@ export const contactsApi = {
   person: (personId: string) => api.getContact(personId),
   ingest: (payload: Record<string, unknown>) => api.ingestContact(payload),
   setVip: (personId: string, vip: boolean) => api.setContactVip(personId, vip),
+}
+
+export const waitingOnApi = {
+  list: (status?: string) => api.getWaitingOn(status),
+  item: (requestId: string) => api.getWaitingOnItem(requestId),
+  ingest: (payload: Record<string, unknown>) => api.ingestWaitingOn(payload),
+  resolve: (requestId: string, note?: string | null) => api.resolveWaitingOn(requestId, note),
+  followUp: (requestId: string) => api.followUpWaitingOn(requestId),
 }
 
 export const authApi = {

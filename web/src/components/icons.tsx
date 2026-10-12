@@ -119,6 +119,18 @@ export function VoicemailIcon({ size = 18, ...rest }: IconProps) {
   )
 }
 
+/** Waiting On — a clock on an open loop (prompt2 §19 — an outgoing request
+ * with no response yet: time is elapsing while the answer is still pending). */
+export function WaitingOnIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <path d="M21 12a9 9 0 1 1-4.6-7.9" />
+      <polyline points="21 4 21 12 13 12" />
+      <path d="M12 12v4" />
+    </svg>
+  )
+}
+
 /** Systems — stacked server nodes. */
 export function SystemsIcon({ size = 18, ...rest }: IconProps) {
   return (

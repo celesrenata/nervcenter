@@ -32,6 +32,7 @@ from backend.contacts import get_contacts_service
 from backend.email import get_email_service
 from backend.messages import get_messages_service
 from backend.voicemail import get_voicemail_service
+from backend.waiting_on import get_waiting_on_service
 from backend.api.endpoints import (
     agents,
     attention,
@@ -50,6 +51,7 @@ from backend.api.endpoints import (
     email,
     evidence,
     voicemail,
+    waiting_on,
     goals,
     incidents,
     knowledge,
@@ -76,6 +78,7 @@ ALL_ROUTERS = (
     email.router,
     messages.router,
     voicemail.router,
+    waiting_on.router,
     calendar.router,
     contacts.router,
     goals.router,
@@ -251,6 +254,21 @@ def create_app() -> FastAPI:
     target.state.voicemail_service = voicemail_service
     if os.environ.get("NERVE_SEED_VOICEMAILS", "").lower() in {"1", "true", "yes"}:
         voicemail_service.seed_demo()
+
+    # Waiting-On plane (prompt2 §19 — Waiting-On Detection / §31): in-process
+    # store that tracks *outgoing requests that received no response*. The
+    # relay / personal-ops layers detect the outgoing request and post a
+    # normalized record here (channel-side detection is §46/§47 source-side,
+    # out of scope); this plane only tracks it and never sends. Each OPEN
+    # request produces exactly one live AttentionItem through the shared P0
+    # attention service (factor: "waiting on {person} for {description}
+    # ({n} days")). Dev mode (NERVE_SEED_WAITING_ON=1) pre-populates demo
+    # requests so the Waiting-On screen has content before real traffic
+    # arrives.
+    waiting_on_service = get_waiting_on_service()
+    target.state.waiting_on_service = waiting_on_service
+    if os.environ.get("NERVE_SEED_WAITING_ON", "").lower() in {"1", "true", "yes"}:
+        waiting_on_service.seed_demo()
 
     # Calendar plane (prompt2 P2): in-process read-only copy of the user's
     # schedule, used for availability + conflict reasoning (§42/§43). NerveCenter

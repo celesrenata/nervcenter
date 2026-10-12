@@ -8,6 +8,7 @@ import { Layout } from './components/Layout'
 import { MessagesView } from './views/MessagesView'
 import { EmailView } from './views/EmailView'
 import { VoicemailView } from './views/VoicemailView'
+import { WaitingOnView } from './views/WaitingOnView'
 import { ContactsView } from './views/ContactsView'
 import { CalendarView } from './views/CalendarView'
 import { NowView } from './views/NowView'
@@ -47,6 +48,7 @@ function App() {
             <Route path="/email" element={<EmailView />} />
             <Route path="/voicemail" element={<VoicemailView />} />
             <Route path="/contacts" element={<ContactsView />} />
+            <Route path="/waiting-on" element={<WaitingOnView />} />
             <Route path="/systems" element={<SystemsView />} />
             <Route path="/timeline" element={<TimelineView />} />
             <Route path="/goals" element={<GoalsView />} />

@@ -20,6 +20,7 @@ import {
   TimelineIcon,
   VoicemailIcon,
   ContactsIcon,
+  WaitingOnIcon,
   type IconProps,
 } from './icons'
 
@@ -37,6 +38,7 @@ const navItems: NavItem[] = [
   { path: '/email', label: 'Email', Icon: EmailIcon },
   { path: '/voicemail', label: 'Voicemail', Icon: VoicemailIcon },
   { path: '/contacts', label: 'Contacts', Icon: ContactsIcon },
+  { path: '/waiting-on', label: 'Waiting On', Icon: WaitingOnIcon },
   { path: '/systems', label: 'Systems', Icon: SystemsIcon },
   { path: '/timeline', label: 'Timeline', Icon: TimelineIcon },
   { path: '/goals', label: 'Goals', Icon: GoalsIcon },
