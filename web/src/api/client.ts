@@ -189,6 +189,45 @@ const mockVoicemails = [
   },
 ]
 
+// Demonstration data (mock transport only — never served by the real API):
+// three resolved people mirroring the people the backend seeds via
+// `NERVE_SEED_CONTACTS=1` / `seed_demo()` — one of them a VIP (§12).
+const mockContacts = [
+  {
+    person_id: 'alice-nguyen',
+    display_name: 'Alice Nguyen',
+    emails: ['alice.n@example.com'],
+    phones: ['+1 415-555-0134'],
+    notes: 'Design partner — prefers email.',
+    is_vip: false,
+    source: 'personal-relay',
+    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    last_updated_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    person_id: 'bob-cho',
+    display_name: 'Bob Cho',
+    emails: ['bob.cho@example.com'],
+    phones: ['+1 202-555-0199'],
+    notes: null,
+    is_vip: false,
+    source: 'personal-relay',
+    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    last_updated_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    person_id: 'dr-smith',
+    display_name: 'Dr. Smith',
+    emails: ['frontdesk@smithclinic.example.com'],
+    phones: ['+1 415-555-0100'],
+    notes: 'Call before 5 PM — clinic closes early.',
+    is_vip: true,
+    source: 'manual',
+    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    last_updated_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+  },
+]
+
 // One upcoming event + one overlapping event (mock transport only): lets
 // /calendar demonstrate availability + conflict reasoning (§42/§43) with no
 // real API. The 18:00–19:00 event overlaps the 18:30 request below.
@@ -827,6 +866,32 @@ const realApi = {
     return { data: await responseOrThrow(res), status: res.status }
   },
 
+  // Contacts (prompt2 Phase P4 — cross-channel person resolution + VIP)
+  getContacts: async () => {
+    const res = await apiFetch('/contacts')
+    return { data: await listFromResponse(res), status: res.status }
+  },
+  getContact: async (personId: string) => {
+    const res = await apiFetch(`/contacts/${personId}`)
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+  ingestContact: async (payload: Record<string, unknown>) => {
+    const res = await apiFetch('/contacts/ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+  setContactVip: async (personId: string, vip: boolean) => {
+    const res = await apiFetch(`/contacts/${personId}/vip`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vip }),
+    })
+    return { data: await responseOrThrow(res), status: res.status }
+  },
+
   // Models
   // Models
   getModels: async () => {
@@ -1306,6 +1371,52 @@ const mockApi = {
     return { data: { ...d, suggested_at: earliest, suggestion: `I can do after ${new Date(earliest).toTimeString().slice(0, 5)}.` }, status: 200 }
   },
 
+  // Contacts (prompt2 Phase P4 — mock transport). Mirrors the backend's
+  // idempotent upsert + VIP toggle so /contacts behaves the same in mock mode.
+  getContacts: async () => {
+    await delay(60)
+    return { data: mockContacts, status: 200 }
+  },
+  getContact: async (personId: string) => {
+    await delay(40)
+    const contact = mockContacts.find((c) => c.person_id === personId)
+    if (!contact) return { data: undefined, status: 404 }
+    return { data: contact, status: 200 }
+  },
+  ingestContact: async (payload: Record<string, unknown>) => {
+    await delay(80)
+    const existing = mockContacts.find((c) => c.person_id === payload.person_id)
+    const now = new Date().toISOString()
+    const contact = existing
+      ? {
+          ...existing,
+          display_name: (payload.display_name as string) || existing.display_name,
+          emails: [...new Set([...existing.emails, ...((payload.emails as string[]) ?? [])])],
+          phones: [...new Set([...existing.phones, ...((payload.phones as string[]) ?? [])])],
+          is_vip: (payload.is_vip as boolean) ?? existing.is_vip,
+          source: (payload.source as string) ?? existing.source,
+          last_updated_at: now,
+        }
+      : {
+          person_id: (payload.person_id as string) ?? `person-${Math.random().toString(16).slice(2, 10)}`,
+          display_name: (payload.display_name as string) ?? 'New Contact',
+          emails: (payload.emails as string[]) ?? [],
+          phones: (payload.phones as string[]) ?? [],
+          notes: (payload.notes as string | null) ?? null,
+          is_vip: (payload.is_vip as boolean) ?? false,
+          source: (payload.source as string) ?? 'personal-relay',
+          created_at: now,
+          last_updated_at: now,
+        }
+    return { data: { contact, created: !existing }, status: existing ? 200 : 201 }
+  },
+  setContactVip: async (personId: string, vip: boolean) => {
+    await delay(40)
+    const contact = mockContacts.find((c) => c.person_id === personId)
+    if (!contact) return { data: undefined, status: 404 }
+    return { data: { contact: { ...contact, is_vip: vip, last_updated_at: new Date().toISOString() } }, status: 200 }
+  },
+
   // Models
   // Models
   getModels: async () => {
@@ -1450,6 +1561,14 @@ export const calendarApi = {
     api.calendarFreeTime(start, durationMinutes, horizonMinutes),
   suggest: (start: string, durationMinutes: number) => api.calendarSuggest(start, durationMinutes),
 }
+
+export const contactsApi = {
+  list: () => api.getContacts(),
+  person: (personId: string) => api.getContact(personId),
+  ingest: (payload: Record<string, unknown>) => api.ingestContact(payload),
+  setVip: (personId: string, vip: boolean) => api.setContactVip(personId, vip),
+}
+
 export const authApi = {
   login: (username: string, password: string) => api.login(username, password),
   logout: () => api.logout(),

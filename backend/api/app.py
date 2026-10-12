@@ -28,6 +28,7 @@ from backend.api.auth import router as auth_router
 from backend.api.docs import custom_openapi, get_version_info
 from backend.attention import get_attention_service
 from backend.calendar import get_calendar_service
+from backend.contacts import get_contacts_service
 from backend.email import get_email_service
 from backend.messages import get_messages_service
 from backend.voicemail import get_voicemail_service
@@ -36,6 +37,7 @@ from backend.api.endpoints import (
     attention,
     approvals,
     calendar,
+    contacts,
     changes,
     claims,
     clients,
@@ -75,6 +77,7 @@ ALL_ROUTERS = (
     messages.router,
     voicemail.router,
     calendar.router,
+    contacts.router,
     goals.router,
     tasks.router,
     evidence.router,
@@ -257,6 +260,21 @@ def create_app() -> FastAPI:
     target.state.calendar_service = calendar_service
     if os.environ.get("NERVE_SEED_CALENDAR", "").lower() in {"1", "true", "yes"}:
         calendar_service.seed_demo()
+
+    # Contacts plane (prompt2 P4 — cross-channel person resolution + VIP):
+    # in-process store holding one resolved person per ``person_id``. It
+    # receives normalized person records from the Personal Relay (the macOS
+    # local-address-book bridge is source-side, §46/§47 — out of scope) and
+    # only ever sees normalized events. The service stores/returns the VIP
+    # flag (§12); the attention engine is what weighs VIP contacts heavier
+    # (§22/§45) — that is a separate concern, so this store creates no
+    # AttentionItems. Dev mode (NERVE_SEED_CONTACTS=1) pre-populates a demo
+    # set of people (one VIP) so the Contacts screen has content before real
+    # relay traffic arrives.
+    contacts_service = get_contacts_service()
+    target.state.contacts_service = contacts_service
+    if os.environ.get("NERVE_SEED_CONTACTS", "").lower() in {"1", "true", "yes"}:
+        contacts_service.seed_demo()
 
     return target
 

@@ -488,3 +488,50 @@ class VoicemailThread(BaseModel):
     attention_id: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
+
+
+# ---------------------------------------------------------------------------
+# Contacts (prompt2 Phase P4 — cross-channel person resolution + VIP)
+# ---------------------------------------------------------------------------
+
+
+class ContactSource(StrEnum):
+    """Provenance of an ingested person record (prompt2 §49 — per-source).
+
+    Which ingestion path produced the normalized contact record. The
+    NerveCenter plane only ever sees these normalized sources — the raw
+    capture (the macOS local address book, an import, or a manual entry) is
+    done by the source-side Personal Relay and is *out of scope for this
+    deliverable* (§46/§47). Typing the value as an enum makes an unknown
+    source a Pydantic 422 at the boundary, not a stored error.
+    """
+
+    RELAY = "personal-relay"
+    MANUAL = "manual"
+    IMPORT = "import"
+
+
+class Contact(BaseModel):
+    """One resolved person (prompt2 §79 — unified person model).
+
+    A contact is a cross-channel *person-resolution* record: ``person_id`` is
+    the stable slug for the human (one person, not one address), and
+    ``emails``/``phones`` are the merged address sets accumulated across
+    channels. Re-ingesting the same ``person_id`` *updates* this record
+    (idempotent upsert) rather than creating a duplicate. ``is_vip`` is the
+    VIP flag the attention engine weighs heavier (§12/§22/§45); the contacts
+    service only stores and returns it. ``source`` names the ingestion path
+    that last produced/updated the record.
+    """
+
+    person_id: str
+    display_name: str
+    emails: list[str] = Field(default_factory=list)
+    phones: list[str] = Field(default_factory=list)
+    notes: str | None = None
+    is_vip: bool = False
+    # Provenance: which ingestion source produced this person record
+    # (prompt2 §49 — retention/provenance is per-source).
+    source: ContactSource = ContactSource.RELAY
+    created_at: datetime | None = None
+    last_updated_at: datetime | None = None

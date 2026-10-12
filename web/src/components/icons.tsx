@@ -98,6 +98,16 @@ export function EmailIcon({ size = 18, ...rest }: IconProps) {
   )
 }
 
+/** Contacts — a person silhouette (the §79 cross-channel person-resolution record). */
+export function ContactsIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20a8 8 0 0 1 16 0" />
+    </svg>
+  )
+}
+
 /** Voicemail — a microphone (the §14/§15 ingestion source for the transcript). */
 export function VoicemailIcon({ size = 18, ...rest }: IconProps) {
   return (
