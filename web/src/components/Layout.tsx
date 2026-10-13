@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import {
   AgentsIcon,
+  BriefingIcon,
   CalendarIcon,
   AskIcon,
   CloseIcon,
@@ -33,6 +34,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { path: '/', label: 'Overview', Icon: OverviewIcon },
   { path: '/now', label: 'Now', Icon: NowIcon },
+  { path: '/briefing', label: 'Briefing', Icon: BriefingIcon },
   { path: '/calendar', label: 'Calendar', Icon: CalendarIcon },
   { path: '/messages', label: 'Messages', Icon: MessagesIcon },
   { path: '/email', label: 'Email', Icon: EmailIcon },

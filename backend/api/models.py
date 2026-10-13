@@ -608,3 +608,102 @@ class WaitingOnItem(BaseModel):
     last_follow_up_at: datetime | None = None
     # The one live AttentionItem this OPEN request produces on /now.
     attention_id: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Briefing (prompt2 §30 — Briefings)
+# ---------------------------------------------------------------------------
+
+
+class BriefingKind(StrEnum):
+    """Which briefing of the day (prompt2 §30 — Briefings).
+
+    ``MORNING`` is the full daily brief (the §30 "Morning Brief" example);
+    ``MIDDAY`` is the optional midday check-in; ``EVENING`` is the wrap-up.
+    The §30 output shape is identical for all three — the same four sections
+    — so the kind is echoed back as metadata, not a filter. An unknown kind is
+    a Pydantic 422 at the boundary, not a stored error.
+    """
+
+    MORNING = "morning"
+    MIDDAY = "midday"
+    EVENING = "evening"
+
+
+class BriefingAction(BaseModel):
+    """One action item for the briefing (prompt2 §30 — "things need action").
+
+    A flat projection of an :class:`AttentionItem` from the Now bucket (§26):
+    ``label`` is the human-readable action (the item's ``suggested_action``
+    when it has one, otherwise its ``reason``), and ``due`` carries the item's
+    due timestamp so the screen can render "before 5 PM" style framing.
+    """
+
+    attention_id: str
+    label: str
+    due: datetime | None = None
+
+
+class BriefingWaitingOn(BaseModel):
+    """One outstanding request for the briefing (prompt2 §30 — "you're waiting on").
+
+    A flat projection of an OPEN :class:`WaitingOnItem`: the §19 example
+    "WAITING ON / Sam / Deployment credentials / 3 days" rendered inline.
+    ``days_elapsed`` is computed deterministically from the briefing's
+    injected clock (never the wall clock), so the count is exact in tests.
+    """
+
+    request_id: str
+    person: str
+    description: str
+    days_elapsed: int
+
+
+class BriefingEvent(BaseModel):
+    """One of today's calendar events for the briefing (prompt2 §30 — "today").
+
+    A flat projection of a :class:`CalendarEvent` that overlaps today: the
+    title for the line and its start for the "6:30 PM" framing. All-day events
+    carry ``start`` at 00:00 UTC of that day.
+    """
+
+    event_id: str
+    title: str
+    start: datetime | None = None
+
+
+class BriefingOvernight(BaseModel):
+    """The overnight activity counts for the briefing (prompt2 §30 — "overnight").
+
+    "What happened while I slept?" (§31): how much new activity arrived on
+    each plane in the last 24 hours, counted deterministically from the
+    briefing's injected clock. ``emails`` counts threads active since
+    ``now - 24h`` (email's ``last_timestamp``), ``messages`` conversations the
+    same way (``last_timestamp``), ``voicemails`` threads by their
+    ``last_received_at``.
+    """
+
+    emails: int = 0
+    messages: int = 0
+    voicemails: int = 0
+
+
+class Briefing(BaseModel):
+    """The composed Briefing (prompt2 §30 — Briefings).
+
+    A read-only, deterministic aggregation across the attention, waiting-on,
+    email, messages, voicemail, and calendar planes. It owns *no state of its
+    own* — every section is projected from already-committed plane state at
+    compose time, and ``now`` is injectable so the same fixtures produce the
+    same brief. ``empty`` is True when no section has content, which lets the
+    screen render the §30 honest closing ("Nothing else requires attention.")
+    unambiguously.
+    """
+
+    kind: BriefingKind
+    generated_at: datetime
+    actions: list[BriefingAction] = Field(default_factory=list)
+    waiting_on: list[BriefingWaitingOn] = Field(default_factory=list)
+    today: list[BriefingEvent] = Field(default_factory=list)
+    overnight: BriefingOvernight = Field(default_factory=BriefingOvernight)
+    empty: bool = False

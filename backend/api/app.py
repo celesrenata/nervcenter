@@ -27,6 +27,7 @@ from backend.api.auth import approvals_router as auth_approvals_router
 from backend.api.auth import router as auth_router
 from backend.api.docs import custom_openapi, get_version_info
 from backend.attention import get_attention_service
+from backend.briefing import get_briefing_service
 from backend.calendar import get_calendar_service
 from backend.contacts import get_contacts_service
 from backend.email import get_email_service
@@ -36,6 +37,7 @@ from backend.waiting_on import get_waiting_on_service
 from backend.api.endpoints import (
     agents,
     attention,
+    briefing,
     approvals,
     calendar,
     contacts,
@@ -75,6 +77,7 @@ from backend.api.wiring import install_dependency_wiring
 ALL_ROUTERS = (
     agents.router,
     attention.router,
+    briefing.router,
     email.router,
     messages.router,
     voicemail.router,
@@ -293,6 +296,14 @@ def create_app() -> FastAPI:
     target.state.contacts_service = contacts_service
     if os.environ.get("NERVE_SEED_CONTACTS", "").lower() in {"1", "true", "yes"}:
         contacts_service.seed_demo()
+
+    # Briefing plane (prompt2 §30 — Briefings): a read-only, deterministic
+    # aggregation over the personal-operations planes above. It owns no state
+    # of its own and never ingests — it only *projects* already-committed
+    # plane state (Now attention, open waiting-on requests, today's calendar,
+    # and 24-hour activity counts) into the §30 brief at compose time. Like
+    # the P0/P1/P2 stores above it is always available, so bind the singleton.
+    target.state.briefing_service = get_briefing_service()
 
     return target
 

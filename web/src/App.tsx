@@ -12,6 +12,7 @@ import { WaitingOnView } from './views/WaitingOnView'
 import { ContactsView } from './views/ContactsView'
 import { CalendarView } from './views/CalendarView'
 import { NowView } from './views/NowView'
+import { BriefingView } from './views/BriefingView'
 import { OverviewView } from './views/OverviewView'
 import { SystemsView } from './views/SystemsView'
 import { TimelineView } from './views/TimelineView'
@@ -43,6 +44,7 @@ function App() {
           >
             <Route path="/" element={<OverviewView />} />
             <Route path="/now" element={<NowView />} />
+            <Route path="/briefing" element={<BriefingView />} />
             <Route path="/calendar" element={<CalendarView />} />
             <Route path="/messages" element={<MessagesView />} />
             <Route path="/email" element={<EmailView />} />

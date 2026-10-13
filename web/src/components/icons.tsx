@@ -78,6 +78,18 @@ export function NowIcon({ size = 18, ...rest }: IconProps) {
   )
 }
 
+/** Briefing — a paper sheet with a horizontal divider (a one-screen daily brief). */
+export function BriefingIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <line x1="8" y1="7" x2="16" y2="7" />
+      <line x1="8" y1="11" x2="16" y2="11" />
+      <line x1="8" y1="15" x2="13" y2="15" />
+    </svg>
+  )
+}
+
 /** Messages — chat bubbles (a thread). */
 export function MessagesIcon({ size = 18, ...rest }: IconProps) {
   return (

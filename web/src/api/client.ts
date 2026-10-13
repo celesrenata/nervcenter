@@ -10,6 +10,45 @@ const API_BASE = import.meta.env?.VITE_API_BASE
 
 export const useMockMode = API_BASE === undefined || API_BASE === ''
 
+// ─── Briefing (prompt2 §30 — Briefings) ────────────────────────────────────────
+
+export type BriefingKind = 'morning' | 'midday' | 'evening'
+
+export interface BriefingAction {
+  attention_id: string
+  label: string
+  due: string | null
+}
+
+export interface BriefingWaitingOn {
+  request_id: string
+  person: string
+  description: string
+  days_elapsed: number
+}
+
+export interface BriefingEvent {
+  event_id: string
+  title: string
+  start: string | null
+}
+
+export interface BriefingOvernight {
+  emails: number
+  messages: number
+  voicemails: number
+}
+
+export interface Briefing {
+  kind: BriefingKind
+  generated_at: string
+  actions: BriefingAction[]
+  waiting_on: BriefingWaitingOn[]
+  today: BriefingEvent[]
+  overnight: BriefingOvernight
+  empty: boolean
+}
+
 export interface ApiResponse<T> {
   data: T
   status: number
@@ -1023,6 +1062,11 @@ const realApi = {
     const res = await apiFetch('/auth/logout', { method: 'POST' })
     return { data: await responseOrThrow(res), status: res.status }
   },
+  // Briefing (prompt2 §30 — the one-screen daily brief)
+  getBriefing: async (kind: BriefingKind = 'morning') => {
+    const res = await apiFetch(`/briefing?kind=${kind}`)
+    return { data: (await responseOrThrow(res)) as Briefing, status: res.status }
+  },
   me: async () => {
     const res = await apiFetch('/auth/me')
     return { data: await responseOrThrow(res), status: res.status }
@@ -1636,6 +1680,28 @@ const mockApi = {
     await delay(50)
     return { data: { success: true }, status: 200 }
   },
+  // Briefing (prompt2 §30 — the one-screen daily brief)
+  getBriefing: async (kind: BriefingKind = 'morning') => {
+    await delay(60)
+    return {
+      data: {
+        kind,
+        generated_at: new Date().toISOString(),
+        actions: [
+          { attention_id: 'att-demo-call-pharmacy', label: 'Call the pharmacy before their 5 PM cutoff', due: null },
+        ],
+        waiting_on: [
+          { request_id: 'wo-demo-sam', person: 'Sam', description: 'Deployment credentials', days_elapsed: 3 },
+        ],
+        today: [
+          { event_id: 'cal-demo-standup', title: 'Standup', start: new Date().toISOString() },
+        ],
+        overnight: { emails: 2, messages: 1, voicemails: 0 },
+        empty: false,
+      },
+      status: 200,
+    }
+  },
   me: async () => {
     await delay(50)
     return { data: { username: 'admin', roles: ['admin'] }, status: 200 }
@@ -1767,6 +1833,11 @@ export const waitingOnApi = {
   ingest: (payload: Record<string, unknown>) => api.ingestWaitingOn(payload),
   resolve: (requestId: string, note?: string | null) => api.resolveWaitingOn(requestId, note),
   followUp: (requestId: string) => api.followUpWaitingOn(requestId),
+}
+
+// Briefing (prompt2 §30 — the one-screen daily brief)
+export const briefingApi = {
+  compose: (kind: BriefingKind = 'morning') => api.getBriefing(kind),
 }
 
 export const authApi = {
