@@ -35,7 +35,7 @@ services:
 
   nats:
     image: nats:2.10-alpine
-    command: ["--jetstream", "--logtime"]
+    command: ["--jetstream", "--logtime", "-m", "8222"]
     ports:
       - "4222:4222"
       - "8222:8222"
