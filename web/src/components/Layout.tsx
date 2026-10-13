@@ -90,7 +90,7 @@ export function Layout() {
   const closeMenu = () => setMenuOpen(false)
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="flex min-h-screen flex-col bg-gray-100 dark:bg-gray-900 sm:flex-row">
       {/* Top bar — visible only at ≤640px (mobile) */}
       <header className="sm:hidden sticky top-0 z-20 flex items-center gap-3 px-4 h-12 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <button
@@ -137,8 +137,11 @@ export function Layout() {
         </div>
       )}
 
-      {/* Sidebar — permanent, visible only at ≥641px (desktop) */}
-      <div className="hidden sm:flex sm:w-64 sm:flex-col shrink-0 bg-white dark:bg-gray-800 shadow-lg">
+      {/* Sidebar — permanent left rail, visible only at ≥641px (desktop).
+          sticky + h-screen keeps it beside the content while it scrolls;
+          overflow-y-auto keeps every nav item reachable when the list
+          outgrows the viewport (longest item must never be clipped). */}
+      <div className="hidden sm:sticky sm:top-0 sm:flex sm:h-screen sm:w-64 sm:flex-col shrink-0 overflow-y-auto bg-white dark:bg-gray-800 shadow-lg">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">NerveCenter</h1>
           <p className="text-sm text-gray-600 dark:text-gray-400">Personal Intelligence Core</p>
