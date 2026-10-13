@@ -1,0 +1,266 @@
+import Foundation
+
+// -- transport (Core-local so the relay is unit-testable without NerveAPI) --
+
+/// One HTTP result: status + raw body.
+public struct RelayHTTPResult: Sendable, Equatable {
+    public let status: Int
+    public let body: Data
+    public init(status: Int, body: Data) {
+        self.status = status
+        self.body = body
+    }
+}
+
+public enum RelayTransportError: Error, Equatable {
+    /// The network layer failed (offline, DNS, TLS) — transient, retry.
+    case network(String)
+    /// The server answered but not with success (4xx/5xx) — the body is
+    /// carried in the error so the CLI can show the server's reason.
+    case http(status: Int, body: String)
+}
+
+/// Transport seam for the relay. The production implementation is
+/// `URLSessionRelayTransport`; tests inject a scripted mock.
+public protocol RelayTransport: Sendable {
+    func send(_ request: URLRequest) async throws -> RelayHTTPResult
+}
+
+/// TLS to the configured base URL (§47 "encrypt transport"). The
+/// Authorization header is a bearer token (§47 "authenticate to
+/// NerveCenter") — no credentials in URLs, no query strings.
+public struct URLSessionRelayTransport: RelayTransport {
+    public init() {}
+
+    public func send(_ request: URLRequest) async throws -> RelayHTTPResult {
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            if status == 0 {
+                throw RelayTransportError.network("no HTTP status in response")
+            }
+            return RelayHTTPResult(status: status, body: data)
+        } catch let e as RelayTransportError {
+            throw e
+        } catch {
+            throw RelayTransportError.network(error.localizedDescription)
+        }
+    }
+}
+
+// -- cycle result ---------------------------------------------------------------
+
+/// One iteration result, surfaced to the CLI for `run --once` and
+/// `status` (and for the LaunchAgent's `StandardOutPath` log).
+public struct RelayCycle: Sendable, Equatable {
+    public var captured: Int = 0
+    public var skipped: Int = 0
+    public var sent: Int = 0
+    public var replayed: Int = 0
+    public var failed: Int = 0
+    public var backlog: Int = 0
+    public var maxStoreID: Int64 = 0
+    public var note: String = ""
+
+    public init() {}
+}
+
+public enum RelayError: Error {
+    case config(RelayConfig.ConfigError)
+    case store(StoreError)
+    case outbox(OutboxError)
+    /// The relay is not allowed to parse this schema — fail closed (§11).
+    case schemaRefused
+}
+
+// -- engine ----------------------------------------------------------------------
+
+/// The relay loop: tail the Messages store (read-only) → normalize
+/// (fail closed on anything unparsable) → enqueue to the durable
+/// outbox → flush the outbox to NerveCenter in `seq` order.
+///
+/// prompt2 §46/§47/§48 and §11 Strategy A. Each `runOnce()` is one
+/// idempotent cycle; `run` just repeats it on an interval.
+public final class RelayEngine {
+    public let config: RelayConfig
+    public let store: MessageStore
+    public let outbox: Outbox
+    public let transport: RelayTransport
+
+    private let encoder: JSONEncoder
+
+    public init(config: RelayConfig, transport: RelayTransport? = nil) {
+        self.config = config
+        self.store = MessageStore(url: config.storePath)
+        self.outbox = Outbox(url: config.outboxPath)
+        self.transport = transport ?? URLSessionRelayTransport()
+        self.encoder = JSONEncoder()
+        self.encoder.outputFormatting = [.sortedKeys]
+    }
+
+    /// Open store (schema-guarded) + outbox. Throws on any refusal —
+    /// in particular a missing/renamed column stops the relay cold.
+    public func open() throws -> (schemaVersion: String, backlog: Int) {
+        let opened = try store.open()
+        switch opened {
+        case .ok(let schemaVersion):
+            let backlog = try outbox.open()
+            return (schemaVersion, backlog)
+        case .notFound:
+            // open() already threw for a missing file; this case is
+            // defensive only.
+            throw StoreError.openFailed("store missing")
+        }
+    }
+
+    /// One full cycle: capture new rows, then flush what we can.
+    ///
+    /// A send failure leaves the outbox intact — nothing is dropped;
+    /// the next cycle (or reconnect) replays it (§48).
+    public func runOnce() async throws -> RelayCycle {
+        var cycle = RelayCycle()
+
+        // 1) Capture: tail rows past the capture cursor (see highWaterMark).
+        let cursor = try highWaterMark()
+        let rows = try store.tail(afterCursor: cursor, limit: config.batchSize)
+        var payloads: [String] = []
+        for raw in rows {
+            do {
+                let norm = try MessageNormalizer().normalize(raw)
+                payloads.append(Self.ingestJSON(norm, encoder: encoder))
+            } catch let e as NormalizationError {
+                cycle.skipped += 1
+                cycle.note = "skipped \(String(raw.guid.prefix(12)))…: \(String(describing: e))"
+            }
+        }
+        if !payloads.isEmpty {
+            // Attribute the batch to the highest row id so the cursor
+            // never re-captures a partially-sent batch.
+            try outbox.enqueue(storeID: rows.map(\.id).max() ?? 0, payloads: payloads)
+        }
+        cycle.captured = payloads.count
+        cycle.maxStoreID = try store.maxID()
+
+        // 2) Flush: pending entries oldest-first; ack accepted ones.
+        let backlog = try outbox.count()
+        if backlog > 0 {
+            await flush(&cycle)
+        }
+        cycle.backlog = try outbox.count()
+        return cycle
+    }
+
+    /// Send the pending batch; retry briefly on transient failures,
+    /// then stop for this cycle (the remainder stays queued and
+    /// replays next cycle / on reconnect — §48).
+    private func flush(_ cycle: inout RelayCycle) async {
+        for attempt in 0..<3 {
+            let batch = (try? outbox.pending(limit: config.batchSize)) ?? []
+            if batch.isEmpty { return }
+
+            var ackedSeqs: [Int64] = []
+            var transient = false
+            for entry in batch {
+                let request = Self.makeRequest(entry: entry, config: config)
+                do {
+                    let result = try await transport.send(request)
+                    if (200...299).contains(result.status) {
+                        ackedSeqs.append(entry.seq)
+                        cycle.sent += 1
+                        if Self.isDuplicate(result.body) { cycle.replayed += 1 }
+                    } else {
+                        // 4xx/5xx: do NOT ack. A 4xx usually means the
+                        // token is bad — keep failing loudly, but do not
+                        // spin: one retry per cycle is enough.
+                        cycle.failed += 1
+                        let detail = (String(data: result.body, encoding: .utf8) ?? "")
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                        cycle.note = "HTTP \(result.status): \(detail)"
+                        return
+                    }
+                } catch {
+                    // Network/TLS failure — transient; the whole batch
+                    // stays queued for the next cycle.
+                    cycle.failed += 1
+                    cycle.note = "transport: \(String(describing: error))"
+                    transient = true
+                    break
+                }
+            }
+
+            if !ackedSeqs.isEmpty {
+                _ = (try? outbox.ack(ackedSeqs))
+            }
+            if !transient { return }
+            try? await Task.sleep(nanoseconds: 1_000_000_000 * UInt64(attempt + 1))
+        }
+        // Out of attempts for this cycle — remainder stays queued.
+    }
+
+    // -- wire helpers ------------------------------------------------------------
+
+    /// `POST {base}/api/messages/ingest` with bearer auth.
+    static func makeRequest(entry: OutboxEntry, config: RelayConfig) -> URLRequest {
+        var url = config.baseURL
+        url.appendPathComponent("api")
+        url.appendPathComponent("messages")
+        url.appendPathComponent("ingest")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(config.token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = entry.payloadJSON.data(using: .utf8)
+        request.timeoutInterval = 15
+        return request
+    }
+
+    /// Encode a normalized message into the backend `IngestRequest`
+    /// JSON (snake_case fields, matching the Pydantic model exactly).
+    static func ingestJSON(_ m: NormalizedMessage, encoder: JSONEncoder) -> String {
+        struct Payload: Encodable {
+            let message_id: String
+            let direction: String
+            let peer_identifier: String
+            let peer_name: String?
+            let body: String
+            let channel: String
+            let timestamp: String
+            let source: String
+        }
+        let p = Payload(
+            message_id: m.messageID,
+            direction: m.direction,
+            peer_identifier: m.peerIdentifier,
+            peer_name: m.peerName,
+            body: m.body,
+            channel: m.channel,
+            timestamp: m.timestampISO8601,
+            source: m.source
+        )
+        return String(data: try! encoder.encode(p), encoding: .utf8) ?? "{}"
+    }
+
+    /// IngestResponse: `{"duplicate": true/false, ...}` — true means
+    /// this exact message_id was already ingested (a replay, §48).
+    static func isDuplicate(_ body: Data) -> Bool {
+        guard let obj = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any] else {
+            return false
+        }
+        return obj["duplicate"] as? Bool == true
+    }
+
+    /// Capture cursor: the persisted outbox cursor — the highest chat.db
+    /// `id` already captured. On the very first run it is seeded at the
+    /// store's current max so we do not replay the entire message history
+    /// (MVP: only *new* messages, §13/§48). Persisting it (rather than
+    /// deriving it from `MAX(outbox.store_id)`) means rows that arrive
+    /// while the outbox is momentarily empty are captured next cycle,
+    /// not skipped.
+    private func highWaterMark() throws -> Int64 {
+        let cursor = try outbox.cursor()
+        if cursor > 0 { return cursor }
+        let seed = try store.maxID()
+        try outbox.setCursor(seed)
+        return seed
+    }
+}

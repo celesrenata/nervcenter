@@ -98,6 +98,22 @@ let package = Package(
             ],
             path: "Watch"
         ),
+        // Personal Relay (§46): platform-free core — store reader,
+        // normalizer, outbox, engine, config. Testable on macOS without
+        // the Messages app or network.
+        .target(
+            name: "NerveRelayCore",
+            dependencies: [],
+            path: "Relay/Core"
+        ),
+        // `nerve-personal-relay` CLI (prompt2 §46/§47): tails
+        // ~/Library/Messages/chat.db read-only and forwards normalized
+        // messages to NerveCenter with a durable outbox.
+        .executableTarget(
+            name: "NervePersonalRelay",
+            dependencies: ["NerveRelayCore"],
+            path: "Relay/CLI"
+        ),
         // Widget extension target (T312). iOS/visionOS/macCatalyst only.
                 // watchOS/macOS host builds skip this target; cross-compile for them
                 // is skipped because WidgetKit families are unavailable on watchOS.
@@ -113,6 +129,12 @@ let package = Package(
                     ],
                     path: "Widgets"
                 ),
+        // Relay unit tests (normalizer, outbox, store schema guard, config).
+        .testTarget(
+            name: "NerveRelayTests",
+            dependencies: ["NerveRelayCore"],
+            path: "Tests/RelayTests"
+        ),
         // Cross-platform unit tests for the app domain logic.
         .testTarget(
             name: "NerveAppsTests",
