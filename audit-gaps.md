@@ -29,7 +29,7 @@
 `pytest tests/` → **559 passed** (0 failed, 0 skipped), run 2026-10-12. The 513 pre-Waiting-On baseline (493 pre-Contacts + 20 Contacts) plus 28 new `tests/backend/test_waiting_on.py` tests (idempotent upsert by `request_id` — 201-new / 200-existing-duplicate; open→AttentionItem creation + resolve→AttentionItem resolution; follow-up draft generation with rule-based timing language (days elapsed); list filtering by status + ordering by `requested_at` ascending; 404 unknown item; 422 empty description / invalid source / invalid status; resolve sets resolved_at + status=resolved; follow_up increments count + last_follow_up_at; seed_demo + reset hook).
 
 ### Playwright e2e suite
-`cd web && npx playwright test` → **54 passed** (0 failed), run 2026-10-12. The 47 pre-Waiting-On baseline (P0 core, `/now`, the `events-ws.spec.ts` socket handshake/error-frame tests, and the P0/P2/P4 view-matrix additions `/calendar` + `/email` + `/messages` + `/voicemail` + `/contacts`) plus:
+`cd web && npx playwright test` → **56 passed** (0 failed), run 2026-10-12. The 47 pre-Waiting-On baseline (P0 core, `/now`, the `events-ws.spec.ts` socket handshake/error-frame tests, and the P0/P2/P4 view-matrix additions `/calendar` + `/email` + `/messages` + `/voicemail` + `/contacts`) plus:
 - `views.spec.ts` — `/calendar` added to the AC005 render matrix (renders the upcoming-events list and the availability/free-slot/§43-suggestion panel with no console errors).
 - `views.spec.ts` — `/email` added to the AC005 render matrix (renders the reconstructed thread list + conversation pane with no console errors).
 - `views.spec.ts` — `/messages` added to the AC005 render matrix (renders the reconstructed thread list + conversation pane with no console errors).

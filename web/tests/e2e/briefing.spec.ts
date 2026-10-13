@@ -194,14 +194,13 @@ test.describe('Briefing (BF — prompt2 §30)', () => {
     try {
       await visitAuthenticated(page, '/briefing')
       await expect(page.locator('main h1')).toHaveText('Briefing')
-      // The four section headings are still present even though every section
-      // has no rows — the closing line in the middle of the brief is the
-      // §30 empty-state contract.
-      await expect(page.getByRole('heading', { name: 'Actions' })).toBeVisible()
-      await expect(page.getByRole('heading', { name: 'Overnight' })).toBeVisible()
-      // The honest closer (§30): a single <div> carrying the line, not
-      // one of the four section cards.
+      // §30 empty-state contract: when the briefing is empty the view renders
+      // ONLY the single honest closer (no section cards, no section headings).
+      // The closer is a single <div> carrying the line, not one of the four
+      // section cards.
       await expect(page.getByTestId('briefing-empty')).toHaveText(/Nothing else requires attention\./)
+      await expect(page.getByRole('heading', { name: 'Actions' })).toHaveCount(0)
+      await expect(page.getByRole('heading', { name: 'Overnight' })).toHaveCount(0)
     } finally {
       detach()
       assertConsoleClean(cap)
@@ -216,7 +215,7 @@ test.describe('Briefing (BF — prompt2 §30)', () => {
       await visitAuthenticated(page, '/')
       await expect(page.locator('main h1')).toHaveText('Overview')
       await page.getByRole('link', { name: 'Briefing' }).click()
-      await expect(page).toHaveURL('**/briefing')
+      expect(page.url()).toContain('/briefing')
       await expect(page.locator('main h1')).toHaveText('Briefing')
     } finally {
       detach()
