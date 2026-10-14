@@ -23,6 +23,7 @@ import { InferenceView } from './views/InferenceView'
 import { IncidentsView } from './views/IncidentsView'
 import { DecisionsView } from './views/DecisionsView'
 import { AskView } from './views/AskView'
+import { DownloadsView } from './views/DownloadsView'
 import { LoginView } from './views/LoginView'
 import { AuthCallback } from './auth/AuthCallback'
 
@@ -60,6 +61,7 @@ function App() {
             <Route path="/incidents" element={<IncidentsView />} />
             <Route path="/decisions" element={<DecisionsView />} />
             <Route path="/ask" element={<AskView />} />
+            <Route path="/downloads" element={<DownloadsView />} />
           </Route>
         </Routes>
       </AuthProvider>

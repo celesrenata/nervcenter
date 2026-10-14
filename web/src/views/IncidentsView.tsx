@@ -72,7 +72,7 @@ const IncidentsView = () => {
       case 'low':
         return 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900'
       default:
-        return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-900'
+        return 'text-secondary bg-gray-100 dark:bg-gray-900'
     }
   }
 
@@ -187,7 +187,7 @@ const IncidentsView = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+      <h1 className="text-3xl font-bold text-primary">
         Incidents
       </h1>
 
@@ -202,7 +202,7 @@ const IncidentsView = () => {
       )}
 
       <div className="flex justify-between items-center">
-        <div className="text-gray-500 dark:text-gray-400">
+        <div className="text-muted">
           {incidents.filter((i) => i.status === 'active').length} active
           incidents
         </div>
@@ -218,12 +218,12 @@ const IncidentsView = () => {
         <form
           data-testid="incident-form"
           onSubmit={submitReport}
-          className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg space-y-4"
+          className="bg-elevated p-6 rounded-lg shadow-lg space-y-4"
         >
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+          <h3 className="text-xl font-semibold text-primary">
             Report incident
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-muted">
             Creates a new incident via the write route (POST{' '}
             <code className="text-xs">/api/incidents</code>). Non-2xx responses
             are shown as-is.
@@ -244,7 +244,7 @@ const IncidentsView = () => {
               value={reportTitle}
               onChange={(e) => setReportTitle(e.target.value)}
               placeholder="What is affected?"
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-primary"
             />
           </div>
 
@@ -260,7 +260,7 @@ const IncidentsView = () => {
               data-testid="incident-form-severity"
               value={reportSeverity}
               onChange={(e) => setReportSeverity(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-primary"
             >
               <option value="low">low</option>
               <option value="medium">medium</option>
@@ -283,7 +283,7 @@ const IncidentsView = () => {
               value={reportDescription}
               onChange={(e) => setReportDescription(e.target.value)}
               placeholder="What happened, and what is the impact?"
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-primary"
             />
           </div>
 
@@ -319,7 +319,7 @@ const IncidentsView = () => {
             <button
               type="button"
               onClick={closeForm}
-              className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white px-4 py-2 rounded-lg"
+              className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-primary px-4 py-2 rounded-lg"
             >
               Cancel
             </button>
@@ -332,12 +332,12 @@ const IncidentsView = () => {
       ) : incidents.length === 0 ? (
         <div
           data-testid="incidents-empty"
-          className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg text-center"
+          className="bg-elevated p-8 rounded-lg shadow-lg text-center"
         >
           <p className="text-gray-700 dark:text-gray-300 font-medium">
             No incidents recorded.
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          <p className="text-sm text-muted mt-2">
             Use “+ Report Incident” to file the first incident, or wait for the
             event bus to surface one. Incidents are append-only and never
             deleted.
@@ -348,11 +348,11 @@ const IncidentsView = () => {
           {incidents.map((incident) => (
             <div
               key={incident.id}
-              className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg"
+              className="bg-elevated p-6 rounded-lg shadow-lg"
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+                  <h3 className="text-xl font-semibold text-primary">
                     {incident.title}
                   </h3>
                   <div className="flex items-center space-x-2 mt-2">
@@ -374,10 +374,10 @@ const IncidentsView = () => {
                 </div>
                 <div className="text-right space-y-3">
                   <div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                    <div className="text-sm text-muted">
                       Created
                     </div>
-                    <div className="text-sm text-gray-800 dark:text-white">
+                    <div className="text-sm text-primary">
                       {incident.createdAt}
                     </div>
                   </div>
@@ -422,7 +422,7 @@ const IncidentsView = () => {
               </div>
               <div className="space-y-2">
                 <div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                  <span className="text-sm text-muted">
                     Description
                   </span>
                   <p className="text-gray-700 dark:text-gray-300 mt-1">
@@ -431,7 +431,7 @@ const IncidentsView = () => {
                 </div>
                 {incident.impact && (
                   <div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                    <span className="text-sm text-muted">
                       Impact
                     </span>
                     <p className="text-gray-700 dark:text-gray-300 mt-1">
@@ -441,12 +441,12 @@ const IncidentsView = () => {
                 )}
               </div>
               {incident.tags.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="mt-4 pt-4 border-t border-line">
                   <div className="flex flex-wrap gap-2">
                     {incident.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded"
+                        className="text-xs bg-hover px-2 py-1 rounded"
                       >
                         {tag}
                       </span>

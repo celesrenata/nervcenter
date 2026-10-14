@@ -1,0 +1,113 @@
+# NervePhone — iPhone app project (self-host distribution, no App Store).
+#
+# Generated with:  xcodegen generate --spec apple/Distribution/xcodegen/NervePhone.xcodegen.yml
+# Output:          apple/Distribution/Generated/NervePhone.xcodeproj (committed for reproducibility)
+#
+# The Swift sources are NOT copied into the project — this target compiles the
+# SPM package in place (apple/Package.swift, package "NerveCenter") and the app
+# entry point lives in apple/iOS/App (NervePhoneApp.swift, @main).
+#
+# Signing: personal-team development/ad-hoc. See ../README.md and ../fastlane.
+#
+# App Group note: the phone source hardcodes `group.com.celestium.nervecenter`
+# (apple/iOS/App/Environment/PhoneEnvironment.swift) while the Watch/Widget
+# sources pin `group.nerv.center`. Until the code is aligned, BOTH identifiers
+# are granted in the entitlements below so every target sees one container.
+#
+# Path note: this spec lives in apple/Distribution/xcodegen/, so
+#   "../.."  -> apple/          (the local SPM package root)
+#   "../.."  -> apple/ (sources: ../.. = apple/, plus subdirs)
+#   "Generated/" -> apple/Distribution/Generated/
+
+name: NervePhone
+options:
+  bundleIdPrefix: com.celesrenata
+  deploymentTarget:
+    iOS: "17.0"
+  developmentLanguage: en
+  createIntermediateGroups: true
+  minimumXcodeGenVersion: "2.44"
+  # Write the project into Distribution/Generated/ where it is committed.
+  dest: "../Generated/NervePhone.xcodeproj"
+
+# Local SPM package (relative to this spec file).
+packages:
+  NerveCenter:
+    path: "../../"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    # Ad-hoc / personal-team distribution: no App Store validation.
+    CODE_SIGN_STYLE: Manual
+
+targets:
+  # Widget extension embedded in the app (WidgetKit, §62).
+  NerveCenterWidgetExtension:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: "../../Widgets"
+    info:
+      path: "../Generated/NerveCenterWidgetExtension-Info.plist"
+      properties:
+        CFBundleIdentifier: com.celesrenata.nervephone.widgets
+        CFBundleDisplayName: "Nerve Center Widgets"
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        LSApplicationCategoryType: public.app-category.productivity
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: "../Generated/NerveCenterWidgetExtension.entitlements"
+      properties:
+        com.apple.security.application-groups:
+          - group.nerv.center
+          - group.com.celestium.nervecenter
+    product: NerveCenterWidgetExtension
+
+  NervePhone:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: "../../iOS/App"
+    info:
+      path: "../Generated/NervePhone-Info.plist"
+      properties:
+        CFBundleIdentifier: com.celesrenata.nervephone
+        CFBundleDisplayName: "Nerve Center"
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        UIRequiredDeviceCapabilities:
+          - arm64
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        # Self-host: allow http to localhost (LAN / tunnel use).
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        # Default API base, overridable at runtime via UserDefaults
+        # (defaults write com.celesrenata.nervephone NERVE_API_BASE "https://...").
+        NERVE_API_BASE: "https://nerv.celestium.life/api"
+    entitlements:
+      path: "../Generated/NervePhone.entitlements"
+      properties:
+        com.apple.security.application-groups:
+          - group.nerv.center
+          - group.com.celestium.nervecenter
+    product: NervePhone
+    dependencies:
+      # Local SPM package (../../Package.swift); the target links its products.
+      - package: NerveCenter
+      - target: NerveCenterWidgetExtension
+        embedded: true
+
+schemes:
+  NervePhone:
+    build:
+      targets:
+        NervePhone: all
+    archive:
+      buildConfiguration: Release

@@ -115,11 +115,11 @@ const AskView = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+      <h1 className="text-3xl font-bold text-primary">
         Ask NerveCenter
       </h1>
 
-      <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col">
+      <div className="flex-1 bg-elevated rounded-lg shadow-lg overflow-hidden flex flex-col">
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {messages.map((message) => (
             <div
@@ -132,7 +132,7 @@ const AskView = () => {
                 className={`max-w-[85%] p-4 rounded-lg shadow ${
                   message.role === 'user'
                     ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white'
+                    : 'bg-hover text-primary'
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -175,7 +175,7 @@ const AskView = () => {
             </div>
           ))}
         </div>
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="p-4 border-t border-line">
           <div className="flex space-x-2">
             <input
               type="text"
@@ -199,8 +199,8 @@ const AskView = () => {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+      <div className="bg-elevated rounded-lg shadow-lg p-6">
+        <h3 className="text-lg font-semibold text-primary mb-4">
           Quick Questions
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -213,7 +213,7 @@ const AskView = () => {
             <button
               key={index}
               onClick={() => setInput(question)}
-              className="text-left px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+              className="text-left px-4 py-3 bg-hover rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
             >
               <p className="text-sm text-gray-700 dark:text-gray-300">
                 {question}

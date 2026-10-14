@@ -26,6 +26,8 @@ import NerveDesign
 @main
 struct NerveWatchApp: App {
     @StateObject private var store = WatchDataStore()
+    @StateObject private var themeStore = ThemeStore()
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some Scene {
         WindowGroup {
@@ -36,6 +38,8 @@ struct NerveWatchApp: App {
                     }
             }
             .environmentObject(store)
+            .environmentObject(themeStore)
+            .theme(themeStore.resolvedTheme(for: colorScheme))
         }
     }
 

@@ -35,7 +35,7 @@ const WS_STATUS: Record<
     label: 'Disconnected',
     dot: 'bg-gray-400',
     ring: 'border-gray-300 dark:border-gray-600',
-    text: 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700',
+    text: 'text-gray-700 dark:text-gray-300 bg-hover',
   },
   error: {
     label: 'Reconnecting',
@@ -162,7 +162,7 @@ const SystemsView = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Systems</h1>
+        <h1 className="text-3xl font-bold text-primary">Systems</h1>
         <div
           role="status"
           aria-label={`Real-time connection: ${conn.label}`}
@@ -179,7 +179,7 @@ const SystemsView = () => {
       </div>
 
       {lastUpdate && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+        <p className="text-xs text-muted">
           Last live update:{' '}
           {lastUpdate.toLocaleTimeString()}
         </p>
@@ -204,8 +204,8 @@ const SystemsView = () => {
       ) : (
         <>
           {systems.length === 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="bg-elevated rounded-lg shadow-lg p-6">
+              <p className="text-sm text-muted">
                 No systems reported. The /api/systems endpoint returned successfully but the
                 system registry is empty — no system has reported status yet.
               </p>
@@ -215,7 +215,7 @@ const SystemsView = () => {
             {systems.map((system) => (
               <div
                 key={system.name}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4"
+                className="bg-elevated rounded-lg shadow-lg p-4"
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2 min-w-0">
@@ -229,13 +229,13 @@ const SystemsView = () => {
                         aria-hidden="true"
                       />
                     </span>
-                    <span className="font-semibold text-gray-800 dark:text-white truncate">
+                    <span className="font-semibold text-primary truncate">
                       {system.name}
                     </span>
                     <span className="text-xs text-gray-400">{system.version}</span>
                   </div>
                   <span
-                    className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 capitalize"
+                    className="text-xs font-medium px-2 py-0.5 rounded-full bg-hover text-gray-700 dark:text-gray-200 capitalize"
                     aria-label={`Status: ${system.status}`}
                   >
                     {system.status}

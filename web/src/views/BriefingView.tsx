@@ -50,7 +50,7 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
-const cardBase = 'bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5'
+const cardBase = 'bg-elevated rounded-lg border border-line p-5'
 
 export function BriefingView() {
   const [kind, setKind] = useState<BriefingKind>('morning')
@@ -83,8 +83,8 @@ export function BriefingView() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Briefing</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <h1 className="text-3xl font-bold text-primary">Briefing</h1>
+          <p className="text-sm text-muted">
             {loading
               ? 'Composing…'
               : briefing
@@ -93,11 +93,11 @@ export function BriefingView() {
           </p>
         </div>
         <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-          <span className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Time of day</span>
+          <span className="text-xs uppercase tracking-wide text-muted">Time of day</span>
           <select
             value={kind}
             onChange={(e) => setKind(e.target.value as BriefingKind)}
-            className="rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-gray-700 dark:text-gray-200"
+            className="rounded border border-gray-300 dark:border-gray-600 bg-elevated px-2 py-1 text-sm text-gray-700 dark:text-gray-200"
             data-testid="briefing-kind"
           >
             {KINDS.map((k) => (
@@ -119,7 +119,7 @@ export function BriefingView() {
       )}
 
       {loading || !briefing ? (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-500 dark:text-gray-400">
+        <div className="rounded-lg border border-line p-4 text-sm text-muted">
           Loading briefing…
         </div>
       ) : empty ? (
@@ -138,13 +138,13 @@ export function BriefingView() {
               {briefing.actions.map((a) => (
                 <li
                   key={a.attention_id}
-                  className="flex items-baseline justify-between gap-3 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-3 py-2"
+                  className="flex items-baseline justify-between gap-3 rounded border border-line bg-gray-50 dark:bg-gray-900/40 px-3 py-2"
                   data-testid={`briefing-action-${a.attention_id}`}
                 >
                   <span className="min-w-0 break-words text-sm text-gray-900 dark:text-white">{a.label}</span>
                   {a.due && (
                     <span
-                      className="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400"
+                      className="shrink-0 text-xs font-medium text-muted"
                       data-testid={`briefing-action-due-${a.attention_id}`}
                     >
                       before {formatTime(a.due)}
@@ -182,12 +182,12 @@ export function BriefingView() {
               {briefing.today.map((ev) => (
                 <li
                   key={ev.event_id}
-                  className="flex items-baseline justify-between gap-3 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-3 py-2"
+                  className="flex items-baseline justify-between gap-3 rounded border border-line bg-gray-50 dark:bg-gray-900/40 px-3 py-2"
                   data-testid={`briefing-today-${ev.event_id}`}
                 >
                   <span className="min-w-0 break-words text-sm text-gray-900 dark:text-white">{ev.title}</span>
                   {ev.start && (
-                    <span className="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
+                    <span className="shrink-0 text-xs font-medium text-muted">
                       {formatTime(ev.start)}
                     </span>
                   )}
@@ -198,7 +198,7 @@ export function BriefingView() {
 
           <section className={cardBase} data-testid="briefing-overnight">
             <SectionHeader title="Overnight" count={undefined}>
-              <span className="text-xs text-gray-500 dark:text-gray-400">in the last 24h</span>
+              <span className="text-xs text-muted">in the last 24h</span>
             </SectionHeader>
             <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-800 dark:text-gray-200">
               <span>
@@ -241,7 +241,7 @@ function Section({
     <section className={cardBase} data-testid={`briefing-section-${title.toLowerCase()}`}>
       <SectionHeader title={title} count={count} />
       {isEmpty ? (
-        <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">{emptyText ?? 'Nothing to show.'}</p>
+        <p className="mt-3 text-sm text-muted">{emptyText ?? 'Nothing to show.'}</p>
       ) : (
         <div className="mt-3">{children}</div>
       )}
@@ -260,7 +260,7 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-baseline justify-between">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{title}</h2>
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">{title}</h2>
       <div className="flex items-baseline gap-2">
         {typeof count === 'number' && (
           <span className="text-xs tabular-nums text-gray-400 dark:text-gray-500">{count}</span>

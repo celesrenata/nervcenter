@@ -149,8 +149,8 @@ export function NowView() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Now</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-3xl font-bold text-primary">Now</h1>
+        <p className="text-sm text-muted">
           {loading ? 'Loading…' : `${items.length} ${status.toLowerCase()} item${items.length === 1 ? '' : 's'}`}
         </p>
       </div>
@@ -167,7 +167,7 @@ export function NowView() {
             className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
               status === s
                 ? 'bg-blue-600 border-blue-600 text-white'
-                : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
+                : 'bg-elevated border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
             {s}
@@ -187,7 +187,7 @@ export function NowView() {
 
       {/* Ranked queue */}
       {!loading && !error && items.length === 0 && (
-        <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg text-center">
+        <div className="bg-elevated p-8 rounded-lg shadow-lg text-center">
           <p className="text-gray-600 dark:text-gray-300">
             Nothing in the <span className="font-semibold">{status}</span> bucket right now.
           </p>
@@ -198,7 +198,7 @@ export function NowView() {
         {items.map((item) => (
           <li
             key={item.attention_id}
-            className="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-lg"
+            className="bg-elevated p-5 rounded-lg shadow-lg"
             data-testid={`attention-${item.attention_id}`}
           >
             <div className="flex items-start gap-4">
@@ -226,7 +226,7 @@ export function NowView() {
                   </p>
                 )}
 
-                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
                   <span>urgency {item.urgency.toFixed(2)}</span>
                   <span>importance {item.importance.toFixed(2)}</span>
                   {item.due && <span className="font-medium">due {formatDue(item.due)}</span>}
@@ -239,7 +239,7 @@ export function NowView() {
                   <button
                     type="button"
                     onClick={() => setExpanded((prev) => ({ ...prev, [item.attention_id]: !prev[item.attention_id] }))}
-                    className="text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                    className="text-xs font-medium text-muted hover:text-gray-700 dark:hover:text-gray-200"
                   >
                     {expanded[item.attention_id] ? 'Hide why' : 'Why this rank'}
                   </button>
@@ -285,10 +285,10 @@ export function NowView() {
       {/* Create */}
       <form
         onSubmit={onCreate}
-        className="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-lg space-y-4"
+        className="bg-elevated p-5 rounded-lg shadow-lg space-y-4"
         aria-label="Add an attention item"
       >
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Add to the queue</h2>
+        <h2 className="text-lg font-semibold text-primary">Add to the queue</h2>
         {createError && (
           <div role="alert" className="text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/40 p-3 rounded-lg">
             {createError}

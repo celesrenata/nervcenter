@@ -141,8 +141,8 @@ export function WaitingOnView() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Waiting On</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <h1 className="text-3xl font-bold text-primary">Waiting On</h1>
+          <p className="text-sm text-muted">
             {loading
               ? 'Loading…'
               : `${items.length} request${items.length === 1 ? '' : 's'} · outgoing asks with no response yet`}
@@ -169,11 +169,11 @@ export function WaitingOnView() {
       )}
 
       {loading ? (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-500 dark:text-gray-400">
+        <div className="rounded-lg border border-line p-4 text-sm text-muted">
           Loading waiting-on requests…
         </div>
       ) : items.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-500 dark:text-gray-400">
+        <div className="rounded-lg border border-line p-4 text-sm text-muted">
           {showResolved
             ? 'No waiting-on requests yet.'
             : 'Nothing waiting on you — no outgoing requests without a response yet. New ones land here from the Personal Relay.'}
@@ -191,13 +191,13 @@ export function WaitingOnView() {
                 className={`rounded-lg border p-4 ${
                   open
                     ? 'border-amber-300 dark:border-amber-600/50 bg-amber-50/60 dark:bg-amber-900/20'
-                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/40'
+                    : 'border-line bg-elevated/40'
                 }`}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      <span className="text-sm font-semibold uppercase tracking-wide text-muted">
                         {open ? 'Waiting on' : item.status}
                       </span>
                       <span
@@ -207,7 +207,7 @@ export function WaitingOnView() {
                         {item.source}
                       </span>
                       {!open && item.resolved_at && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="text-xs text-muted">
                           resolved {formatWhen(item.resolved_at)}
                         </span>
                       )}
@@ -232,7 +232,7 @@ export function WaitingOnView() {
                       )}
                     </p>
                     {item.note && (
-                      <p className="mt-1 text-sm italic text-gray-500 dark:text-gray-400">
+                      <p className="mt-1 text-sm italic text-muted">
                         Note: {item.note}
                       </p>
                     )}
@@ -266,7 +266,7 @@ export function WaitingOnView() {
                       <span>Draft follow-up (never sent — review & send yourself)</span>
                     </div>
                     <p className="mt-1 text-sm text-gray-800 dark:text-gray-100">{draft.draft}</p>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{draft.basis}</p>
+                    <p className="mt-1 text-xs text-muted">{draft.basis}</p>
                   </div>
                 )}
               </li>

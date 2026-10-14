@@ -84,6 +84,21 @@ http {
       chunked_transfer_encoding on;
     }
 
+    # Self-hosted app distribution (ad-hoc, no App Store): static files
+    # published under /downloads (NervePhone.ipa, NerveWatch.app,
+    # NerveWatchWidgetExtension.watchkitarchive, manifest.json). Built by
+    # apple/Distribution/export_app.sh and mounted at runtime (see web/Dockerfile).
+    # Long expiry + Last-Modified so unchanged builds are cached client-side.
+    location /downloads/ {
+      alias /usr/share/nginx/downloads/;
+      autoindex on;
+      # Artifact installs rarely change; serve strong conditional headers.
+      expires 7d;
+      add_header Cache-Control "public, max-age=604800";
+      # manifest.json is small and JSON; keep it cacheable too.
+      # No SPA fallback: a missing artifact must 404, not load index.html.
+    }
+
     location / {
       # SPA: deep links fall back to index.html and the router resolves.
       try_files $uri $uri/ /index.html;

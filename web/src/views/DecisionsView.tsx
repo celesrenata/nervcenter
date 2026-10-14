@@ -66,7 +66,7 @@ const DecisionsView = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+      <h1 className="text-3xl font-bold text-primary">
         Decisions
       </h1>
 
@@ -81,7 +81,7 @@ const DecisionsView = () => {
       )}
 
       <div className="flex justify-between items-center">
-        <div className="text-gray-500 dark:text-gray-400">
+        <div className="text-muted">
           {loading ? (
             "Loading decisions…"
           ) : fetchError ? (
@@ -101,7 +101,7 @@ const DecisionsView = () => {
         <button
           disabled
           title="No decision-create route is exposed by the backend yet."
-          className="bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-4 py-2 rounded-lg cursor-not-allowed"
+          className="bg-gray-300 dark:bg-gray-700 text-muted px-4 py-2 rounded-lg cursor-not-allowed"
         >
           + New Decision
         </button>
@@ -112,12 +112,12 @@ const DecisionsView = () => {
       ) : !fetchError && decisions.length === 0 ? (
         <div
           data-testid="decisions-empty"
-          className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg text-center"
+          className="bg-elevated p-8 rounded-lg shadow-lg text-center"
         >
           <p className="text-gray-700 dark:text-gray-300 font-medium">
             No decisions recorded.
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          <p className="text-sm text-muted mt-2">
             Decisions are appended as they are made. Nothing has been recorded
             yet — this is an honest empty state, not a failed fetch.
           </p>
@@ -127,11 +127,11 @@ const DecisionsView = () => {
           {decisions.map((decision) => (
             <div
               key={decision.id}
-              className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg"
+              className="bg-elevated p-6 rounded-lg shadow-lg"
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+                  <h3 className="text-xl font-semibold text-primary">
                     {decision.title}
                   </h3>
                   <div className="flex items-center space-x-2 mt-2">
@@ -145,17 +145,17 @@ const DecisionsView = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="text-sm text-muted">
                     Created
                   </div>
-                  <div className="text-sm text-gray-800 dark:text-white">
+                  <div className="text-sm text-primary">
                     {decision.createdAt}
                   </div>
                 </div>
               </div>
               <div className="space-y-2">
                 <div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                  <span className="text-sm text-muted">
                     Description
                   </span>
                   <p className="text-gray-700 dark:text-gray-300 mt-1">
@@ -164,7 +164,7 @@ const DecisionsView = () => {
                 </div>
                 {decision.rationale && (
                   <div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                    <span className="text-sm text-muted">
                       Rationale
                     </span>
                     <p className="text-gray-700 dark:text-gray-300 mt-1">
@@ -174,7 +174,7 @@ const DecisionsView = () => {
                 )}
                 {decision.impact && (
                   <div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                    <span className="text-sm text-muted">
                       Impact
                     </span>
                     <p className="text-gray-700 dark:text-gray-300 mt-1">
@@ -184,12 +184,12 @@ const DecisionsView = () => {
                 )}
               </div>
               {decision.tags.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="mt-4 pt-4 border-t border-line">
                   <div className="flex flex-wrap gap-2">
                     {decision.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded"
+                        className="text-xs bg-hover px-2 py-1 rounded"
                       >
                         {tag}
                       </span>

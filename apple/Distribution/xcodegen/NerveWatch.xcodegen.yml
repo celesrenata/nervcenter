@@ -1,0 +1,109 @@
+# NerveWatch — watchOS app project (self-host distribution, no App Store).
+#
+# Generated with:  xcodegen generate --spec apple/Distribution/xcodegen/NerveWatch.xcodegen.yml
+# Output:          apple/Distribution/Generated/NerveWatch.xcodeproj (committed for reproducibility)
+#
+# The Swift sources are NOT copied into the project — this target compiles the
+# SPM package in place (apple/Package.swift, package "NerveCenter") and the app
+# entry point lives in apple/Watch (NerveWatchApp.swift, @main).
+#
+# Signing: personal-team development/ad-hoc. See ../README.md and ../fastlane.
+#
+# App Group note: the Watch source pins `group.nerv.center` (WatchSnapshotSource.swift)
+# while the phone source uses `group.com.celestium.nervecenter`. Until the code is
+# aligned, BOTH identifiers are granted so every target sees one container.
+#
+# Path note: this spec lives in apple/Distribution/xcodegen/, so
+#   "../../"  -> apple/          (the local SPM package root)
+#   "../../Watch"  -> apple/Watch
+#   "../../Widgets"  -> apple/Widgets
+#   "Generated/" -> apple/Distribution/Generated/
+
+name: NerveWatch
+options:
+  bundleIdPrefix: com.celesrenata
+  deploymentTarget:
+    watchOS: "10.0"
+  developmentLanguage: en
+  createIntermediateGroups: true
+  minimumXcodeGenVersion: "2.44"
+  # Write the project into Distribution/Generated/ where it is committed.
+  dest: "../Generated/NerveWatch.xcodeproj"
+
+# Local SPM package (relative to this spec file).
+packages:
+  NerveCenter:
+    path: "../../"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    # Ad-hoc / personal-team distribution: no App Store validation.
+    CODE_SIGN_STYLE: Manual
+
+targets:
+  # Widget extension embedded in the watch app (WidgetKit, §62).
+  NerveWatchWidgetExtension:
+    type: app-extension
+    platform: watchOS
+    deploymentTarget: "10.0"
+    sources:
+      - path: "../../Widgets"
+    info:
+      path: "../Generated/NerveWatchWidgetExtension-Info.plist"
+      properties:
+        CFBundleIdentifier: com.celesrenata.nervewatch.widgets
+        CFBundleDisplayName: "Nerve Center Widgets"
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        LSApplicationCategoryType: public.app-category.productivity
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: "../Generated/NerveWatchWidgetExtension.entitlements"
+      properties:
+        com.apple.security.application-groups:
+          - group.nerv.center
+          - group.com.celestium.nervecenter
+    product: NerveWatchWidgetExtension
+
+  NerveWatch:
+    type: application
+    platform: watchOS
+    deploymentTarget: "10.0"
+    sources:
+      - path: "../../Watch"
+    info:
+      path: "../Generated/NerveWatch-Info.plist"
+      properties:
+        CFBundleIdentifier: com.celesrenata.nervewatch
+        CFBundleDisplayName: "Nerve Center"
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        WKCompanionAppBundleIdentifier: com.celesrenata.nervephone
+        # Self-host: allow http to localhost (LAN / tunnel use).
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        # Default API base, overridable at runtime via UserDefaults
+        # (defaults write com.celesrenata.nervewatch NERVE_API_BASE "https://...").
+        NERVE_API_BASE: "https://nerv.celestium.life/api"
+    entitlements:
+      path: "../Generated/NerveWatch.entitlements"
+      properties:
+        com.apple.security.application-groups:
+          - group.nerv.center
+          - group.com.celestium.nervecenter
+    product: NerveWatch
+    dependencies:
+      # Local SPM package (../../Package.swift); the target links its products.
+      - package: NerveCenter
+      - target: NerveWatchWidgetExtension
+        embedded: true
+
+schemes:
+  NerveWatch:
+    build:
+      targets:
+        NerveWatch: all
+    archive:
+      buildConfiguration: Release

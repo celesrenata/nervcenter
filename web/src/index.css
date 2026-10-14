@@ -2,49 +2,133 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Semantic design tokens (gap-closure D-6) ──────────────────────────────
- * Ad-hoc default-gray usage is being replaced by named tokens. Bounded to
- * tokens + the sidebar/main surfaces + secondary text, per the work item —
- * no broader redesign.
+/* ─── Semantic design tokens ─────────────────────────────────────────────────
+ * Full token set under :root: colors + spacing + radii + shadows.
  *
- * Contrast targets (WCAG AA, verified against the light surfaces):
- *   --nc-text-secondary  #5c6471 on #ffffff / #f3f4f6  → 6.4 : 1  (≥ 4.5:1)
- *   (the old gray-500 #6b7280 on white is 4.8:1 — this is the raised tier)
- *   --nc-text-primary    #262b33 on #ffffff / #f3f4f6  → 13 : 1
- * Dark-mode equivalents sit on #111827 / #1f2937 and stay above 4.5:1.
+ * THEMES
+ *   :root                 → default DARK theme. The app shipped dark-styled;
+ *                           the dark palette below preserves the exact
+ *                           Tailwind values the views currently use (the
+ *                           `dark:` half of every class pair), so the
+ *                           default look is pixel-identical.
+ *   [data-theme='light']  → light theme (the views' light palette).
+ *   [data-theme='dark']   → explicit dark (identical to :root; kept so the
+ *                           attribute always names a complete token set).
+ *   [data-theme='system'] → empty hook; CSS falls back to dark (:root).
+ *                           ThemeContext.tsx listens to
+ *                           matchMedia('(prefers-color-scheme: light)') and
+ *                           flips these tokens for OS-light users — the JS
+ *                           check the empty selector enables. The media rule
+ *                           below mirrors that check in pure CSS.
  */
+
 :root {
-  /* Surfaces */
-  --nc-canvas: #f3f4f6;        /* page background */
-  --nc-surface: #ffffff;       /* cards, sidebar, panels */
-  --nc-surface-elevated: #ffffff; /* drawers / floating chrome */
-  --nc-border: #d7dbe2;
+  /* Surfaces (dark — default) */
+  --bg: #111827;          /* page background          (dark:bg-gray-900) */
+  --bg-elevated: #1f2937;  /* cards, sidebar, panels   (dark:bg-gray-800) */
+  --bg-hover: #374151;     /* hover / row fills        (dark:bg-gray-700) */
+  --surface: #1f2937;      /* drawers / floating chrome */
+  --border: #374151;       /* hairlines                (dark:border-gray-700) */
 
   /* Text tiers */
-  --nc-text-primary: #262b33;
-  --nc-text-secondary: #5c6471; /* raised from #6b7280 for ≥4.5:1 headroom */
-  --nc-text-muted: #707885;     /* metadata only; do not use for body copy */
+  --text-primary: #ffffff;    /* headings             (dark:text-white) */
+  --text-secondary: #d1d5db;  /* body copy            (dark:text-gray-300) */
+  --text-muted: #9ca3af;      /* metadata / captions  (dark:text-gray-400) */
 
   /* Interactive + status */
-  --nc-accent: #2563eb;
-  --nc-accent-strong: #1d4ed8;
-  --nc-danger: #b91c1c;
-  --nc-ring: #2563eb;
+  --accent: #3b82f6;      /* interactive fill (dark:bg-blue-500) */
+  --accent-hover: #60a5fa; /* hover / emphasis (dark:text-blue-400) */
+  --accent-soft: rgba(59, 130, 246, 0.25);  /* active/tinted fills (dark:bg-blue-900/40) */
+  --accent-contrast: #bfdbfe; /* text on accent-soft (dark:text-blue-200) */
+  --success: #4ade80;
+  --warning: #facc15;
+  --danger: #f87171;
+  --ring: #60a5fa;
+
+  /* Spacing scale (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --nc-canvas: #111827;
-    --nc-surface: #1f2937;
-    --nc-surface-elevated: #1f2937;
-    --nc-border: #374151;
-    --nc-text-primary: #f3f4f6;
-    --nc-text-secondary: #b4bbc6; /* #b4bbc6 on #1f2937 ≈ 7.4:1 */
-    --nc-text-muted: #9aa1ad;
-    --nc-accent: #3b82f6;
-    --nc-accent-strong: #60a5fa;
-    --nc-danger: #f87171;
-    --nc-ring: #60a5fa;
+/* Light theme — the views' light palette, verbatim. */
+[data-theme='light'] {
+  --bg: #f3f4f6;           /* gray-100 */
+  --bg-elevated: #ffffff;
+  --bg-hover: #e5e7eb;     /* gray-200 */
+  --surface: #ffffff;
+  --border: #e5e7eb;       /* gray-200 */
+
+  --text-primary: #1f2937;   /* gray-800 */
+  --text-secondary: #374151; /* gray-700 */
+  --text-muted: #6b7280;     /* gray-500 */
+
+  --accent: #2563eb;       /* blue-600 */
+  --accent-hover: #1d4ed8; /* blue-700 */
+  --accent-soft: rgba(37, 99, 235, 0.08); /* blue-50 */
+  --accent-contrast: #1d4ed8;
+  --success: #16a34a;      /* green-600 */
+  --warning: #ca8a04;      /* yellow-600 */
+  --danger: #dc2626;       /* red-600 */
+  --ring: #2563eb;
+
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 4px 6px rgba(16, 24, 40, 0.08);
+  --shadow-lg: 0 10px 15px rgba(16, 24, 40, 0.1);
+}
+
+/* Explicit dark — inherits :root; declared so a reader can always tell
+ * which palette a data-theme value selects. */
+[data-theme='dark'] {
+  /* inherits :root values */
+}
+
+/* System — empty hook per contract; falls back to dark (:root).
+ * ThemeContext toggles the attribute for OS-light users, and the media
+ * rule below mirrors that check so the tokens track the OS preference
+ * while data-theme='system' is set. */
+[data-theme='system'] {
+  /* no overrides — dark default applies */
+}
+
+@media (prefers-color-scheme: light) {
+  [data-theme='system'] {
+    --bg: #f3f4f6;
+    --bg-elevated: #ffffff;
+    --bg-hover: #e5e7eb;
+    --surface: #ffffff;
+    --border: #e5e7eb;
+
+    --text-primary: #1f2937;
+    --text-secondary: #374151;
+    --text-muted: #6b7280;
+
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-soft: rgba(37, 99, 235, 0.08);
+    --accent-contrast: #1d4ed8;
+    --success: #16a34a;
+    --warning: #ca8a04;
+    --danger: #dc2626;
+    --ring: #2563eb;
+
+    --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+    --shadow-md: 0 4px 6px rgba(16, 24, 40, 0.08);
+    --shadow-lg: 0 10px 15px rgba(16, 24, 40, 0.1);
   }
 }
 
@@ -55,7 +139,7 @@
  * :focus as well so pointer users still get feedback on inputs.
  */
 :focus-visible {
-  outline: 2px solid var(--nc-ring);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -64,7 +148,7 @@ input:focus,
 select:focus,
 textarea:focus,
 button:focus {
-  outline: 2px solid var(--nc-ring);
+  outline: 2px solid var(--ring);
   outline-offset: 1px;
 }
 
@@ -86,8 +170,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--nc-canvas);
-  color: var(--nc-text-primary);
+  background-color: var(--bg);
+  color: var(--text-primary);
 }
 
 code {
@@ -95,15 +179,6 @@ code {
     monospace;
 }
 
-/* ─── Secondary text helper (D-6) ──────────────────────────────────────────
- * Use `text-secondary` / `text-muted` instead of raw gray-* utilities for
- * supporting copy. They are token-backed and contrast-checked; gray-500
- * (4.8:1) stays acceptable but these are the preferred classes.
- */
-.text-secondary {
-  color: var(--nc-text-secondary);
-}
-
-.text-muted {
-  color: var(--nc-text-muted);
-}
+/* Secondary-text utilities (.text-secondary / .text-muted) are now
+ * generated by tailwind.config.js from the --text-* tokens, so the old
+ * hand-rolled helpers were removed in favor of a single source of truth. */

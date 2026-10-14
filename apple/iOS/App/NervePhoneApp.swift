@@ -18,11 +18,15 @@ struct NervePhoneApp: App {
         server: ServerConfig(host: "nerv.celestium.life")
     )
     @StateObject private var store = PhoneDataStore()
+    @StateObject private var themeStore = ThemeStore()
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some Scene {
         WindowGroup {
             AppShell()
                 .environmentObject(environment)
+                .environmentObject(themeStore)
+                .theme(themeStore.resolvedTheme(for: colorScheme))
                 .task {
                     await bootstrap()
                 }

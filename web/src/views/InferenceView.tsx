@@ -50,7 +50,7 @@ function EmptyState({ testId, title, body }: EmptyStateProps) {
       className="text-center py-8"
     >
       <p className="text-gray-700 dark:text-gray-300 font-medium">{title}</p>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-md mx-auto">
+      <p className="text-sm text-muted mt-2 max-w-md mx-auto">
         {body}
       </p>
     </div>
@@ -107,13 +107,13 @@ const InferenceView = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+      <h1 className="text-3xl font-bold text-primary">
         Inference
       </h1>
 
       {/* Physical Nodes Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+      <div className="bg-elevated rounded-lg shadow-lg p-6">
+        <h3 className="text-xl font-semibold text-primary mb-4">
           Physical Nodes
         </h3>
         {loading ? (
@@ -127,20 +127,20 @@ const InferenceView = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {nodes.map((node) => (
-              <div key={node.id} className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+              <div key={node.id} className="bg-hover p-4 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-semibold text-gray-800 dark:text-white">{node.hostname}</h4>
+                  <h4 className="font-semibold text-primary">{node.hostname}</h4>
                   <div className={`w-2 h-2 rounded-full ${getNodeColor(node.gpuUtilization)}`} />
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">{node.hardware} • {node.vram}</div>
+                <div className="text-sm text-secondary mb-2">{node.hardware} • {node.vram}</div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Model:</span>
-                  <span className="text-gray-800 dark:text-white">{node.loadedModel || 'Idle'}</span>
+                  <span className="text-muted">Model:</span>
+                  <span className="text-primary">{node.loadedModel || 'Idle'}</span>
                 </div>
                 <div className="mt-2">
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-gray-500 dark:text-gray-400">GPU Usage</span>
-                    <span className="text-gray-800 dark:text-white">{node.gpuUtilization}%</span>
+                    <span className="text-muted">GPU Usage</span>
+                    <span className="text-primary">{node.gpuUtilization}%</span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
                     <div
@@ -151,28 +151,28 @@ const InferenceView = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Tokens/s:</span>
-                    <span className="text-gray-800 dark:text-white ml-1">{node.tokensPerSec}</span>
+                    <span className="text-muted">Tokens/s:</span>
+                    <span className="text-primary ml-1">{node.tokensPerSec}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Calls:</span>
-                    <span className="text-gray-800 dark:text-white ml-1">{node.activeCalls}</span>
+                    <span className="text-muted">Calls:</span>
+                    <span className="text-primary ml-1">{node.activeCalls}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">p95 Lat:</span>
-                    <span className="text-gray-800 dark:text-white ml-1">{node.latency?.p95 || 0}ms</span>
+                    <span className="text-muted">p95 Lat:</span>
+                    <span className="text-primary ml-1">{node.latency?.p95 || 0}ms</span>
                   </div>
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Failures (24h):</span>
-                    <span className="text-gray-800 dark:text-white ml-1">{node.failures24h}</span>
+                    <span className="text-muted">Failures (24h):</span>
+                    <span className="text-primary ml-1">{node.failures24h}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Fallbacks (24h):</span>
-                    <span className="text-gray-800 dark:text-white ml-1">{node.fallbacks24h}</span>
+                    <span className="text-muted">Fallbacks (24h):</span>
+                    <span className="text-primary ml-1">{node.fallbacks24h}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Context:</span>
-                    <span className="text-gray-800 dark:text-white ml-1">{node.contextUsage || 'N/A'}</span>
+                    <span className="text-muted">Context:</span>
+                    <span className="text-primary ml-1">{node.contextUsage || 'N/A'}</span>
                   </div>
                 </div>
               </div>
@@ -182,8 +182,8 @@ const InferenceView = () => {
       </div>
 
       {/* OmniRoute Routes Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+      <div className="bg-elevated rounded-lg shadow-lg p-6">
+        <h3 className="text-xl font-semibold text-primary mb-4">
           OmniRoute Routes
         </h3>
         {loading ? (
@@ -197,26 +197,26 @@ const InferenceView = () => {
         ) : (
           <div className="space-y-3">
             {routes.map((route) => (
-              <div key={route.routeId} className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+              <div key={route.routeId} className="bg-hover p-3 rounded-lg">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-gray-800 dark:text-white">{route.routeId}</span>
+                  <span className="font-medium text-primary">{route.routeId}</span>
                   <span className={`text-xs px-2 py-1 rounded ${getStrategyColor(route.strategy)} text-white`}>
                     {route.strategy}
                   </span>
                 </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                <div className="text-xs text-secondary mb-2">
                   Chain: {route.chain.join(' → ')}
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex space-x-3">
                     <span>
-                      Calls: <span className="text-gray-800 dark:text-white">{route.activeCalls}</span>
+                      Calls: <span className="text-primary">{route.activeCalls}</span>
                     </span>
                     <span>
-                      Success: <span className="text-gray-800 dark:text-white">{(route.successRate * 100).toFixed(0)}%</span>
+                      Success: <span className="text-primary">{(route.successRate * 100).toFixed(0)}%</span>
                     </span>
                     <span>
-                      Latency: <span className="text-gray-800 dark:text-white">{route.avgLatency}ms</span>
+                      Latency: <span className="text-primary">{route.avgLatency}ms</span>
                     </span>
                   </div>
                 </div>
@@ -227,8 +227,8 @@ const InferenceView = () => {
       </div>
 
       {/* Historical Model Performance Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+      <div className="bg-elevated rounded-lg shadow-lg p-6">
+        <h3 className="text-xl font-semibold text-primary mb-4">
           Historical Model Performance
         </h3>
         {loading ? (
@@ -242,25 +242,25 @@ const InferenceView = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {history.map((item, idx) => (
-              <div key={idx} className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                <div className="font-medium text-gray-800 dark:text-white">{item.model} ({item.node})</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">{item.window} window</div>
+              <div key={idx} className="bg-hover p-3 rounded-lg">
+                <div className="font-medium text-primary">{item.model} ({item.node})</div>
+                <div className="text-xs text-secondary mb-2">{item.window} window</div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Tok/s:</span>
-                    <span className="text-gray-800 dark:text-white ml-1">{item.avgTokPerSec}</span>
+                    <span className="text-muted">Tok/s:</span>
+                    <span className="text-primary ml-1">{item.avgTokPerSec}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">p95 Lat:</span>
-                    <span className="text-gray-800 dark:text-white ml-1">{item.p95Latency}ms</span>
+                    <span className="text-muted">p95 Lat:</span>
+                    <span className="text-primary ml-1">{item.p95Latency}ms</span>
                   </div>
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Success:</span>
-                    <span className="text-gray-800 dark:text-white ml-1">{(item.successRate * 100).toFixed(0)}%</span>
+                    <span className="text-muted">Success:</span>
+                    <span className="text-primary ml-1">{(item.successRate * 100).toFixed(0)}%</span>
                   </div>
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Fallback:</span>
-                    <span className="text-gray-800 dark:text-white ml-1">{(item.fallbackRate * 100).toFixed(0)}%</span>
+                    <span className="text-muted">Fallback:</span>
+                    <span className="text-primary ml-1">{(item.fallbackRate * 100).toFixed(0)}%</span>
                   </div>
                 </div>
               </div>

@@ -417,6 +417,62 @@ class EmailThread(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Mail connectors (prompt2 §46 — connector registry + liveness)
+# ---------------------------------------------------------------------------
+
+
+class MailAuthMethod(StrEnum):
+    """How a connector authenticates to its mailbox (§47).
+
+    The *secret* (OAuth access token / app password / password) is never
+    persisted by NerveCenter — it is supplied by the browser/relay at
+    connection-test time and only a *reference* to where it is held
+    (``token_ref``) is stored. This keeps the backend secret-free; the macOS
+    Personal Relay is the only long-lived holder of mail credentials (§47).
+    """
+
+    OAUTH2 = "oauth2"
+    APP_PASSWORD = "app-password"
+    BASIC = "basic"
+
+
+class MailConnectorStatus(StrEnum):
+    """Liveness of a connector as last probed."""
+
+    PENDING = "pending"          # registered, never probed
+    CONNECTED = "connected"      # last probe succeeded (CAPABILITY ok)
+    AUTH_EXPIRED = "auth-expired"  # token/password rejected — refresh needed
+    ERROR = "error"              # probe failed (host/port/network)
+    DISABLED = "disabled"        # user turned it off
+
+
+class MailConnector(BaseModel):
+    """A registered mail connector (prompt2 §46 — connector registry).
+
+    This is a *description + liveness record*: where the relay should read
+    from and whether that mailbox currently answers. NerveCenter does **not**
+    hold the socket — the macOS Personal Relay does (§47). ``token_ref`` is an
+    opaque pointer to where the credential is kept (keychain item id / vault
+    path); it is never the secret itself.
+    """
+
+    connector_id: str
+    account: str                                # human label: "Work", "Personal"…
+    mailbox: str                                # mailbox / account id (user@domain)
+    host: str                                   # IMAP host
+    port: int = 993
+    ssl: bool = True
+    auth_method: MailAuthMethod = MailAuthMethod.OAUTH2
+    status: MailConnectorStatus = MailConnectorStatus.PENDING
+    token_ref: str | None = None                # keychain item id / vault path
+    scope: str | None = None                    # OAuth scope (informational)
+    last_checked_at: datetime | None = None
+    last_error: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+# ---------------------------------------------------------------------------
 # Voicemail (prompt2 Phase P2 — Personal Operations Plane)
 # ---------------------------------------------------------------------------
 

@@ -157,11 +157,11 @@ export function LoginView() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-      <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-        <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-2">
+      <div className="max-w-md w-full bg-elevated rounded-lg shadow-lg p-8">
+        <h2 className="text-3xl font-bold text-center text-primary mb-2">
           NerveCenter
         </h2>
-        <p className="text-center text-gray-500 dark:text-gray-400 mb-8">
+        <p className="text-center text-muted mb-8">
           Personal Intelligence Core
         </p>
 
@@ -254,7 +254,7 @@ export function LoginView() {
                 <div className="w-full border-t border-gray-200 dark:border-gray-600" />
               </div>
               <div className="relative flex justify-center">
-                <span className="px-3 text-xs uppercase tracking-wide bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                <span className="px-3 text-xs uppercase tracking-wide bg-elevated text-muted">
                   Or
                 </span>
               </div>

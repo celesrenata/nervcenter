@@ -1,0 +1,208 @@
+#!/usr/bin/env ruby
+# NerveCenter self-hosting Fastfile — no App Store, no Matchfile.
+#
+# Ad-hoc distribution for NervePhone (iOS) + NerveWatch (watchOS, with the
+# embedded widget extension). Signing uses a personal-team ad-hoc /
+# development provisioning profile + p12 that live in ../credentials/
+# (gitignored — see ../credentials/README.md).
+#
+# Usage:
+#   cd apple/Distribution/fastlane
+#   fastlane build_ipa            # archive + export NervePhone.ipa
+#   fastlane build_watch          # archive + export NerveWatch.app + watchkitarchive
+#   fastlane publish             # copy artifacts -> web/dist/downloads/ (or dist/)
+#   fastlane distribute          # build_ipa + build_watch + publish
+
+default_team = ENV["NERVE_TEAM_ID"]
+# Ad-hoc export does not validate against App Store rules.
+
+app_identifier_phone = "com.celesrenata.nervephone"
+app_identifier_watch = "com.celesrenata.nervewatch"
+
+# --- Paths -----------------------------------------------------------------
+distribution_root = File.expand_path("..", __dir__)
+project_phone = File.join(distribution_root, "Generated", "NervePhone.xcodeproj")
+project_watch = File.join(distribution_root, "Generated", "NerveWatch.xcodeproj")
+build_root = File.join(distribution_root, "build")
+artifact_root = File.join(build_root, "artifacts")
+credentials_dir = File.join(distribution_root, "credentials")
+web_dist = File.join(Dir.pwd, "..", "..", "web", "dist", "downloads")
+fallback_dist = File.join(distribution_root, "dist")
+manifest_script = File.join(distribution_root, "generate_manifest.py")
+
+# --- Signing profile (ad-hoc, personal team) ---------------------------------
+# The provisioning profile is stored as ../credentials/nervecenter.mobileprovision
+# and the p12 (exported from the keychain) as ../credentials/nervecenter.p12.
+
+def signing_identity_path
+  File.join(credentials_dir, "nervecenter.p12")
+end
+
+def provisioning_profile_path
+  File.join(credentials_dir, "nervecenter.mobileprovision")
+end
+
+# Build export_options.plist for ad-hoc.
+# For personal-team / no developer program this must be method: ad-hoc
+# (or development for direct device installs).
+def export_options(method:)
+  {
+    "method" => method
+  }
+end
+
+# Archive a project with xcodebuild.
+def run_xcodebuild_archive(project:, scheme:, platform:)
+  system(
+    "xcodebuild " \
+    "-project #{project} " \
+    "-scheme #{scheme} " \
+    "-destination '#{platform}' " \
+    "-archivePath #{build_root}/#{scheme}.xcarchive " \
+    "-archive " \
+    "OTHER_XCODEFLAGS='-allowProvisioningUpdates'",
+    chdir: Dir.pwd
+  )
+end
+
+# Export an archive to an app bundle / ipa.
+def run_xcodebuild_export(archive:, platform:, export_method:, destination:)
+  # Build the export_options plist inline (no Matchfile, no certificates
+  # managed by fastlane — we use the profile + p12 in ../credentials/).
+  export_plist = File.join(build_root, "export_options_#{export_method}.plist")
+  system("plutil -p -o /dev/null #{export_plist}") # ensure file exists (no-op check)
+  if !File.exist?(export_plist)
+    content = <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key>
+  <string>#{export_method}</string>
+  <key>teamID</key>
+  <string>#{default_team}</string>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>com.celesrenata.nervephone</key>
+    <string>com.celesrenata.nervephone</string>
+  </dict>
+</dict>
+</plist>
+PLIST
+    File.write(export_plist, content)
+  end
+
+  system(
+    "xcodebuild " \
+    "-exportArchive " \
+    "-archive #{archive} " \
+    "-exportOptionsPlist #{export_plist} " \
+    "-destination '#{destination}'",
+    chdir: Dir.pwd
+  )
+end
+
+# --- Lanes -------------------------------------------------------------------
+
+lane :build_ipa do
+  UI.message("Building NervePhone.ipa (iOS, ad-hoc)...")
+
+  # 1. Archive
+  run_xcodebuild_archive(
+    project: project_phone,
+    scheme: "NervePhone",
+    platform: "generic/platform=iOS"
+  )
+
+  # 2. Export (ad-hoc)
+  destination = File.join(build_root, "phone-export")
+  FileUtils.mkdir_p(destination)
+  run_xcodebuild_export(
+    archive: File.join(build_root, "NervePhone.xcarchive"),
+    platform: "iOS",
+    export_method: "ad-hoc",
+    destination: destination
+  )
+
+  # 3. Copy to artifact root
+  FileUtils.mkdir_p(artifact_root)
+  ipa = Dir.glob(File.join(destination, "*.ipa")).first
+  raise "NervePhone.ipa not produced" if ipa.nil?
+  FileUtils.cp(ipa, File.join(artifact_root, "NervePhone.ipa"))
+  UI.success("NervePhone.ipa ready: #{File.join(artifact_root, 'NervePhone.ipa')}")
+end
+
+lane :build_watch do
+  UI.message("Building NerveWatch (watchOS, ad-hoc, with embedded widget extension)...")
+
+  # 1. Archive
+  run_xcodebuild_archive(
+    project: project_watch,
+    scheme: "NerveWatch",
+    platform: "generic/platform=watchOS"
+  )
+
+  # 2. Export (ad-hoc for watchOS includes the embedded extension)
+  destination = File.join(build_root, "watch-export")
+  FileUtils.mkdir_p(destination)
+  run_xcodebuild_export(
+    archive: File.join(build_root, "NerveWatch.xcarchive"),
+    platform: "watchOS",
+    export_method: "ad-hoc",
+    destination: destination
+  )
+
+  # 3. Collect artifacts: .app + .watchkitarchive + manifest
+  FileUtils.mkdir_p(artifact_root)
+  app = Dir.glob(File.join(destination, "**/NerveWatch.app")).first
+  watchkit = Dir.glob(File.join(destination, "**/*.watchkitarchive")).first
+  raise "NerveWatch.app not produced" if app.nil?
+  FileUtils.cp_r(app, File.join(artifact_root, "NerveWatch.app"))
+  FileUtils.cp(watchkit, File.join(artifact_root, "NerveWatchWidgetExtension.watchkitarchive")) if watchkit
+  UI.success("NerveWatch artifacts ready in #{artifact_root}")
+end
+
+lane :publish do
+  UI.message("Publishing exported artifacts...")
+
+  # Determine destination: web/dist/downloads/ if present, else dist/
+  destination = File.exist?(web_dist) ? web_dist : fallback_dist
+  FileUtils.mkdir_p(destination)
+
+  # Copy NervePhone.ipa
+  ipa = File.join(artifact_root, "NervePhone.ipa")
+  if File.exist?(ipa)
+    FileUtils.cp(ipa, File.join(destination, "NervePhone.ipa"))
+    UI.message("  NervePhone.ipa -> #{destination}")
+  end
+
+  # Copy NerveWatch.app + watchkitarchive
+  app = File.join(artifact_root, "NerveWatch.app")
+  watchkit = File.join(artifact_root, "NerveWatchWidgetExtension.watchkitarchive")
+  if File.exist?(app)
+    FileUtils.cp_r(app, File.join(destination, "NerveWatch.app"))
+    UI.message("  NerveWatch.app -> #{destination}")
+  end
+  if File.exist?(watchkit)
+    FileUtils.cp(watchkit, File.join(destination, "NerveWatchWidgetExtension.watchkitarchive"))
+    UI.message("  NerveWatchWidgetExtension.watchkitarchive -> #{destination}")
+  end
+
+  # Generate the download manifest (calls generate_manifest.py).
+  if File.exist?(manifest_script)
+    system("python3 #{manifest_script} --destination #{destination} --artifact-root #{artifact_root}")
+    if File.exist?(File.join(destination, "manifest.json"))
+      UI.success("manifest.json generated: #{destination}/manifest.json")
+    else
+      UI.important("generate_manifest.py did not produce manifest.json — check output.")
+    end
+  else
+    UI.important("generate_manifest.py not found — skipping manifest generation.")
+  end
+end
+
+lane :distribute do
+  build_ipa
+  build_watch
+  publish
+end

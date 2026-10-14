@@ -245,7 +245,7 @@ const GoalsView = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-4">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Goals</h1>
+        <h1 className="text-3xl font-bold text-primary">Goals</h1>
         <button
           type="button"
           onClick={openForm}
@@ -268,10 +268,10 @@ const GoalsView = () => {
       {formOpen && (
         <form
           onSubmit={submitGoal}
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 space-y-4"
+          className="bg-elevated rounded-lg shadow-lg p-6 space-y-4"
           aria-label="Create a new goal"
         >
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+          <h3 className="text-lg font-semibold text-primary">
             New goal
           </h3>
 
@@ -289,7 +289,7 @@ const GoalsView = () => {
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               placeholder="e.g. Reduce context compilation latency below 1s p95"
               required
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -306,7 +306,7 @@ const GoalsView = () => {
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               rows={3}
               placeholder="What outcome does this goal describe?"
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -325,7 +325,7 @@ const GoalsView = () => {
                 max={10}
                 value={form.priority}
                 onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
@@ -340,7 +340,7 @@ const GoalsView = () => {
                 type="date"
                 value={form.deadline}
                 onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -374,7 +374,7 @@ const GoalsView = () => {
         </form>
       )}
 
-      <div className="text-gray-500 dark:text-gray-400 text-sm">
+      <div className="text-muted text-sm">
         {goals.length} total goal{goals.length === 1 ? '' : 's'}
       </div>
 
@@ -383,8 +383,8 @@ const GoalsView = () => {
           Loading goals…
         </div>
       ) : goals.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+        <div className="bg-elevated rounded-lg shadow-lg p-8 text-center">
+          <p className="text-sm text-muted max-w-md mx-auto">
             No goals yet. Goals are the targets NerveCenter works toward — create
             one with “+ New Goal”, and its progress, status, and due date will
             show up here.
@@ -395,11 +395,11 @@ const GoalsView = () => {
           {goals.map((goal) => (
             <div
               key={goal.id}
-              className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg"
+              className="bg-elevated p-6 rounded-lg shadow-lg"
               data-testid={`goal-card-${goal.id}`}
             >
               <div className="flex items-start justify-between mb-4">
-                <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+                <h3 className="text-xl font-semibold text-primary">
                   {goal.name}
                 </h3>
                 <span
@@ -421,8 +421,8 @@ const GoalsView = () => {
               )}
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Progress</span>
-                  <span className="text-gray-800 dark:text-white tabular-nums">
+                  <span className="text-muted">Progress</span>
+                  <span className="text-primary tabular-nums">
                     {goal.progressPct}%
                   </span>
                 </div>
@@ -442,14 +442,14 @@ const GoalsView = () => {
                   />
                 </div>
               </div>
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="mt-4 pt-4 border-t border-line">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Due</span>
-                  <span className="text-gray-800 dark:text-white">{formatDate(goal.dueDate)}</span>
+                  <span className="text-muted">Due</span>
+                  <span className="text-primary">{formatDate(goal.dueDate)}</span>
                 </div>
                 <div className="flex justify-between text-sm mt-2">
-                  <span className="text-gray-500 dark:text-gray-400">Priority</span>
-                  <span className="text-gray-800 dark:text-white tabular-nums">
+                  <span className="text-muted">Priority</span>
+                  <span className="text-primary tabular-nums">
                     P{goal.priority}
                   </span>
                 </div>

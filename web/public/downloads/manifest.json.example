@@ -1,0 +1,55 @@
+{
+  "name": "NerveCenter",
+  "generated_at": "1970-01-01T00:00:00Z",
+  "versions": {
+    "phone": "1.0",
+    "watch": "1.0",
+    "widget": "1.0"
+  },
+  "artifacts": [
+    {
+      "name": "NervePhone.ipa",
+      "kind": "ios",
+      "label": "NervePhone (iPhone / iPad)",
+      "path": "NervePhone.ipa",
+      "present": true,
+      "embedded": false,
+      "bundle_id": "com.celesrenata.nervephone",
+      "min_ios": "17.0",
+      "sha256": "EXAMPLESHA256FORDOCUMENTATIONONLY00000000000000000000000000000000",
+      "bytes": 0
+    },
+    {
+      "name": "NerveWatch.app",
+      "kind": "watch",
+      "label": "NerveWatch (watchOS)",
+      "path": "NerveWatch.app",
+      "present": true,
+      "embedded": false,
+      "bundle_id": "com.celesrenata.nervewatch",
+      "min_watch": "10.0",
+      "sha256": "EXAMPLESHA256FORDOCUMENTATIONONLY00000000000000000000000000000001",
+      "bytes": 0
+    },
+    {
+      "name": "NerveWatchWidgetExtension.watchkitarchive",
+      "kind": "watch-widget",
+      "label": "NerveWatch widget",
+      "path": "NerveWatchWidgetExtension.watchkitarchive",
+      "present": true,
+      "embedded": false,
+      "bundle_id": "com.celesrenata.nervewatch.widgets",
+      "sha256": "EXAMPLESHA256FORDOCUMENTATIONONLY00000000000000000000000000000002",
+      "bytes": 0
+    },
+    {
+      "name": "NerveCenterWidgetExtension.appex",
+      "kind": "ios-widget",
+      "label": "NerveCenter widget (embedded in app)",
+      "path": "NerveCenterWidgetExtension.appex",
+      "present": false,
+      "embedded": true,
+      "bundle_id": "com.celesrenata.nervephone.widgets"
+    }
+  ]
+}

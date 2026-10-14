@@ -1,6 +1,7 @@
 import { useEffect, useState, type ComponentType } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { ThemeSwitcher } from './ThemeSwitcher'
 import {
   AgentsIcon,
   BriefingIcon,
@@ -9,6 +10,7 @@ import {
   CloseIcon,
   EmailIcon,
   DecisionsIcon,
+  DownloadsIcon,
   GoalsIcon,
   IncidentsIcon,
   InferenceIcon,
@@ -50,6 +52,7 @@ const navItems: NavItem[] = [
   { path: '/incidents', label: 'Incidents', Icon: IncidentsIcon },
   { path: '/decisions', label: 'Decisions', Icon: DecisionsIcon },
   { path: '/ask', label: 'Ask', Icon: AskIcon },
+  { path: '/downloads', label: 'Downloads', Icon: DownloadsIcon },
 ]
 
 /**
@@ -90,20 +93,23 @@ export function Layout() {
   const closeMenu = () => setMenuOpen(false)
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-100 dark:bg-gray-900 sm:flex-row">
+    <div className="flex min-h-screen flex-col bg-app sm:flex-row">
       {/* Top bar — visible only at ≤640px (mobile) */}
-      <header className="sm:hidden sticky top-0 z-20 flex items-center gap-3 px-4 h-12 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <header className="sm:hidden sticky top-0 z-20 flex items-center gap-3 px-4 h-12 bg-elevated border-b border-line">
         <button
           type="button"
           onClick={() => setMenuOpen((open) => !open)}
           aria-label={menuOpen ? 'Close navigation' : 'Open navigation'}
           aria-expanded={menuOpen}
           aria-controls="app-nav"
-          className="p-1.5 -ml-1 rounded text-gray-700 dark:text-gray-200"
+          className="p-1.5 -ml-1 rounded text-secondary hover:text-primary hover:bg-hover"
         >
           {menuOpen ? <CloseIcon size={20} /> : <MenuIcon size={20} />}
         </button>
-        <span className="font-semibold text-gray-800 dark:text-white">NerveCenter</span>
+        <span className="font-semibold text-primary">NerveCenter</span>
+        <div className="ml-auto">
+          <ThemeSwitcher />
+        </div>
       </header>
 
       {/* Mobile drawer — off-canvas overlay, no full-screen scrim. Starts below
@@ -113,21 +119,21 @@ export function Layout() {
           walk finding — the toggle could not be clicked while open). */}
       {menuOpen && (
         <div
-          className="fixed top-12 bottom-0 left-0 z-30 w-64 max-w-[80%] bg-white dark:bg-gray-800 shadow-xl overflow-y-auto sm:hidden"
+          className="fixed top-12 bottom-0 left-0 z-30 w-64 max-w-[80%] bg-elevated shadow-xl overflow-y-auto sm:hidden"
           role="dialog"
           aria-modal="false"
           aria-label="Navigation menu"
         >
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between p-4 border-b border-line">
             <div>
-              <h1 className="text-lg font-bold text-gray-800 dark:text-white">NerveCenter</h1>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Personal Intelligence Core</p>
+              <h1 className="text-lg font-bold text-primary">NerveCenter</h1>
+              <p className="text-xs text-muted">Personal Intelligence Core</p>
             </div>
             <button
               type="button"
               onClick={closeMenu}
               aria-label="Close navigation"
-              className="p-1.5 rounded text-gray-500 dark:text-gray-400"
+              className="p-1.5 rounded text-muted hover:text-primary hover:bg-hover"
             >
               <CloseIcon size={18} />
             </button>
@@ -141,10 +147,10 @@ export function Layout() {
           sticky + h-screen keeps it beside the content while it scrolls;
           overflow-y-auto keeps every nav item reachable when the list
           outgrows the viewport (longest item must never be clipped). */}
-      <div className="hidden sm:sticky sm:top-0 sm:flex sm:h-screen sm:w-64 sm:flex-col shrink-0 overflow-y-auto bg-white dark:bg-gray-800 shadow-lg">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">NerveCenter</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Personal Intelligence Core</p>
+      <div className="hidden sm:sticky sm:top-0 sm:flex sm:h-screen sm:w-64 sm:flex-col shrink-0 overflow-y-auto bg-elevated shadow-lg">
+        <div className="p-4 border-b border-line">
+          <h1 className="text-2xl font-bold text-primary">NerveCenter</h1>
+          <p className="text-sm text-muted">Personal Intelligence Core</p>
         </div>
         <NavLinks activePath={activePath} />
         <UserFooter user={user} onLogout={logout} />
@@ -180,8 +186,8 @@ function NavLinks({
             aria-current={active ? 'page' : undefined}
             className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
               active
-                ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200 font-medium'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                ? 'bg-accent-soft text-accent-contrast font-medium'
+                : 'text-secondary hover:bg-hover hover:text-primary'
             }`}
           >
             <Icon size={18} className="shrink-0" />
@@ -201,26 +207,29 @@ function UserFooter({
   onLogout: () => void
 }) {
   return (
-    <div className="mt-auto p-4 border-t border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between">
+    <div className="mt-auto p-4 border-t border-line">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <p className="text-sm font-medium text-secondary">
             {user?.username || 'Guest'}
           </p>
-          <p className="text-xs text-gray-600 dark:text-gray-400">
+          <p className="text-xs text-muted">
             {user?.roles?.join(', ') || 'No roles'}
           </p>
         </div>
-        {/* r3 walk: no session ⇒ no Logout action (was visible for Guest) */}
-        {user && (
-          <button
-            type="button"
-            onClick={onLogout}
-            className="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-          >
-            Logout
-          </button>
-        )}
+        <div className="flex flex-col items-end gap-2">
+          {/* r3 walk: no session ⇒ no Logout action (was visible for Guest) */}
+          {user && (
+            <button
+              type="button"
+              onClick={onLogout}
+              className="text-sm text-danger hover:underline"
+            >
+              Logout
+            </button>
+          )}
+          <ThemeSwitcher />
+        </div>
       </div>
     </div>
   )

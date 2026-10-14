@@ -147,8 +147,8 @@ export function MessagesView() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Messages</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-3xl font-bold text-primary">Messages</h1>
+        <p className="text-sm text-muted">
           {loading
             ? 'Loading…'
             : `${conversations.length} thread${conversations.length === 1 ? '' : 's'} · via Personal Relay`}
@@ -167,15 +167,15 @@ export function MessagesView() {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Thread list */}
         <section className="space-y-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
             Threads
           </h2>
           {loading ? (
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-500 dark:text-gray-400">
+            <div className="rounded-lg border border-line p-4 text-sm text-muted">
               Loading threads…
             </div>
           ) : conversations.length === 0 ? (
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-500 dark:text-gray-400">
+            <div className="rounded-lg border border-line p-4 text-sm text-muted">
               No conversations yet — messages arrive here from the Personal
               Relay on your Mac.
             </div>
@@ -192,7 +192,7 @@ export function MessagesView() {
                       className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
                         active
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
-                          : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/60'
+                          : 'border-line hover:bg-gray-50 dark:hover:bg-gray-800/60'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
@@ -211,7 +211,7 @@ export function MessagesView() {
                           </span>
                         )}
                       </div>
-                      <p className="mt-1 truncate text-sm text-gray-500 dark:text-gray-400">
+                      <p className="mt-1 truncate text-sm text-muted">
                         {c.last_body ?? ''}
                       </p>
                       <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
@@ -227,15 +227,15 @@ export function MessagesView() {
 
         {/* Thread detail */}
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
             Conversation
           </h2>
           {!selected ? (
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-500 dark:text-gray-400">
+            <div className="rounded-lg border border-line p-4 text-sm text-muted">
               Select a thread to read it.
             </div>
           ) : !thread ? (
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-500 dark:text-gray-400">
+            <div className="rounded-lg border border-line p-4 text-sm text-muted">
               Loading conversation…
             </div>
           ) : (

@@ -158,7 +158,7 @@ const AgentsView = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+      <h1 className="text-3xl font-bold text-primary">
         Agents
       </h1>
 
@@ -173,7 +173,7 @@ const AgentsView = () => {
       )}
 
       <div className="flex justify-between items-center">
-        <div className="text-gray-500 dark:text-gray-400">
+        <div className="text-muted">
           {agents.length} total agents
         </div>
         {/* AG-3 (round 3): create route exists → enabled. */}
@@ -189,12 +189,12 @@ const AgentsView = () => {
         <form
           data-testid="agent-form"
           onSubmit={submitAgent}
-          className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg space-y-4"
+          className="bg-elevated p-6 rounded-lg shadow-lg space-y-4"
         >
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+          <h3 className="text-xl font-semibold text-primary">
             Add agent
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-muted">
             Creates a durable agent instance via the write route (POST{' '}
             <code className="text-xs">/api/agents</code>). Non-2xx responses
             are shown as-is.
@@ -215,7 +215,7 @@ const AgentsView = () => {
               value={agentName}
               onChange={(e) => setAgentName(e.target.value)}
               placeholder="e.g. scout-1"
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-primary"
             />
           </div>
 
@@ -231,7 +231,7 @@ const AgentsView = () => {
               data-testid="agent-form-type"
               value={agentType}
               onChange={(e) => setAgentType(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-primary"
             >
               {NATIVE_AGENT_TYPES.map((t) => (
                 <option key={t} value={t}>
@@ -255,7 +255,7 @@ const AgentsView = () => {
               value={agentDescription}
               onChange={(e) => setAgentDescription(e.target.value)}
               placeholder="What does this agent do?"
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-primary"
             />
           </div>
 
@@ -291,7 +291,7 @@ const AgentsView = () => {
             <button
               type="button"
               onClick={closeForm}
-              className="text-gray-500 dark:text-gray-400 px-4 py-2"
+              className="text-muted px-4 py-2"
             >
               Cancel
             </button>
@@ -304,12 +304,12 @@ const AgentsView = () => {
       ) : !fetchError && agents.length === 0 ? (
         <div
           data-testid="agents-empty"
-          className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg text-center"
+          className="bg-elevated p-8 rounded-lg shadow-lg text-center"
         >
           <p className="text-gray-700 dark:text-gray-300 font-medium">
             No agents registered.
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          <p className="text-sm text-muted mt-2">
             Agents appear here once the AgentRegistry reports them, or use
             “+ Add Agent” to create a durable agent instance via
             POST /api/agents.
@@ -320,14 +320,14 @@ const AgentsView = () => {
           {agents.map((agent) => (
             <div
               key={agent.id}
-              className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg"
+              className="bg-elevated p-6 rounded-lg shadow-lg"
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+                  <h3 className="text-xl font-semibold text-primary">
                     {agent.name}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-muted">
                     {agent.type}
                   </p>
                 </div>
@@ -354,10 +354,10 @@ const AgentsView = () => {
                   <>
                     <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-500 dark:text-gray-400">
+                        <span className="text-muted">
                           CPU Usage
                         </span>
-                        <span className="text-gray-800 dark:text-white">
+                        <span className="text-primary">
                           {agent.cpuUsage}%
                         </span>
                       </div>
@@ -372,10 +372,10 @@ const AgentsView = () => {
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-500 dark:text-gray-400">
+                        <span className="text-muted">
                           Memory Usage
                         </span>
-                        <span className="text-gray-800 dark:text-white">
+                        <span className="text-primary">
                           {agent.memoryUsage}%
                         </span>
                       </div>
@@ -395,18 +395,18 @@ const AgentsView = () => {
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">
+                  <span className="text-muted">
                     Tasks completed
                   </span>
-                  <span className="text-gray-800 dark:text-white">
+                  <span className="text-primary">
                     {agent.tasksCompleted ?? '—'}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">
+                  <span className="text-muted">
                     Tasks failed
                   </span>
-                  <span className="text-gray-800 dark:text-white">
+                  <span className="text-primary">
                     {agent.tasksFailed ?? '—'}
                   </span>
                 </div>

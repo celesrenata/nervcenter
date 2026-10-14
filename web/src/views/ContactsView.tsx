@@ -102,8 +102,8 @@ export function ContactsView() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Contacts</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-3xl font-bold text-primary">Contacts</h1>
+        <p className="text-sm text-muted">
           {loading
             ? 'Loading…'
             : `${contacts.length} person${contacts.length === 1 ? '' : 's'} · ${vipCount} VIP · via Personal Relay`}
@@ -126,7 +126,7 @@ export function ContactsView() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by name, email, phone, or notes…"
           aria-label="Search contacts"
-          className="min-w-0 flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="min-w-0 flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-elevated px-3 py-2 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
           <input
@@ -140,16 +140,16 @@ export function ContactsView() {
       </div>
 
       {loading ? (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-500 dark:text-gray-400">
+        <div className="rounded-lg border border-line p-4 text-sm text-muted">
           Loading contacts…
         </div>
       ) : contacts.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-500 dark:text-gray-400">
+        <div className="rounded-lg border border-line p-4 text-sm text-muted">
           No people yet — resolved contacts arrive here from the Personal Relay
           on your Mac.
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-500 dark:text-gray-400">
+        <div className="rounded-lg border border-line p-4 text-sm text-muted">
           No contacts match{query.trim() ? ` “${query.trim()}”` : ''}
           {vipOnly ? ' (VIP only)' : ''}.
         </div>
@@ -158,7 +158,7 @@ export function ContactsView() {
           {filtered.map((c) => (
             <li
               key={c.person_id}
-              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/40 px-4 py-3"
+              className="rounded-lg border border-line bg-elevated/40 px-4 py-3"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
@@ -196,7 +196,7 @@ export function ContactsView() {
                       </p>
                     ) : null}
                     {c.notes ? (
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{c.notes}</p>
+                      <p className="text-xs text-muted">{c.notes}</p>
                     ) : null}
                   </div>
                 </div>

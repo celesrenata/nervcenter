@@ -141,8 +141,8 @@ export function CalendarView() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Calendar</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-3xl font-bold text-primary">Calendar</h1>
+        <p className="text-sm text-muted">
           {loading
             ? 'Loading…'
             : `${events.length} upcoming event${events.length === 1 ? '' : 's'} · read-only`}
@@ -161,15 +161,15 @@ export function CalendarView() {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Upcoming events */}
         <section className="space-y-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
             Upcoming
           </h2>
           {loading ? (
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-500 dark:text-gray-400">
+            <div className="rounded-lg border border-line p-4 text-sm text-muted">
               Loading events…
             </div>
           ) : events.length === 0 ? (
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-500 dark:text-gray-400">
+            <div className="rounded-lg border border-line p-4 text-sm text-muted">
               Nothing on the calendar in the next 7 days — availability checks
               against an empty schedule.
             </div>
@@ -178,12 +178,12 @@ export function CalendarView() {
               {events.map((ev) => (
                 <li
                   key={ev.event_id}
-                  className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-sm"
+                  className="rounded-lg border border-line p-3 text-sm"
                 >
                   <div className="font-medium text-gray-800 dark:text-gray-100">
                     {ev.title}
                   </div>
-                  <div className="text-gray-500 dark:text-gray-400">
+                  <div className="text-muted">
                     {fmtRange(ev)}
                     {ev.location ? ` · ${ev.location}` : ''}
                   </div>
@@ -195,27 +195,27 @@ export function CalendarView() {
 
         {/* Reasoning tools */}
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
             Availability & conflict reasoning
           </h2>
 
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+          <div className="rounded-lg border border-line p-4 space-y-3">
             <div className="flex flex-wrap items-end gap-3">
-              <label className="text-xs text-gray-500 dark:text-gray-400">
+              <label className="text-xs text-muted">
                 Desired start
                 <input
                   type="datetime-local"
                   value={checkStart}
                   onChange={(e) => setCheckStart(e.target.value)}
-                  className="ml-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-gray-800 dark:text-gray-100"
+                  className="ml-2 rounded border border-gray-300 dark:border-gray-600 bg-elevated px-2 py-1 text-sm text-gray-800 dark:text-gray-100"
                 />
               </label>
-              <label className="text-xs text-gray-500 dark:text-gray-400">
+              <label className="text-xs text-muted">
                 Duration
                 <select
                   value={durationMin}
                   onChange={(e) => setDurationMin(Number(e.target.value))}
-                  className="ml-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-gray-800 dark:text-gray-100"
+                  className="ml-2 rounded border border-gray-300 dark:border-gray-600 bg-elevated px-2 py-1 text-sm text-gray-800 dark:text-gray-100"
                 >
                   <option value={30}>30 min</option>
                   <option value={60}>60 min</option>

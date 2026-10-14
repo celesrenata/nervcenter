@@ -30,6 +30,7 @@ from backend.attention import get_attention_service
 from backend.briefing import get_briefing_service
 from backend.calendar import get_calendar_service
 from backend.contacts import get_contacts_service
+from backend.connectors import get_mail_connector_service
 from backend.email import get_email_service
 from backend.messages import get_messages_service
 from backend.voicemail import get_voicemail_service
@@ -51,6 +52,7 @@ from backend.api.endpoints import (
     events,
     events_ws,
     email,
+    mail_connectors,
     evidence,
     voicemail,
     waiting_on,
@@ -79,6 +81,7 @@ ALL_ROUTERS = (
     attention.router,
     briefing.router,
     email.router,
+    mail_connectors.router,
     messages.router,
     voicemail.router,
     waiting_on.router,
@@ -244,6 +247,18 @@ def create_app() -> FastAPI:
     target.state.email_service = email_service
     if os.environ.get("NERVE_SEED_EMAILS", "").lower() in {"1", "true", "yes"}:
         email_service.seed_demo()
+
+    # Mail connector registry (prompt2 §46 — connector registry + liveness):
+    # an in-process store of *described* mail connectors (where the relay reads
+    # from + whether the mailbox answers). NerveCenter never holds a mailbox
+    # socket — the Personal Relay does (§47); the registry only records the
+    # connector's description and its last liveness probe. Dev mode
+    # (NERVE_SEED_CONNECTORS=1) pre-populates a demo connector so the
+    # Connectors screen has content before the user registers a real one.
+    mail_connector_service = get_mail_connector_service()
+    target.state.mail_connector_service = mail_connector_service
+    if os.environ.get("NERVE_SEED_CONNECTORS", "").lower() in {"1", "true", "yes"}:
+        mail_connector_service.seed_demo()
 
     # Voicemail plane (prompt2 P2 — Personal Operations Plane): in-process store
     # that receives normalized voicemail events from the Personal Relay (the

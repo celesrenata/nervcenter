@@ -40,7 +40,7 @@ const STATUS_META: Record<TaskDisplayStatus, { dot: string; badge: string }> = {
   COMPLETED: { dot: 'bg-green-600', badge: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200' },
   SUCCEEDED: { dot: 'bg-green-600', badge: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200' },
   FAILED: { dot: 'bg-red-500', badge: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200' },
-  CANCELLED: { dot: 'bg-gray-400', badge: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300' },
+  CANCELLED: { dot: 'bg-gray-400', badge: 'bg-hover text-gray-600 dark:text-gray-300' },
 }
 
 /** Map a raw backend status (either vocabulary) onto the display vocabulary. */
@@ -280,13 +280,13 @@ const TaskDagView = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Task DAG</h1>
+        <h1 className="text-3xl font-bold text-primary">Task DAG</h1>
         <div
           className="flex flex-wrap gap-2"
           role="status"
           aria-label={`Concurrency: ${tasks.length} tasks total`}
         >
-          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-hover text-gray-700 dark:text-gray-200">
             {tasks.length} task{tasks.length === 1 ? '' : 's'}
           </span>
           {concurrency.map(({ status, count }) => (
@@ -315,7 +315,7 @@ const TaskDagView = () => {
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
+      <div className="bg-elevated rounded-lg shadow-lg p-4">
         <div className="flex flex-wrap gap-x-4 gap-y-2">
           {(Object.keys(STATUS_META) as TaskDisplayStatus[]).map((status) => (
             <span
@@ -337,15 +337,15 @@ const TaskDagView = () => {
           Loading task DAG…
         </div>
       ) : tasks.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="bg-elevated rounded-lg shadow-lg p-8 text-center">
+          <p className="text-sm text-muted">
             No tasks scheduled. Tasks appear here when goals or decisions are
             decomposed into work; the dependency graph renders as each task
             lands.
           </p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 overflow-x-auto">
+        <div className="bg-elevated rounded-lg shadow-lg p-6 overflow-x-auto">
           <div
             className="relative"
             style={{ width: layout.width, height: layout.height }}
@@ -387,7 +387,7 @@ const TaskDagView = () => {
             {layout.nodes.map(({ task, x, y, level }) => (
               <div
                 key={task.id}
-                className="absolute bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 p-3 shadow-sm"
+                className="absolute bg-hover rounded-lg border border-gray-200 dark:border-gray-600 p-3 shadow-sm"
                 style={{ left: x, top: y, width: NODE_W, height: NODE_H }}
                 data-testid={`task-node-${task.id}`}
                 data-name={task.name}
@@ -401,7 +401,7 @@ const TaskDagView = () => {
                     className={`shrink-0 w-2.5 h-2.5 rounded-full ${STATUS_META[task.status].dot}`}
                     aria-hidden="true"
                   />
-                  <span className="font-medium text-sm text-gray-800 dark:text-white truncate">
+                  <span className="font-medium text-sm text-primary truncate">
                     {task.name}
                   </span>
                 </div>
@@ -411,12 +411,12 @@ const TaskDagView = () => {
                   >
                     {task.status}
                   </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 tabular-nums">
+                  <span className="text-xs text-muted tabular-nums">
                     P{task.priority} · L{level}
                   </span>
                 </div>
                 {task.description && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+                  <p className="text-xs text-muted mt-1 truncate">
                     {task.description}
                   </p>
                 )}

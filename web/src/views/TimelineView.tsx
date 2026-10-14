@@ -114,7 +114,7 @@ const TimelineView = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+      <h1 className="text-3xl font-bold text-primary">
         Timeline
       </h1>
 
@@ -128,8 +128,8 @@ const TimelineView = () => {
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+      <div className="bg-elevated rounded-lg shadow-lg p-6">
+        <h3 className="text-xl font-semibold text-primary mb-4">
           Recent events
         </h3>
         {loading ? (
@@ -142,29 +142,29 @@ const TimelineView = () => {
             <p className="text-gray-700 dark:text-gray-300 font-medium">
               No events recorded yet.
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-md mx-auto">
+            <p className="text-sm text-muted mt-2 max-w-md mx-auto">
               The event bus has not published any activity (or is not
               configured). Events are append-only and appear here the moment
               the system records them — nothing is hidden.
             </p>
           </div>
         ) : (
-          <div className="relative pl-8 border-l-2 border-gray-200 dark:border-gray-700">
+          <div className="relative pl-8 border-l-2 border-line">
             {events.map((event, index) => (
               <div key={index} className="relative mb-6">
                 <div className="absolute -left-[41px] top-0">
                   <div
                     className={`w-5 h-5 rounded-full border-2 ${getSeverityColor(
                       event.severity
-                    )} bg-white dark:bg-gray-800`}
+                    )} bg-elevated`}
                   />
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <div className="bg-hover p-4 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-800 dark:text-white">
+                    <span className="font-medium text-primary">
                       {event.type}
                     </span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                    <span className="text-sm text-muted">
                       {event.timestamp}
                     </span>
                   </div>
@@ -185,25 +185,25 @@ const TimelineView = () => {
         )}
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+      <div className="bg-elevated rounded-lg shadow-lg p-6">
+        <h3 className="text-xl font-semibold text-primary mb-4">
           Legend
         </h3>
-        <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+        <div className="flex flex-wrap gap-4 text-sm text-secondary">
           <span className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full border-2 border-blue-500 bg-white dark:bg-gray-800" />
+            <span className="w-3 h-3 rounded-full border-2 border-blue-500 bg-elevated" />
             info
           </span>
           <span className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full border-2 border-yellow-500 bg-white dark:bg-gray-800" />
+            <span className="w-3 h-3 rounded-full border-2 border-yellow-500 bg-elevated" />
             warning
           </span>
           <span className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full border-2 border-red-500 bg-white dark:bg-gray-800" />
+            <span className="w-3 h-3 rounded-full border-2 border-red-500 bg-elevated" />
             error
           </span>
           <span className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full border-2 border-green-500 bg-white dark:bg-gray-800" />
+            <span className="w-3 h-3 rounded-full border-2 border-green-500 bg-elevated" />
             success
           </span>
         </div>

@@ -179,7 +179,7 @@ const OverviewView = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Overview</h1>
+      <h1 className="text-3xl font-bold text-primary">Overview</h1>
 
       {errors.length > 0 && (
         <div
@@ -202,10 +202,10 @@ const OverviewView = () => {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+            <div className="bg-elevated p-6 rounded-lg shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Active Goals</p>
+                  <p className="text-sm text-muted">Active Goals</p>
                   <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">
                     {stats.activeGoals}
                   </span>
@@ -213,10 +213,10 @@ const OverviewView = () => {
                 <div className="text-4xl" aria-hidden="true">🎯</div>
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+            <div className="bg-elevated p-6 rounded-lg shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Active Agents</p>
+                  <p className="text-sm text-muted">Active Agents</p>
                   <span className="text-3xl font-bold text-green-600 dark:text-green-400">
                     {stats.activeAgents}
                   </span>
@@ -224,10 +224,10 @@ const OverviewView = () => {
                 <div className="text-4xl" aria-hidden="true">🤖</div>
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+            <div className="bg-elevated p-6 rounded-lg shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Pending Tasks</p>
+                  <p className="text-sm text-muted">Pending Tasks</p>
                   <span className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
                     {stats.pendingTasks}
                   </span>
@@ -235,10 +235,10 @@ const OverviewView = () => {
                 <div className="text-4xl" aria-hidden="true">📋</div>
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+            <div className="bg-elevated p-6 rounded-lg shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Active Incidents</p>
+                  <p className="text-sm text-muted">Active Incidents</p>
                   <span className="text-3xl font-bold text-red-600 dark:text-red-400">
                     {stats.activeIncidents}
                   </span>
@@ -249,12 +249,12 @@ const OverviewView = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-              <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+            <div className="bg-elevated rounded-lg shadow-lg p-6">
+              <h3 className="text-xl font-semibold text-primary mb-4">
                 Goals
               </h3>
               {goals.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <p className="text-sm text-muted bg-hover rounded-lg p-4">
                   No goals yet. Create a goal from the Goals page to give NerveCenter a target to
                   work toward.
                 </p>
@@ -263,10 +263,10 @@ const OverviewView = () => {
                   {goals.slice(0, 5).map((goal) => (
                     <div
                       key={goal.id}
-                      className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                      className="p-3 bg-hover rounded-lg"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <p className="font-medium text-gray-800 dark:text-white truncate">
+                        <p className="font-medium text-primary truncate">
                           {goal.name}
                         </p>
                         <span
@@ -297,14 +297,14 @@ const OverviewView = () => {
                             style={{ width: `${goal.progressPct}%` }}
                           />
                         </div>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 tabular-nums">
+                        <span className="text-xs text-muted tabular-nums">
                           {goal.progressPct}%
                         </span>
                       </div>
                     </div>
                   ))}
                   {goals.length > 5 && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-muted">
                       +{goals.length - 5} more on the Goals page
                     </p>
                   )}
@@ -312,12 +312,12 @@ const OverviewView = () => {
               )}
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-              <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+            <div className="bg-elevated rounded-lg shadow-lg p-6">
+              <h3 className="text-xl font-semibold text-primary mb-4">
                 Agents
               </h3>
               {agents.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <p className="text-sm text-muted bg-hover rounded-lg p-4">
                   No agents registered. Agents show up here once the agent service is wired and
                   reports its roster.
                 </p>
@@ -326,10 +326,10 @@ const OverviewView = () => {
                   {agents.map((agent) => (
                     <div
                       key={agent.id}
-                      className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                      className="p-3 bg-hover rounded-lg"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <p className="font-medium text-gray-800 dark:text-white truncate">
+                        <p className="font-medium text-primary truncate">
                           {agent.name}
                         </p>
                         <span
@@ -353,7 +353,7 @@ const OverviewView = () => {
                         </span>
                       </div>
                       {agent.task && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">
+                        <p className="text-sm text-muted mt-1 truncate">
                           {agent.task}
                         </p>
                       )}

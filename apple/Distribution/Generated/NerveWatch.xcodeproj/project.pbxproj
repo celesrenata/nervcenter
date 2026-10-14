@@ -1,0 +1,545 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 70;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1075520E2C038D4BD7365093 /* NerveWatchWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 024FD01A9EBCBA0B920972AA /* NerveWatchWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		1433DE287A2583CDC5DE8371 /* WatchApprovalsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F39AFEC00AA7AFD298B2EC8C /* WatchApprovalsView.swift */; };
+		2DEF27262F41DB44F5797594 /* LargeWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3DF641AED245ED5CC1B1547 /* LargeWidgetView.swift */; };
+		4192CC999A699C0568813128 /* NerveWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB19D34DAA040BFE239C75BC /* NerveWatchApp.swift */; };
+		51F3E11D9DB6D2A8CE00D714 /* WatchStopView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 948AFE9224B5BF2E05DA312F /* WatchStopView.swift */; };
+		56C9BA91D105A784BDBFAA51 /* WatchGoalViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB8324C439384E0D7A50F0D4 /* WatchGoalViews.swift */; };
+		5EFEA76FFFFCCC385D49E238 /* MediumWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 015360C960013F4F260CAD42 /* MediumWidgetView.swift */; };
+		70DA3A410F811568841A6960 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60263D9567FCB7E83A265D77 /* WidgetSnapshot.swift */; };
+		954C428134986DABF2D3A4AF /* AppGroupWidgetDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED26BCA9D451233CDC7AD25A /* AppGroupWidgetDataSource.swift */; };
+		9E156A4E5361B76BA9489A05 /* InMemoryWidgetDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7D812F879306C5A1CF3D93E /* InMemoryWidgetDataSource.swift */; };
+		AA8296AD3F9D2E8AFE0F0CCF /* WatchHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59203916F8A27508A0D66EAE /* WatchHomeView.swift */; };
+		B42D39448412D5F6C308242D /* WatchDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D15687C819784BDCFA13738 /* WatchDesign.swift */; };
+		C7FDEFD6854A8DEF6379C22A /* WidgetDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42C7E226D7B3AF00D7AFAC48 /* WidgetDesign.swift */; };
+		D12D924B598D1F77BFE4B908 /* SmallWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EC08A0E9AA7C831B0B3621E /* SmallWidgetView.swift */; };
+		D81D349F251AA830E69A154E /* NerveCenterWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AC3921B4349DB9C7F58F655 /* NerveCenterWidgetBundle.swift */; };
+		E39AE06145250061947D4846 /* NerveCenter in Frameworks */ = {isa = PBXBuildFile; productRef = 62882C1000C91EAD04CCAEDB /* NerveCenter */; };
+		F0D4586AB3A1ED5702F05294 /* WatchSnapshotSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1904E5390A6CEC4B070333DD /* WatchSnapshotSource.swift */; };
+		F0EEA688C24A4C41213DD059 /* NerveCenterWidgetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05FA5CE3B101766B455871EB /* NerveCenterWidgetProvider.swift */; };
+		F7D07773B8113A75E76EEAC6 /* WatchHomeStateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E4692CA4BE7E5E661B9208 /* WatchHomeStateProvider.swift */; };
+		FE9C3944EE9F5F45BE034C36 /* WatchDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A43F1BF537821A6372F3D9E6 /* WatchDataStore.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		6251B9A663DE8D21B5BB5F65 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AF792C087611FAC8072EB1E4 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 11103184C414956386E47140;
+			remoteInfo = NerveWatchWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		9469A4D982E23100E1368565 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				1075520E2C038D4BD7365093 /* NerveWatchWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		015360C960013F4F260CAD42 /* MediumWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediumWidgetView.swift; sourceTree = "<group>"; };
+		024FD01A9EBCBA0B920972AA /* NerveWatchWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NerveWatchWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		055D78F4313603963374BCA2 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
+		05FA5CE3B101766B455871EB /* NerveCenterWidgetProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NerveCenterWidgetProvider.swift; sourceTree = "<group>"; };
+		1904E5390A6CEC4B070333DD /* WatchSnapshotSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSnapshotSource.swift; sourceTree = "<group>"; };
+		42C7E226D7B3AF00D7AFAC48 /* WidgetDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDesign.swift; sourceTree = "<group>"; };
+		4EC08A0E9AA7C831B0B3621E /* SmallWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmallWidgetView.swift; sourceTree = "<group>"; };
+		53E4692CA4BE7E5E661B9208 /* WatchHomeStateProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHomeStateProvider.swift; sourceTree = "<group>"; };
+		59203916F8A27508A0D66EAE /* WatchHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHomeView.swift; sourceTree = "<group>"; };
+		60263D9567FCB7E83A265D77 /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
+		6D15687C819784BDCFA13738 /* WatchDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchDesign.swift; sourceTree = "<group>"; };
+		87697C01CE99438EC7E9B0B7 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
+		948AFE9224B5BF2E05DA312F /* WatchStopView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStopView.swift; sourceTree = "<group>"; };
+		9AC3921B4349DB9C7F58F655 /* NerveCenterWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NerveCenterWidgetBundle.swift; sourceTree = "<group>"; };
+		A43F1BF537821A6372F3D9E6 /* WatchDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchDataStore.swift; sourceTree = "<group>"; };
+		BF88FFB02DECB1E911BC3FB5 /* NerveWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NerveWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C3DF641AED245ED5CC1B1547 /* LargeWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeWidgetView.swift; sourceTree = "<group>"; };
+		C7D812F879306C5A1CF3D93E /* InMemoryWidgetDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryWidgetDataSource.swift; sourceTree = "<group>"; };
+		E5CF05421D8CFB15B414A67F /* apple */ = {isa = PBXFileReference; lastKnownFileType = folder; name = apple; path = ../..; sourceTree = SOURCE_ROOT; };
+		ED26BCA9D451233CDC7AD25A /* AppGroupWidgetDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroupWidgetDataSource.swift; sourceTree = "<group>"; };
+		F39AFEC00AA7AFD298B2EC8C /* WatchApprovalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchApprovalsView.swift; sourceTree = "<group>"; };
+		FB19D34DAA040BFE239C75BC /* NerveWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NerveWatchApp.swift; sourceTree = "<group>"; };
+		FB8324C439384E0D7A50F0D4 /* WatchGoalViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchGoalViews.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C109A9E40268F9D12B5E10BB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E39AE06145250061947D4846 /* NerveCenter in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		447239BDBE6F72F107723394 /* Watch */ = {
+			isa = PBXGroup;
+			children = (
+				055D78F4313603963374BCA2 /* .gitkeep */,
+				FB19D34DAA040BFE239C75BC /* NerveWatchApp.swift */,
+				4C8828418EDB3E755EF9221D /* Store */,
+				FA0B2F59AFD829C83C5D7F2C /* Support */,
+				4D023C193365EAD56F904266 /* Views */,
+			);
+			path = Watch;
+			sourceTree = "<group>";
+		};
+		4C8828418EDB3E755EF9221D /* Store */ = {
+			isa = PBXGroup;
+			children = (
+				A43F1BF537821A6372F3D9E6 /* WatchDataStore.swift */,
+				53E4692CA4BE7E5E661B9208 /* WatchHomeStateProvider.swift */,
+				1904E5390A6CEC4B070333DD /* WatchSnapshotSource.swift */,
+			);
+			path = Store;
+			sourceTree = "<group>";
+		};
+		4D023C193365EAD56F904266 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				F39AFEC00AA7AFD298B2EC8C /* WatchApprovalsView.swift */,
+				FB8324C439384E0D7A50F0D4 /* WatchGoalViews.swift */,
+				59203916F8A27508A0D66EAE /* WatchHomeView.swift */,
+				948AFE9224B5BF2E05DA312F /* WatchStopView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		52DE4AD17802A8E72FBFFEAB = {
+			isa = PBXGroup;
+			children = (
+				B32884B9F867D61F10F24017 /* apple */,
+				CAC535D112643126533E667D /* Packages */,
+				F5FA358CF019E1C6716356D9 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B32884B9F867D61F10F24017 /* apple */ = {
+			isa = PBXGroup;
+			children = (
+				447239BDBE6F72F107723394 /* Watch */,
+				C007D7F583FB3A61D449685D /* Widgets */,
+			);
+			name = apple;
+			path = ../..;
+			sourceTree = "<group>";
+		};
+		C007D7F583FB3A61D449685D /* Widgets */ = {
+			isa = PBXGroup;
+			children = (
+				87697C01CE99438EC7E9B0B7 /* .gitkeep */,
+				ED26BCA9D451233CDC7AD25A /* AppGroupWidgetDataSource.swift */,
+				C7D812F879306C5A1CF3D93E /* InMemoryWidgetDataSource.swift */,
+				C3DF641AED245ED5CC1B1547 /* LargeWidgetView.swift */,
+				015360C960013F4F260CAD42 /* MediumWidgetView.swift */,
+				9AC3921B4349DB9C7F58F655 /* NerveCenterWidgetBundle.swift */,
+				05FA5CE3B101766B455871EB /* NerveCenterWidgetProvider.swift */,
+				4EC08A0E9AA7C831B0B3621E /* SmallWidgetView.swift */,
+				42C7E226D7B3AF00D7AFAC48 /* WidgetDesign.swift */,
+				60263D9567FCB7E83A265D77 /* WidgetSnapshot.swift */,
+			);
+			path = Widgets;
+			sourceTree = "<group>";
+		};
+		CAC535D112643126533E667D /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				E5CF05421D8CFB15B414A67F /* apple */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		F5FA358CF019E1C6716356D9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BF88FFB02DECB1E911BC3FB5 /* NerveWatch.app */,
+				024FD01A9EBCBA0B920972AA /* NerveWatchWidgetExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FA0B2F59AFD829C83C5D7F2C /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				6D15687C819784BDCFA13738 /* WatchDesign.swift */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		11103184C414956386E47140 /* NerveWatchWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B51293FACEE1AC7466F7E07E /* Build configuration list for PBXNativeTarget "NerveWatchWidgetExtension" */;
+			buildPhases = (
+				36549758107B24C3779019CF /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NerveWatchWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = NerveWatchWidgetExtension;
+			productReference = 024FD01A9EBCBA0B920972AA /* NerveWatchWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		8736F9F7E697359F0432A171 /* NerveWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0AE52BEA0AD0E5BC4657FEBF /* Build configuration list for PBXNativeTarget "NerveWatch" */;
+			buildPhases = (
+				2579015548848046CCBA2FBD /* Sources */,
+				C109A9E40268F9D12B5E10BB /* Frameworks */,
+				9469A4D982E23100E1368565 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8E55F42A5F6DEB75E0593223 /* PBXTargetDependency */,
+			);
+			name = NerveWatch;
+			packageProductDependencies = (
+				62882C1000C91EAD04CCAEDB /* NerveCenter */,
+			);
+			productName = NerveWatch;
+			productReference = BF88FFB02DECB1E911BC3FB5 /* NerveWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AF792C087611FAC8072EB1E4 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					11103184C414956386E47140 = {
+						ProvisioningStyle = Manual;
+					};
+					8736F9F7E697359F0432A171 = {
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = 9F01CBB08F2B027C37980612 /* Build configuration list for PBXProject "NerveWatch" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 52DE4AD17802A8E72FBFFEAB;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				C94F134833A3172332EF937B /* XCLocalSwiftPackageReference "../..//" */,
+			);
+			preferredProjectObjectVersion = 70;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8736F9F7E697359F0432A171 /* NerveWatch */,
+				11103184C414956386E47140 /* NerveWatchWidgetExtension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2579015548848046CCBA2FBD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4192CC999A699C0568813128 /* NerveWatchApp.swift in Sources */,
+				1433DE287A2583CDC5DE8371 /* WatchApprovalsView.swift in Sources */,
+				FE9C3944EE9F5F45BE034C36 /* WatchDataStore.swift in Sources */,
+				B42D39448412D5F6C308242D /* WatchDesign.swift in Sources */,
+				56C9BA91D105A784BDBFAA51 /* WatchGoalViews.swift in Sources */,
+				F7D07773B8113A75E76EEAC6 /* WatchHomeStateProvider.swift in Sources */,
+				AA8296AD3F9D2E8AFE0F0CCF /* WatchHomeView.swift in Sources */,
+				F0D4586AB3A1ED5702F05294 /* WatchSnapshotSource.swift in Sources */,
+				51F3E11D9DB6D2A8CE00D714 /* WatchStopView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		36549758107B24C3779019CF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				954C428134986DABF2D3A4AF /* AppGroupWidgetDataSource.swift in Sources */,
+				9E156A4E5361B76BA9489A05 /* InMemoryWidgetDataSource.swift in Sources */,
+				2DEF27262F41DB44F5797594 /* LargeWidgetView.swift in Sources */,
+				5EFEA76FFFFCCC385D49E238 /* MediumWidgetView.swift in Sources */,
+				D81D349F251AA830E69A154E /* NerveCenterWidgetBundle.swift in Sources */,
+				F0EEA688C24A4C41213DD059 /* NerveCenterWidgetProvider.swift in Sources */,
+				D12D924B598D1F77BFE4B908 /* SmallWidgetView.swift in Sources */,
+				C7FDEFD6854A8DEF6379C22A /* WidgetDesign.swift in Sources */,
+				70DA3A410F811568841A6960 /* WidgetSnapshot.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		8E55F42A5F6DEB75E0593223 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 11103184C414956386E47140 /* NerveWatchWidgetExtension */;
+			targetProxy = 6251B9A663DE8D21B5BB5F65 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		2ECFB693F5EE52FA34250DC7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = ../Generated/NerveWatch.entitlements;
+				INFOPLIST_FILE = "../Generated/NerveWatch-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = com.celesrenata.NerveWatch;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		4A08446CBBEC7727726C6200 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		95FD69D08547EA414C599CFE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ../Generated/NerveWatchWidgetExtension.entitlements;
+				INFOPLIST_FILE = "../Generated/NerveWatchWidgetExtension-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.celesrenata.NerveWatchWidgetExtension;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		AA9754B43D2F05123FFB4615 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		C2C4C8CDC6C13E2643D5ED8E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = ../Generated/NerveWatch.entitlements;
+				INFOPLIST_FILE = "../Generated/NerveWatch-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = com.celesrenata.NerveWatch;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		DB72E2ED5AA2BA9A75E1F161 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ../Generated/NerveWatchWidgetExtension.entitlements;
+				INFOPLIST_FILE = "../Generated/NerveWatchWidgetExtension-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.celesrenata.NerveWatchWidgetExtension;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0AE52BEA0AD0E5BC4657FEBF /* Build configuration list for PBXNativeTarget "NerveWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2ECFB693F5EE52FA34250DC7 /* Debug */,
+				C2C4C8CDC6C13E2643D5ED8E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9F01CBB08F2B027C37980612 /* Build configuration list for PBXProject "NerveWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4A08446CBBEC7727726C6200 /* Debug */,
+				AA9754B43D2F05123FFB4615 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B51293FACEE1AC7466F7E07E /* Build configuration list for PBXNativeTarget "NerveWatchWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DB72E2ED5AA2BA9A75E1F161 /* Debug */,
+				95FD69D08547EA414C599CFE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		C94F134833A3172332EF937B /* XCLocalSwiftPackageReference "../..//" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../..//";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		62882C1000C91EAD04CCAEDB /* NerveCenter */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NerveCenter;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = AF792C087611FAC8072EB1E4 /* Project object */;
+}

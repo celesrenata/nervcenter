@@ -254,6 +254,18 @@ export function AskIcon({ size = 18, ...rest }: IconProps) {
   )
 }
 
+/** Downloads — box with a downward arrow. */
+export function DownloadsIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <path d="M3 8h18l-1.5 11.3a2 2 0 0 1-2 1.7H6.5a2 2 0 0 1-2-1.7L3 8Z" />
+      <path d="M3 8v-2a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2" />
+      <line x1="12" y1="11" x2="12" y2="16" />
+      <path d="m9.5 13.5 2.5 2.5 2.5-2.5" />
+    </svg>
+  )
+}
+
 /* ─── Action icons ────────────────────────────────────────────────────────── */
 
 /** Hamburger — opens the mobile navigation drawer. */

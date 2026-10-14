@@ -48,6 +48,16 @@ COPY entrypoint.sh /entrypoint.sh
 # SPA bundle (root index + hashed assets).
 COPY --from=build /app/dist/ /usr/share/nginx/html/
 
+# Self-host app distribution (ad-hoc, no App Store): /downloads/ is served from
+# a runtime-mounted volume, populated by apple/Distribution/export_app.sh which
+# copies the exported NervePhone.ipa / NerveWatch.app / watchkitarchive /
+# manifest.json into web/dist/downloads. The nginx location /downloads/ (see
+# nginx.conf.template) aliases to this path.
+#   - docker:   mount web/dist/downloads -> /usr/share/nginx/downloads
+#   - k8s:      PVC or emptyDir + volumeMount at /usr/share/nginx/downloads
+# If nothing is mounted the location simply 404s (no SPA fallback).
+VOLUME ["/usr/share/nginx/downloads"]
+
 EXPOSE 80
 
 # nginx master must be root to bind :80; workers drop privileges to `nginx`
