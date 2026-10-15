@@ -83,6 +83,14 @@ log "building ${API_TAG} (linux/amd64)"
 docker build --platform linux/amd64 -f Dockerfile.api -t "${API_TAG}" .
 log "building ${WEB_TAG} (linux/amd64)"
 docker build --platform linux/amd64 -f web/Dockerfile -t "${WEB_TAG}" web/
+# Optional self-host app artifacts (web/dist/downloads) are baked in when
+# staged; without them /downloads/ simply 404s (mount a volume at
+# /usr/share/nginx/downloads to override). See web/README.md + web/verify-downloads-packaging.sh.
+if [[ -d web/dist/downloads ]]; then
+  log "web/dist/downloads staged — /downloads/ artifacts baked into ${WEB_TAG}"
+else
+  log "web/dist/downloads absent — /downloads/ will 404"
+fi
 log "pushing images"
 docker push "${API_TAG}"
 docker push "${WEB_TAG}"

@@ -29,6 +29,13 @@ COPY . .
 ARG VITE_API_BASE=/api
 ENV VITE_API_BASE="${VITE_API_BASE}"
 
+# Optional self-host app artifacts (see the final stage below): capture the
+# staged web/dist/downloads BEFORE the build. `vite build` empties dist/,
+# so the files must be copied out first. The stage is always created, so the
+# final-stage COPY below can never fail even when no artifacts are staged.
+RUN mkdir -p /app/downloads \
+    && if [ -d dist/downloads ]; then cp -a dist/downloads/. /app/downloads/; fi
+
 # `npm run build` = `tsc && vite build` -> dist/
 RUN npm run build
 
@@ -49,14 +56,27 @@ COPY entrypoint.sh /entrypoint.sh
 COPY --from=build /app/dist/ /usr/share/nginx/html/
 
 # Self-host app distribution (ad-hoc, no App Store): /downloads/ is served from
-# a runtime-mounted volume, populated by apple/Distribution/export_app.sh which
-# copies the exported NervePhone.ipa / NerveWatch.app / watchkitarchive /
-# manifest.json into web/dist/downloads. The nginx location /downloads/ (see
-# nginx.conf.template) aliases to this path.
-#   - docker:   mount web/dist/downloads -> /usr/share/nginx/downloads
-#   - k8s:      PVC or emptyDir + volumeMount at /usr/share/nginx/downloads
-# If nothing is mounted the location simply 404s (no SPA fallback).
-VOLUME ["/usr/share/nginx/downloads"]
+# /usr/share/nginx/downloads (aliased by the nginx location /downloads/, see
+# nginx.conf.template). The artifacts — NervePhone.ipa, NerveWatch.app,
+# .watchkitarchive, manifest.json — are produced by
+# apple/Distribution/export_app.sh into web/dist/downloads.
+#
+# They reach the container two ways:
+#   1. BAKED IN (default; no secrets, no committed binaries): the build-stage
+#      step above copied any staged web/dist/downloads into /app/downloads
+#      (before `vite build` wipes dist/), and we bake it here.
+#      web/.dockerignore re-includes ONLY dist/downloads (negating the
+#      gitignored dist/), so the rebuilt bundle never ships stale dist output
+#      and no signing credentials are required at build time.
+#   2. MOUNTED (override): mount a volume at /usr/share/nginx/downloads to
+#      cover the baked copy without rebuilding the image:
+#         - docker: docker run -v ./web/dist/downloads:/usr/share/nginx/downloads ...
+#         - k8s:    a hostPath/PVC/emptyDir volume + volumeMount at that path
+#
+# If neither is present, /downloads/ simply 404s (no SPA fallback) and the
+# UI's Downloads page shows "manifest unavailable" gracefully.
+RUN mkdir -p /usr/share/nginx/downloads
+COPY --from=build /app/downloads/ /usr/share/nginx/downloads/
 
 EXPOSE 80
 

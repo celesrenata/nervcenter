@@ -40,6 +40,14 @@ case "${CMD}" in
     docker build -f Dockerfile.api -t "${API_IMAGE}" .
     log "building ${WEB_IMAGE} (web/Dockerfile)"
     docker build -f web/Dockerfile -t "${WEB_IMAGE}" web/
+    # Optional self-host app artifacts (web/dist/downloads) are baked in
+    # automatically when staged; without them /downloads/ simply 404s.
+    # See web/README.md ("Self-host app downloads") + web/verify-downloads-packaging.sh.
+    if [[ -d web/dist/downloads ]]; then
+      log "web/dist/downloads staged — /downloads/ artifacts baked into ${WEB_IMAGE}"
+    else
+      log "web/dist/downloads absent — /downloads/ will 404 (mount a volume at /usr/share/nginx/downloads to override)"
+    fi
     docker compose -f "${COMPOSE_FILE}" up -d --wait
     log "local stack up:"
     log "  api  http://localhost:8000   (docs at /docs, health at /api/health)"

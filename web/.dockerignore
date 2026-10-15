@@ -1,3 +1,12 @@
+# NOTE: "dist" keeps the Vite build dir OUT of the build context — the image
+# rebuilds the bundle from source, so stale/committed dist/ output is never
+# baked in. "!dist/downloads" re-includes ONLY the self-host app artifact
+# directory (see web/Dockerfile): apple/Distribution/export_app.sh stages
+# NervePhone.ipa & co. + manifest.json into web/dist/downloads, and the
+# Dockerfile bakes that directory into the image when present. Binaries stay
+# gitignored (dist/) and optional — without the directory the /downloads/
+# location simply 404s (or a runtime volume overrides it).
 node_modules
 dist
+!dist/downloads
 .git

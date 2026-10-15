@@ -59,6 +59,42 @@ The UI will be available at `http://localhost:3000`
 npm run build
 ```
 
+## Self-host app downloads (/downloads/)
+
+The container serves optional self-host app artifacts (NervePhone.ipa,
+NerveWatch.app, .watchkitarchive, manifest.json) under `/downloads/`, aliased to
+`/usr/share/nginx/downloads` in `nginx.conf.template`. Artifacts are produced by
+`apple/Distribution/export_app.sh` into `web/dist/downloads` and are **never
+committed** (`web/dist/` is gitignored) — no secrets are needed to build.
+
+Two delivery strategies:
+
+1. **Baked into the image (default).** Stage the artifacts in
+   `web/dist/downloads` before building; `web/.dockerignore` re-includes only
+   that directory (negating the gitignored `dist/`), and `web/Dockerfile`
+   copies it into the image **before** `vite build` wipes `dist/`. Rebuild the
+   image after staging:
+   ```bash
+   ./apple/Distribution/export_app.sh   # ...produces web/dist/downloads/*
+   docker build -f web/Dockerfile -t nervecenter/web:TAG web/
+   ```
+   With nothing staged, the build still succeeds and `/downloads/` simply
+   404s (no SPA fallback); the UI's Downloads page reports the manifest as
+   unavailable.
+
+2. **Runtime volume mount (override, no rebuild).** Mount a directory onto
+   `/usr/share/nginx/downloads` to shadow the baked copy:
+   - docker: `docker run -v "$PWD/web/dist/downloads:/usr/share/nginx/downloads" ...`
+   - k8s: `hostPath` / PVC / `emptyDir` volume with a `volumeMount` at
+     `/usr/share/nginx/downloads` on the web pod.
+
+Verify the packaging end-to-end (two real `docker build`s — default and
+staged modes — plus context and no-secret checks):
+
+```bash
+./web/verify-downloads-packaging.sh
+```
+
 ## Configuration
 
 The UI connects to the backend API at `http://localhost:8000` by default. To change this, modify the proxy configuration in `vite.config.ts`.
