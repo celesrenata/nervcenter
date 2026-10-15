@@ -5,9 +5,21 @@
 **Status:** Planned
 **Scope:** G-0.1–G-0.4 stabilization workstreams plus the G-4 hygiene closure defined by AC001–AC008.
 
+> **gaps2 delta (2026-10-14 evening) — T002/T003/T004 are SUPERSEDED by
+> [`specs/phase0-integrity/`](../phase0-integrity/).** The premise of this pack
+> (gaps1.md, morning) was that the mail plane was *staged but uncommitted*;
+> `gaps2.md` §3.1/§3.7 found it was in fact **committed broken** at `a3c07da`
+> (HEAD `import backend.api.app` fails: `MailConnector` re-export missing).
+> Execute Phase 0 from `specs/phase0-integrity/tasks.md` (P0-01…P0-06) instead
+> of T002/T003/T004 below. T009 below is already done in the worktree (see
+> verification log) and lands inside phase0-integrity P0-04 commit 2.
+> T005/T006/T007/T010 + T008 (the Phase 5 hygiene sweep) remain valid here.
+
 ## Execution rules
 
 - Keep the task order and ownership below. T002 must be green before T003 creates the mail-connector commit.
+- **Import-chain gate (gaps2 §7 Q6, standing rule):** no backend commit that touches an import chain may ship without `python -c "import backend.api.app"` verified in a **detached worktree of the resulting commit** (never just the working tree). Propagated to `specs/phase0-integrity/` and `specs/gap-closure-t003/`.
+- **T007 correction (gaps2 §3.7):** the "stale references" claim was wrong — `backend/events/` and `backend/knowledge/` **both exist and are tested** (e.g. `tests/backend/events/test_dlq.py`). T007 is a *content* refresh (docs dated 2026-09-29, pre-personal-planes), not a path fix; the `rg` path gate in T007 passes trivially.
 - T003 is the explicit dependency boundary for the G-0.2 mail-connector commit: any task that verifies the committed mail plane must run after that commit exists.
 - T003 and T006 both touch distinct regions of [`backend/api/app.py`](../../backend/api/app.py); reconcile both changes during T008 rather than overwriting either region.
 - Do not modify [`audit-gaps.md`](../../audit-gaps.md), [`web/src/`](../../web/src/), or out-of-scope G-1.x/G-2.x/G-3.x surfaces except where the plan explicitly assigns ownership.
@@ -17,13 +29,13 @@
 
 | ID | Workstream | Depends on | Owned paths | AC coverage | Status |
 |---|---|---|---|---|---|
-| T002 | G-0.2 mail-connector tests | None | [`tests/backend/test_mail_connector.py`](../../tests/backend/test_mail_connector.py) | AC001 | [ ] |
-| T003 | G-0.1 mail-connector commit | T002 green | [`backend/connectors/mail/`](../../backend/connectors/mail/), [`backend/api/endpoints/mail_connectors.py`](../../backend/api/endpoints/mail_connectors.py), [`backend/api/models.py`](../../backend/api/models.py), router region of [`backend/api/app.py`](../../backend/api/app.py), assigned web/theme commit surfaces, Git commits | AC002 | [ ] |
-| T004 | G-0.3 build artifacts | None; final gate follows T003 where clean-tree evidence includes its commit | [`.gitignore`](../../.gitignore), [`web/dist/`](../../web/dist/), [`web/Dockerfile`](../../web/Dockerfile) if present | AC003 | [ ] |
+| T002 | G-0.2 mail-connector tests | None | [`tests/backend/test_mail_connector.py`](../../tests/backend/test_mail_connector.py) | AC001 | ⚠️ **superseded** → [`phase0-integrity` P0-03](../phase0-integrity/tasks.md) |
+| T003 | G-0.1 mail-connector commit | T002 green | [`backend/connectors/mail/`](../../backend/connectors/mail/), [`backend/api/endpoints/mail_connectors.py`](../../backend/api/endpoints/mail_connectors.py), [`backend/api/models.py`](../../backend/api/models.py), router region of [`backend/api/app.py`](../../backend/api/app.py), assigned web/theme commit surfaces, Git commits | AC002 | ⚠️ **superseded** → [`phase0-integrity` P0-04](../phase0-integrity/tasks.md) |
+| T004 | G-0.3 build artifacts | None; final gate follows T003 where clean-tree evidence includes its commit | [`.gitignore`](../../.gitignore), [`web/dist/`](../../web/dist/), [`web/Dockerfile`](../../web/Dockerfile) if present | AC003 | ⚠️ **superseded** → [`phase0-integrity` P0-05](../phase0-integrity/tasks.md) |
 | T005 | G-0.4 e2e masks / Apple runner | None | [`apple/Package.swift`](../../apple/Package.swift), [`apple/scripts/test-apple.sh`](../../apple/scripts/test-apple.sh) if needed | AC004 | [ ] |
 | T006 | G-4.2 lifespan migration | None | [`backend/api/wiring.py`](../../backend/api/wiring.py), lifespan region of [`backend/api/app.py`](../../backend/api/app.py) | AC005 | [ ] |
 | T007 | G-4.3 documentation refresh | None | [`docs/implementation-status.yaml`](../../docs/implementation-status.yaml), [`docs/architecture/current-state.md`](../../docs/architecture/current-state.md) | AC006 | [ ] |
-| T009 | G-4.4 JWT key hygiene | None | [`tests/backend/test_auth_sso.py`](../../tests/backend/test_auth_sso.py) | AC007 | [ ] |
+| T009 | G-4.4 JWT key hygiene | None | [`tests/backend/test_auth_sso.py`](../../tests/backend/test_auth_sso.py) | AC007 | [x] |
 | T010 | G-4.5 canonical test documentation | None | [`README.md`](../../README.md) | AC008 | [ ] |
 | T008 | Integration gate | T002, T003, T004, T005, T006, T007, T009, T010 | Verification only; this file's log and command evidence | AC001–AC008 | [ ] |
 
@@ -145,8 +157,8 @@ The `rg` command must produce no stale top-level-path matches; validate YAML syn
 
 ### T009 — JWT test-key hygiene (G-4.4)
 
-- [ ] Replace 32-byte HS256 fixtures in [`tests/backend/test_auth_sso.py`](../../tests/backend/test_auth_sso.py) with `os.urandom(64)` or a fixed key of at least 64 bytes.
-- [ ] Preserve the test contract and avoid logging key material.
+- [x] Replace the short HS256 fixtures in [`tests/backend/test_auth_sso.py`](../../tests/backend/test_auth_sso.py) with fixed keys longer than the RFC 7518 minimum.
+- [x] Preserve the test contract and avoid logging key material.
 
 **Verification:**
 
@@ -206,7 +218,7 @@ git diff --check
 |  | T005 / AC004 |  | Pending |  |
 |  | T006 / AC005 |  | Pending |  |
 |  | T007 / AC006 |  | Pending |  |
-|  | T009 / AC007 |  | Pending |  |
+|  | T009 / AC007 | `.venv/bin/python -m pytest tests/backend/test_auth_sso.py -W always -q` | Passed: 9 passed, 22 warnings; no PyJWT `InsecureKeyLengthWarning` remains | FastAPI `on_event`, Starlette/httpx, and SQLAlchemy warnings remain for separate T006/dependency cleanup |
 |  | T010 / AC008 |  | Pending |  |
 |  | T008 / AC001–AC008 |  | Blocked until all prerequisites | Final clean-tree and all-suite gate |
 

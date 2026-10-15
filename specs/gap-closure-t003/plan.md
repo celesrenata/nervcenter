@@ -3,6 +3,20 @@
 **Task ID:** T003 (gap-closure round) · **Spec:** [`spec.md`](./spec.md)
 **Upstream:** [gaps1.md](../../gaps1.md) §4/§5 (T2 Apple personal surfaces + T3 prompt1 core depth)
 
+> **gaps2 delta (2026-10-14 evening).** Two premises in this pack changed:
+> (1) **T003-02 now covers a *third* masked file** — `web/tests/e2e/views-a.spec.ts:41`
+> also carries a stale `KNOWN_MISSING_BACKEND_PATHS` (and its mask additionally
+> includes `/api/tasks`, which exists). T003-02's owned files below include it.
+> `views-b.spec.ts:41` is **not** a stale mask — it deliberately fulfils
+> 409/501/503 responses to exercise the error UI; leave it. (2) **The Phase 0
+> mail-connector commit is no longer "staged/uncommitted"** (gaps2 §3.1): the
+> plane was committed broken at `a3c07da` and its fix + tests now land via
+> [`specs/phase0-integrity`](../phase0-integrity/) P0-04 — T003-10's read-only
+> dependency is that pack's final commit, not a pending stage.
+> **Import-chain gate (gaps2 §7 Q6, standing rule):** no backend commit touching
+> an import chain ships without `python -c "import backend.api.app"` verified in
+> a detached worktree of the resulting commit.
+
 Phases mirror gaps1.md §5 (Phase 3 "Core brain" and Phase 4 "Apple personal
 surfaces") and run as **two parallel tracks**: the inference track (Phase A)
 depends on nothing in-repo besides the existing routes plane; the Apple track
@@ -43,7 +57,7 @@ IDs are stable: **T003-01 … T003-12**. AC cross-refs are to
 | ID | Title | AC | Deps | Files owned | Size |
 |----|-------|----|------|-------------|------|
 | T003-01 | gRPC transport decision (ADR; HTTP = v0, gRPC deferred) | T003.AC11 | — | `docs/architecture/decisions/ADR-*` | S |
-| T003-02 | e2e: remove stale known-404 masks; assert real responses | T003.AC12 | — | `web/tests/e2e/ask.spec.ts`, `web/tests/e2e/views.spec.ts` | S |
+| T003-02 | e2e: remove stale known-404 masks; assert real responses | T003.AC12 | — | `web/tests/e2e/ask.spec.ts`, `web/tests/e2e/views.spec.ts`, `web/tests/e2e/views-a.spec.ts` (gaps2: 3rd masked file; do NOT touch `views-b.spec.ts` — deliberate error-UI fixtures) | S |
 | T003-03 | OmniRoute real transport (env URL + auth; primary/fallback; telemetry into routes plane; fixture mode) | T003.AC8 | — | `backend/inference/**`, `backend/api/endpoints/models_history.py` (telemetry write path) | L |
 | T003-04 | Ask pipeline (compiler → PDP pre-flight → OmniRoute → provenance answer; 202 ACK only on unavailable) | T003.AC9 | T003-03 | `backend/context/ask.py` (new), `backend/api/endpoints/context.py`, `backend/context/compiler.py` | L |
 | T003-05 | Synthetic-lab evaluation corpus + replay + CI gate (detection, attention, ask QA) | T003.AC10 | T003-04 (ask pairs); G-1.1 detection engines (read-only; degrade to ask-only corpus until they land) | `synthetic-lab/**`, `tests/` fixtures | M |
@@ -115,7 +129,7 @@ IDs are stable: **T003-01 … T003-12**. AC cross-refs are to
 | Owner task | Paths |
 |-----------|-------|
 | T003-01 | `docs/architecture/decisions/ADR-*` (gRPC) |
-| T003-02 | `web/tests/e2e/ask.spec.ts`, `web/tests/e2e/views.spec.ts` (mask removal only) |
+| T003-02 | `web/tests/e2e/ask.spec.ts`, `web/tests/e2e/views.spec.ts`, `web/tests/e2e/views-a.spec.ts` (mask removal only) |
 | T003-03 | `backend/inference/**`, telemetry write path in `backend/api/endpoints/` |
 | T003-04 | `backend/context/**`, `backend/api/endpoints/context.py`, MCP/e2e updates for ask shape |
 | T003-05 | `synthetic-lab/**`, `tests/` (fixtures only) |

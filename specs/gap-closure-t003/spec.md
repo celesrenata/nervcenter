@@ -193,10 +193,16 @@ AC IDs are stable (`T003.AC#`). Each maps to at least one task in
 
 ### e2e known-404 masks (G-3.5)
 
-- **T003.AC12** — The stale masks are removed from `web/tests/e2e/ask.spec.ts` and
-  `views.spec.ts` (`KNOWN_MISSING_BACKEND_PATHS = ['/api/systems', '/api/decisions']`);
-  the suites now assert real responses for both endpoints, and the full e2e suite is
-  green (`npm run e2e`) with zero console errors under the tightened policy.
+- **T003.AC12** — The stale masks are removed from **three** files:
+  `web/tests/e2e/ask.spec.ts`, `views.spec.ts`, and `views-a.spec.ts` (gaps2 §3.7
+  delta: the third masked file was found on the evening re-pass; `views-a`'s
+  mask additionally includes `/api/tasks`, which exists). All three masked
+  endpoints (`/api/systems`, `/api/decisions`, `/api/tasks`) exist and are
+  tested. **`views-b.spec.ts` is excluded on purpose**: its
+  `KNOWN_MISSING_BACKEND_PATHS` is a deliberate non-2xx error-UI fixture
+  (409/501/503 to exercise the error banner), not a stale mask. The suites now
+  assert real responses for the endpoints, and the full e2e suite is green
+  (`npm run e2e`) with zero console errors under the tightened policy.
 
 ---
 
