@@ -67,6 +67,10 @@ pyright backend
 pytest tests
 ```
 
+## Deployment
+
+Deployment targets and runbooks live in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), which covers the local, Kubernetes, and Nix deployment paths under `deployments/`.
+
 ## Documentation
 
 - Specification and architecture notes: `docs/`
