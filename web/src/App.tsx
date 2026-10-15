@@ -24,6 +24,7 @@ import { IncidentsView } from './views/IncidentsView'
 import { DecisionsView } from './views/DecisionsView'
 import { AskView } from './views/AskView'
 import { DownloadsView } from './views/DownloadsView'
+import { SettingsView } from './views/SettingsView'
 import { LoginView } from './views/LoginView'
 import { AuthCallback } from './auth/AuthCallback'
 
@@ -62,6 +63,7 @@ function App() {
             <Route path="/decisions" element={<DecisionsView />} />
             <Route path="/ask" element={<AskView />} />
             <Route path="/downloads" element={<DownloadsView />} />
+            <Route path="/settings" element={<SettingsView />} />
           </Route>
         </Routes>
       </AuthProvider>

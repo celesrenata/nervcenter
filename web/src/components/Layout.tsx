@@ -24,6 +24,7 @@ import {
   VoicemailIcon,
   ContactsIcon,
   WaitingOnIcon,
+  SettingsIcon,
   type IconProps,
 } from './icons'
 
@@ -53,6 +54,7 @@ const navItems: NavItem[] = [
   { path: '/decisions', label: 'Decisions', Icon: DecisionsIcon },
   { path: '/ask', label: 'Ask', Icon: AskIcon },
   { path: '/downloads', label: 'Downloads', Icon: DownloadsIcon },
+  { path: '/settings', label: 'Settings', Icon: SettingsIcon },
 ]
 
 /**

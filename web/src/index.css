@@ -163,6 +163,17 @@ button:focus {
   }
 }
 
+/* Explicit user preference from the Settings panel (Reduce motion). Driven by
+ * a data attribute on <html> set by SettingsContext — independent of the OS
+ * media query above, so a user can force reduced motion regardless of the
+ * system setting. The ring/transition suppression mirrors the media query. */
+[data-reduced-motion='reduce'] *,
+[data-reduced-motion='reduce'] *::before,
+[data-reduced-motion='reduce'] *::after {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

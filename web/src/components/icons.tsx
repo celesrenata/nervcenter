@@ -298,3 +298,17 @@ export function ShieldCheckIcon({ size = 18, ...rest }: IconProps) {
     </svg>
   )
 }
+
+/** Settings — a vertical slider row (the settings panel). */
+export function SettingsIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...baseProps(size, rest)}>
+      <line x1="4" y1="8" x2="13" y2="8" />
+      <line x1="17" y1="8" x2="20" y2="8" />
+      <circle cx="15" cy="8" r="2" />
+      <line x1="4" y1="16" x2="7" y2="16" />
+      <line x1="11" y1="16" x2="20" y2="16" />
+      <circle cx="9" cy="16" r="2" />
+    </svg>
+  )
+}

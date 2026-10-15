@@ -101,6 +101,7 @@ const VIEWS: Array<{ path: string; heading: string }> = [
   { path: '/incidents', heading: 'Incidents' },
   { path: '/decisions', heading: 'Decisions' },
   { path: '/ask', heading: 'Ask NerveCenter' },
+  { path: '/settings', heading: 'Settings' },
 ]
 
 for (const view of VIEWS) {
