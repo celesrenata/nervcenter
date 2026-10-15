@@ -21,6 +21,8 @@ node_modules/
 # Local dev state
 .deployments-cache/
 deployments/local/pgvector-data/
+# Local parallel-worker patch artifacts (dev output, may be sensitive)
+.patches/
 
 # Gitignored secret manifests (see secrets.yaml.example, harbor-pull.example.yaml)
 deployments/kubernetes/base/secrets.yaml
