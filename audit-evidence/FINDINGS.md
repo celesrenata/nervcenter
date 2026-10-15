@@ -77,3 +77,5 @@ There is **no true "delete" button** anywhere in the UI (by design): incidents a
 - `audit-05-now-item-actions-*.png` — Now item card with Resolve/Snooze/Suppress (raw enum labels)
 - `audit-06-contacts-vip-*.png` — Contacts list with VIP state + header count
 - Login P1 verified live (valid creds → API 200 → URL remains `/login`); not screenshot-captured this session.
+- `audit-07-live-settings-postdeploy-*.png` — post-deploy (image `8d3fa59`) Settings view behind SSO:
+  Appearance / Connectors / Sideload sections render; SSO login lands on the app root (P1 fix confirmed live).
