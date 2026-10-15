@@ -92,7 +92,15 @@ def test_ingest_new_is_201_replay_is_200(client):
     payload = _ev("e1", "Design review", at(9), at(10))
     _ingest(client, payload, 201)
     _ingest(client, payload, 200)
-    assert len(client.get("/api/calendar").json()["data"]) == 1
+    # NOTE: explicit [start, end) window — list_events() defaults its window to
+    # [now, now+7d) anchored at the real clock, so a fixed-date fixture read via
+    # the default window is a time-bomb (silently fails the day the reference
+    # date passes). The event sits at at(9)-at(10) on the reference day.
+    data = client.get(
+        "/api/calendar",
+        params={"start": at(0).isoformat(), "end": at(24).isoformat()},
+    ).json()["data"]
+    assert len(data) == 1
 
 
 def test_ingest_invalid_window_422(client):
@@ -278,7 +286,14 @@ def test_delete_then_404(client):
 def test_list_filters_to_window(client):
     _ingest(client, _ev("e1", "A", at(9), at(10)), 201)
     _ingest(client, _ev("e2", "B", at(25), at(26)), 201)
-    data = client.get("/api/calendar").json()["data"]
+    # NOTE: explicit [start, end) window — the default list window is
+    # [now, now+7d) anchored at the real clock, so reading both fixed-date
+    # fixtures (e1 at day-1 at(9), e2 at day-2 at(25)) through the default
+    # window is a time-bomb. Cover both with at(0)..at(30).
+    data = client.get(
+        "/api/calendar",
+        params={"start": at(0).isoformat(), "end": at(30).isoformat()},
+    ).json()["data"]
     assert {e["event_id"] for e in data} == {"e1", "e2"}
     narrow = client.get(
         "/api/calendar",
@@ -288,9 +303,28 @@ def test_list_filters_to_window(client):
 
 
 def test_service_reset_hook():
+    # NOTE: pass an explicit [start, end) window AND give the ingested event a
+    # real duration, strictly inside the window. list_events() defaults its
+    # window to [now, now + 7d), and _day() is a hardcoded reference day
+    # (2026-10-14) that is *in the past* relative to the real clock from that
+    # date onward — relying on the default made this test a time-bomb (it
+    # silently started failing the day the reference date passed). A zero-
+    # duration event sitting exactly on the window boundary is also excluded
+    # by the half-open overlap check (ev_span[1] > ws), so the event must
+    # actually span into the window. This keeps the assertion clock-invariant
+    # while still proving reset_calendar_service() drops the old instance and
+    # a fresh one is empty.
     svc = CalendarService()
-    svc.ingest({"event_id": "m-reset", "title": "x", "start": _day().isoformat()})
-    assert len(svc.list_events()) == 1
+    svc.ingest(
+        {
+            "event_id": "m-reset",
+            "title": "x",
+            "start": at(9).isoformat(),
+            "end": at(10).isoformat(),
+        }
+    )
+    assert len(svc.list_events(start=at(8).isoformat(), end=at(11).isoformat())) == 1
     reset_calendar_service()
     fresh = CalendarService()
     assert fresh is not svc
+    assert len(fresh.list_events(start=at(8).isoformat(), end=at(11).isoformat())) == 0

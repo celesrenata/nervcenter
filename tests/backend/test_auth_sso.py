@@ -34,8 +34,9 @@ from backend.api.auth_service import (
 )
 
 TEST_ISSUER = "https://sso.test.example/application/o/nervecenter/"
-SECRET_A = "unit-secret-a"
-SECRET_B = "unit-secret-b"
+# Keep test fixtures at the RFC 7518-recommended minimum for HS256 keys.
+SECRET_A = "unit-secret-a-" + "a" * 56
+SECRET_B = "unit-secret-b-" + "b" * 56
 
 
 def _ctx(secret: str = SECRET_A, **kwargs) -> AuthContext:
