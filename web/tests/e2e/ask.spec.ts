@@ -11,12 +11,16 @@ import { expect, test } from '@playwright/test'
  *
  * Asserts both the wire response (status 202 + accepted/executed fields)
  * and exactly what the view renders from that payload, with zero console
- * errors. Same console-error policy as views.spec.ts (the only filter is
- * the two provable dead-end 404s — masked via `msg.location().url`, since
- * the console text carries no URL — neither of which fires on this route).
+ * errors. Same console-error policy as views.spec.ts (the only filter is the
+ * `/api/decisions` dead-end 501 — masked via `msg.location().url`, since the
+ * console text carries no URL — which does not fire on this route).
+ *
+ * Note: `/api/systems` is intentionally absent from this list — the endpoint
+ * is implemented (wired at startup, returns 200 with live status rows) and no
+ * longer produces a masked resource error on the /ask route.
  */
 
-const KNOWN_MISSING_BACKEND_PATHS = ['/api/systems', '/api/decisions']
+const KNOWN_MISSING_BACKEND_PATHS = ['/api/decisions']
 
 test('Ask round-trip renders the /api/context/ask response without console errors', async ({
   page,

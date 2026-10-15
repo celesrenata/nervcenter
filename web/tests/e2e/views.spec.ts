@@ -14,20 +14,21 @@ import { expect, test } from '@playwright/test'
  *   - `page.on('pageerror')` — uncaught exceptions FAIL the test.
  *   - `page.on('requestfailed')` — network failures FAIL the test.
  *   - The ONE documented filter: browser-level
- *     `Failed to load resource: the server responded with a status of 4xx
+ *     `Failed to load resource: the server responded with a status of 4xx/5xx
  *     (…)` messages whose URL — read from `msg.location().url`, the only
  *     reliable source (the human-readable `msg.text()` carries no URL;
- *     verified empirically) — is exactly `http://localhost:3000/api/systems`
- *     or `…/api/decisions`. Those two endpoints do not exist on the mock
- *     backend (verified live: HTTP 404, and neither is in spec §46's
- *     endpoint groups), and the corresponding views degrade to their empty
- *     state without any application-level error, so the noise is provably
- *     unrelated to view rendering. Any 4xx/5xx on any OTHER path still
- *     fails the test.
+ *     verified empirically) — is exactly `…/api/decisions`. That endpoint
+ *     answers a real `501 Not Implemented` (listing is unimplemented) and the
+ *     Decisions view degrades to its empty state without any application-level
+ *     error, so the noise is provably unrelated to view rendering. Any
+ *     4xx/5xx on any OTHER path still fails the test.
+ *     (`/api/systems` was removed from this filter: the endpoint is now
+ *     implemented — wired at startup, `GET /api/systems` returns HTTP 200 with
+ *     live status rows — so it no longer produces a masked resource error.)
  *   - No favicon filter needed: /vite.svg exists (HTTP 200).
  */
 
-const KNOWN_MISSING_BACKEND_PATHS = ['/api/systems', '/api/decisions']
+const KNOWN_MISSING_BACKEND_PATHS = ['/api/decisions']
 
 interface ConsoleCapture {
   errors: string[]

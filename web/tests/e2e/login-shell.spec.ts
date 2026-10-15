@@ -140,6 +140,38 @@ test.describe('login view (LG-1…LG-4)', () => {
     await expect(submit).toBeVisible()
   })
 
+  test('valid break-glass login redirects from /login into the app root', async ({
+    page,
+  }) => {
+    await mockSsoConfig(page, { enabled: false, client_id: '', issuer: '' })
+    // Simulate a valid credential exchange: the backend answers 200 with the
+    // access/refresh tokens (shape per backend/api/auth.py login response).
+    await page.route('**/api/auth/login', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'e2e-break-glass-access-token',
+          refresh_token: 'e2e-break-glass-refresh-token',
+          sub: 'local-admin',
+          roles: ['local-admin'],
+        }),
+      }),
+    )
+    await page.goto('/login')
+
+    await page.fill('#username', 'local-admin')
+    await page.fill('#password', 'correct-horse-battery-staple')
+    await page.getByRole('button', { name: 'Sign in' }).click()
+
+    // The successful break-glass login must leave /login and land in the app
+    // (the Overview landing view) — not strand the user on the sign-in form.
+    // This is the fix under test: AuthContext.login now navigates to '/'
+    // on success, mirroring the SSO callback (AuthCallback → '/').
+    await page.waitForURL((url) => url.pathname === '/')
+    await expect(page.locator('main h1')).toHaveText('Overview')
+  })
+
   test('SSO button renders only when sso/config reports enabled', async ({
     page,
   }) => {

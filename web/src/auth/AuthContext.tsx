@@ -17,9 +17,10 @@ import {
  * but never read by the fetch layer, so no request was ever authorized.
  *
  *   - login()  → POST /api/auth/login (break-glass), stores the returned
- *     access+refresh tokens in sessionStorage, resolves the user info, and
- *     REJECTS with ApiError (status 401/403 + backend detail) on failure so
- *     LoginView can map credential errors to actionable messages.
+ *     access+refresh tokens in sessionStorage, resolves the user info,
+ *     navigates to `/` (the app root) on success, and REJECTS with ApiError
+ *     (status 401/403 + backend detail) on failure so LoginView can map
+ *     credential errors to actionable messages.
  *   - logout() → clears the sessionStorage token keys and drops the session.
  *   - mount    → if a token is present, introspect /api/auth/me for the user;
  *     an expired/invalid token 401s, which clears the session (apiFetch).
@@ -106,6 +107,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         : data.user?.roles ?? [],
     }
     setUserState(authedUser)
+    // Successful break-glass login lands the user in the app: navigate away
+    // from /login (replace so browser-back does not re-open the sign-in
+    // form). Mirrors the SSO callback's post-exchange redirect (AuthCallback
+    // → navigate('/')), so both entry points now reach the app the same way.
+    navigate('/', { replace: true })
     return authedUser
   }
 
