@@ -1,7 +1,7 @@
 import { useEffect, useState, type ComponentType } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { ThemeSwitcher } from './ThemeSwitcher'
+import { ThemeToggle } from './ThemeToggle'
 import {
   AgentsIcon,
   BriefingIcon,
@@ -108,7 +108,7 @@ export function Layout() {
         </button>
         <span className="font-semibold text-primary">NerveCenter</span>
         <div className="ml-auto">
-          <ThemeSwitcher />
+          <ThemeToggle />
         </div>
       </header>
 
@@ -228,7 +228,7 @@ function UserFooter({
               Logout
             </button>
           )}
-          <ThemeSwitcher />
+          <ThemeToggle />
         </div>
       </div>
     </div>
