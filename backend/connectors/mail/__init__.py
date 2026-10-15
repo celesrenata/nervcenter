@@ -1,5 +1,7 @@
 """Mail connector plane (prompt2 §46) — package exports."""
 
+from backend.api.models import MailConnector
+
 from backend.connectors.mail.imap_client import (
     ImapClient,
     ImapImapClient,
@@ -26,6 +28,7 @@ from backend.connectors.mail.service import (
 )
 
 __all__ = [
+    "MailConnector",
     "ImapClient",
     "ImapImapClient",
     "ImapProbeResult",
