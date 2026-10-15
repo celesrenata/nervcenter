@@ -29,10 +29,12 @@ of the form:
 
 Usage:
     python3 generate_manifest.py --destination web/dist/downloads \
-        [--version 1.0] [--name NerveCenter]
+        [--artifact-root build/artifacts] [--version 1.0] [--name NerveCenter]
 
-The `--destination` directory must already contain the artifacts (at minimum
-NervePhone.ipa). Missing artifacts are recorded in `artifacts` with
+The `--destination` directory must already exist (it is where `manifest.json`
+is written). When `--artifact-root` is provided, the artifact contents
+(sha256 / byte counts) are read from that directory; otherwise they are read
+from `--destination`. Missing artifacts are recorded in `artifacts` with
 `present: false` so the UI can show a "not built yet" state.
 """
 
@@ -119,7 +121,14 @@ def sha256_of(directory: str, name: str) -> Tuple[Optional[str], Optional[int]]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--destination", required=True,
-                    help="Directory containing the exported artifacts.")
+                    help="Directory where manifest.json is written and, by "
+                         "default, where the exported artifacts live.")
+    ap.add_argument("--artifact-root", default=None,
+                    help="Optional directory containing the source artifacts. "
+                         "When provided, this directory is scanned for the "
+                         "sha256 / byte count of each artifact (the manifest "
+                         "is still written to --destination). Defaults to "
+                         "--destination when omitted.")
     ap.add_argument("--version", default="1.0",
                     help="Version string for the app(s).")
     ap.add_argument("--name", default="NerveCenter",
@@ -131,9 +140,19 @@ def main() -> int:
         print(f"error: destination does not exist: {destination}", file=sys.stderr)
         return 2
 
+    # Directory scanned for artifact contents: the artifact-root when supplied,
+    # otherwise the destination.
+    if args.artifact_root:
+        scan_root = os.path.abspath(args.artifact_root)
+        if not os.path.isdir(scan_root):
+            print(f"error: artifact-root does not exist: {scan_root}", file=sys.stderr)
+            return 2
+    else:
+        scan_root = destination
+
     entries: List[Dict[str, Any]] = []
     for meta in ARTIFACTS:
-        digest, size = sha256_of(destination, str(meta["name"]))
+        digest, size = sha256_of(scan_root, str(meta["name"]))
         entry: Dict[str, Any] = {
             "name": meta["name"],
             "kind": meta["kind"],

@@ -12,7 +12,7 @@
 #   fastlane build_watch          # archive + export NerveWatch.app + watchkitarchive
 #   fastlane publish             # copy artifacts -> web/dist/downloads/ (or dist/)
 #   fastlane distribute          # build_ipa + build_watch + publish
-
+#
 default_team = ENV["NERVE_TEAM_ID"]
 # Ad-hoc export does not validate against App Store rules.
 
@@ -189,13 +189,19 @@ lane :publish do
   end
 
   # Generate the download manifest (calls generate_manifest.py).
+  # Fail hard when generation fails: fastlane's `sh` with :raise => true
+  # raises SystemCommandFailure on a non-zero exit, so the lane aborts
+  # instead of silently shipping without a manifest (the previous
+  # `system(...)` ignored the child process exit code, so an argparse
+  # error on --artifact-root was swallowed and no manifest.json was ever
+  # written).
   if File.exist?(manifest_script)
-    system("python3 #{manifest_script} --destination #{destination} --artifact-root #{artifact_root}")
-    if File.exist?(File.join(destination, "manifest.json"))
-      UI.success("manifest.json generated: #{destination}/manifest.json")
-    else
-      UI.important("generate_manifest.py did not produce manifest.json — check output.")
+    sh "python3 #{manifest_script} --destination #{destination} --artifact-root #{artifact_root}",
+       :raise => true, :log_info => true
+    unless File.exist?(File.join(destination, "manifest.json"))
+      raise "generate_manifest.py ran but did not produce manifest.json — check output."
     end
+    UI.success("manifest.json generated: #{destination}/manifest.json")
   else
     UI.important("generate_manifest.py not found — skipping manifest generation.")
   end
