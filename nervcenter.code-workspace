@@ -13,5 +13,29 @@
 			"path": "../../kube"
 		}
 	],
-	"settings": {}
+	"settings": {},
+	"launch": {
+		"configurations": [
+			{
+				"type": "swift",
+				"request": "launch",
+				"args": [],
+				"cwd": "${workspaceFolder:nervcenter}/apple",
+				"name": "Debug NervePersonalRelay (nervcenter/apple)",
+				"target": "NervePersonalRelay",
+				"configuration": "debug",
+				"preLaunchTask": "swift: Build Debug NervePersonalRelay (nervcenter/apple)"
+			},
+			{
+				"type": "swift",
+				"request": "launch",
+				"args": [],
+				"cwd": "${workspaceFolder:nervcenter}/apple",
+				"name": "Release NervePersonalRelay (nervcenter/apple)",
+				"target": "NervePersonalRelay",
+				"configuration": "release",
+				"preLaunchTask": "swift: Build Release NervePersonalRelay (nervcenter/apple)"
+			}
+		]
+	}
 }
