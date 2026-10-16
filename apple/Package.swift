@@ -10,6 +10,18 @@ let package = Package(
         .macCatalyst(.v17),
     ],
     products: [
+        // Umbrella product the Xcode app targets link (see
+        // Distribution/xcodegen/*.xcodegen.yml — they reference a local SPM
+        // package with product `NerveCenter`).
+        .library(name: "NerveCenter", targets: [
+            "NerveModels",
+            "NerveAPI",
+            "NerveAuth",
+            "NervePersistence",
+            "NerveRealtime",
+            "NerveDesign",
+            "NerveApps",
+        ]),
         .library(name: "NerveShared", targets: [
             "NerveModels",
             "NerveAPI",
