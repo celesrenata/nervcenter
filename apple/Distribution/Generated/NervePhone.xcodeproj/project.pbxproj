@@ -30,6 +30,7 @@
 		D2ABB75F521BEE1703745BC2 /* AskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6D5A074353B5BF9E38EE92C /* AskView.swift */; };
 		F6067D86628FCA06C7AFD7A0 /* PhoneDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5784598D772E278429EB2C6D /* PhoneDesign.swift */; };
 		FE6A19EDA220B68FBC38F65A /* SystemsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB87B5A52DCE7660100DF9FE /* SystemsView.swift */; };
+		AA00000000000000000000FF01 /* NerveCenter in Frameworks */ = {isa = PBXBuildFile; productRef = B1DFA402691777EA1F88BD40 /* NerveCenter */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -90,6 +91,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				375A468CDF2C8129A06302FF /* NerveCenter in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000000FF03 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000000000000000000FF01 /* NerveCenter in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -224,6 +233,7 @@
 			buildConfigurationList = 20B96794E2A2825163ABD543 /* Build configuration list for PBXNativeTarget "NerveCenterWidgetExtension" */;
 			buildPhases = (
 				19821DD1E6228910CDEB9628 /* Sources */,
+				AA00000000000000000000FF03 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -231,6 +241,7 @@
 			);
 			name = NerveCenterWidgetExtension;
 			packageProductDependencies = (
+				B1DFA402691777EA1F88BD40 /* NerveCenter */,
 			);
 			productName = NerveCenterWidgetExtension;
 			productReference = CC50D6BDB25D3E0AD37B6A87 /* NerveCenterWidgetExtension.appex */;

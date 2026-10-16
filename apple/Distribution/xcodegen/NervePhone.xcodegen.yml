@@ -65,6 +65,11 @@ targets:
         com.apple.security.application-groups:
           - group.nerv.center
           - group.com.celestium.nervecenter
+    # The widget imports Nerve* modules from the NerveCenter package. Without
+    # this dependency the widget target fails to compile
+    # ("Unable to resolve module dependency: 'NerveApps'").
+    dependencies:
+      - package: NerveCenter
     product: NerveCenterWidgetExtension
 
   NervePhone:
